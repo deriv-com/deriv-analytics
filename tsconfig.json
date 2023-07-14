@@ -1,0 +1,14 @@
+{
+  "compilerOptions": {
+    "module": "NodeNext",                                
+    "baseUrl": "./",
+    "paths": {
+      "@lib/*": ["lib/*"]
+    },
+    "esModuleInterop": true,
+    "forceConsistentCasingInFileNames": true,
+    "strict": true,       
+    "noImplicitAny": true,
+    "skipLibCheck": true                                 /* Skip type checking all .d.ts files. */
+  }
+}
