@@ -1,4 +1,4 @@
-import { RudderStack } from "@lib/index";
+import { RudderStack } from "@src/index";
 
 jest.mock("rudder-sdk-js", () => {
   const original_module = jest.requireActual("rudder-sdk-js");
