@@ -112,6 +112,13 @@ export class RudderStack {
   }
 
   /**
+  * @returns The user ID that was assigned to the user after calling identify event
+  */
+  getUserId() {
+    return RudderAnalytics.getUserId()
+  }
+
+  /**
   * Initializes the Rudderstack SDK. Ensure that the appropriate environment variables are set before this is called.
   * For local/staging environment, ensure that `RUDDERSTACK_STAGING_KEY` and `RUDDERSTACK_URL` is set.
   * For production environment, ensure that `RUDDERSTACK_PRODUCTION_KEY` and `RUDDERSTACK_URL` is set.
