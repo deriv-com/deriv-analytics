@@ -96,65 +96,65 @@ type TEvents = {
 };
 
 export class RudderStack {
-    has_identified = false;
-    has_initialized = false;
-    current_page = "";
+  has_identified = false;
+  has_initialized = false;
+  current_page = "";
 
-    constructor() {
-        this.init();
-    }
+  constructor() {
+      this.init();
+  }
 
-    init() {
-        const is_production = process.env.CIRCLE_JOB === "release_production";
+  init() {
+      const is_production = process.env.CIRCLE_JOB === "release_production";
 
-        const RUDDERSTACK_KEY = is_production
-            ? process.env.RUDDERSTACK_PRODUCTION_KEY
-            : process.env.RUDDERSTACK_STAGING_KEY;
-        const RUDDERSTACK_URL = process.env.RUDDERSTACK_URL;
+      const RUDDERSTACK_KEY = is_production
+          ? process.env.RUDDERSTACK_PRODUCTION_KEY
+          : process.env.RUDDERSTACK_STAGING_KEY;
+      const RUDDERSTACK_URL = process.env.RUDDERSTACK_URL;
 
-        if (RUDDERSTACK_KEY && RUDDERSTACK_URL) {
-            RudderAnalytics.load(RUDDERSTACK_KEY, RUDDERSTACK_URL);
-            RudderAnalytics.ready(() => {
-                this.has_initialized = true;
-            });
-        }
-    }
+      if (RUDDERSTACK_KEY && RUDDERSTACK_URL) {
+          RudderAnalytics.load(RUDDERSTACK_KEY, RUDDERSTACK_URL);
+          RudderAnalytics.ready(() => {
+              this.has_initialized = true;
+          });
+      }
+  }
 
-    identifyEvent = (user_id: string, payload: TEvents["identify"]) => {
-        if (this.has_initialized) {
-            RudderAnalytics.identify(user_id, payload);
-            this.has_identified = true;
-        }
-    };
+  identifyEvent = (user_id: string, payload: TEvents["identify"]) => {
+      if (this.has_initialized) {
+          RudderAnalytics.identify(user_id, payload);
+          this.has_identified = true;
+      }
+  };
 
-    /**
-     * Pushes page view track event to rudderstack
-     */
-    pageView(current_page: string, platform: string = "Deriv App") {
-        if (this.has_initialized && this.has_identified && current_page !== this.current_page) {
-            RudderAnalytics.page(platform, current_page);
-            this.current_page = current_page;
-        }
-    }
+  /**
+   * Pushes page view track event to rudderstack
+   */
+  pageView(current_page: string, platform: string = "Deriv App") {
+      if (this.has_initialized && this.has_identified && current_page !== this.current_page) {
+          RudderAnalytics.page(platform, current_page);
+          this.current_page = current_page;
+      }
+  }
 
-    /**
-     * Pushes reset event to rudderstack
-     */
-    reset() {
-        if (this.has_initialized) {
-            RudderAnalytics.reset();
-            this.has_identified = false;
-        }
-    }
+  /**
+   * Pushes reset event to rudderstack
+   */
+  reset() {
+      if (this.has_initialized) {
+          RudderAnalytics.reset();
+          this.has_identified = false;
+      }
+  }
 
-    /**
-     * Pushes track events to rudderstack
-     */
-    track<T extends keyof TEvents>(event: T, payload: TEvents[T]) {
-        if (this.has_initialized && this.has_identified) {
-            RudderAnalytics.track(event, payload);
-        }
-    }
+  /**
+   * Pushes track events to rudderstack
+   */
+  track<T extends keyof TEvents>(event: T, payload: TEvents[T]) {
+      if (this.has_initialized && this.has_identified) {
+          RudderAnalytics.track(event, payload);
+      }
+  }
 }
 
 export default new RudderStack();
