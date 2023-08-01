@@ -132,8 +132,8 @@ export class RudderStack {
    */
   pageView(current_page: string, platform: string = "Deriv App") {
     if (this.has_initialized && this.has_identified && current_page !== this.current_page) {
-        RudderAnalytics.page(platform, current_page);
-        this.current_page = current_page;
+      RudderAnalytics.page(platform, current_page);
+      this.current_page = current_page;
     }
   }
 
@@ -142,8 +142,8 @@ export class RudderStack {
    */
   reset() {
     if (this.has_initialized) {
-        RudderAnalytics.reset();
-        this.has_identified = false;
+      RudderAnalytics.reset();
+      this.has_identified = false;
     }
   }
 
@@ -152,7 +152,7 @@ export class RudderStack {
    */
   track<T extends keyof TEvents>(event: T, payload: TEvents[T]) {
     if (this.has_initialized && this.has_identified) {
-        RudderAnalytics.track(event, payload);
+      RudderAnalytics.track(event, payload);
     }
   }
 }
