@@ -6,6 +6,7 @@ type VirtualSignupFormAction = {
   action:
     | "open"
     | "started"
+    | "email_confirmation_sent"
     | "email_confirmed"
     | "signup_continued"
     | "country_selection_screen_opened"
@@ -17,6 +18,8 @@ type VirtualSignupFormAction = {
   form_source?: string;
   form_name?: string;
   error_message?: string;
+  email?: string;
+  app_id?: string;
 };
 
 type RealAccountSignupFormAction = {
@@ -105,59 +108,63 @@ export class RudderStack {
   }
 
   /**
-  * @returns The anonymous ID assigned to the user before the identify event was called
-  */
+   * @returns The anonymous ID assigned to the user before the identify event was called
+   */
   getAnonymousId() {
-    return RudderAnalytics.getAnonymousId()
+    return RudderAnalytics.getAnonymousId();
   }
 
   /**
-  * @returns The user ID that was assigned to the user after calling identify event
-  */
+   * @returns The user ID that was assigned to the user after calling identify event
+   */
   getUserId() {
-    return RudderAnalytics.getUserId()
+    return RudderAnalytics.getUserId();
   }
 
   /**
-  * Initializes the Rudderstack SDK. Ensure that the appropriate environment variables are set before this is called.
-  * For local/staging environment, ensure that `RUDDERSTACK_STAGING_KEY` and `RUDDERSTACK_URL` is set.
-  * For production environment, ensure that `RUDDERSTACK_PRODUCTION_KEY` and `RUDDERSTACK_URL` is set.
-  */
+   * Initializes the Rudderstack SDK. Ensure that the appropriate environment variables are set before this is called.
+   * For local/staging environment, ensure that `RUDDERSTACK_STAGING_KEY` and `RUDDERSTACK_URL` is set.
+   * For production environment, ensure that `RUDDERSTACK_PRODUCTION_KEY` and `RUDDERSTACK_URL` is set.
+   */
   init() {
     const is_production = process.env.CIRCLE_JOB === "release_production";
 
     const RUDDERSTACK_KEY = is_production
-        ? process.env.RUDDERSTACK_PRODUCTION_KEY
-        : process.env.RUDDERSTACK_STAGING_KEY;
+      ? process.env.RUDDERSTACK_PRODUCTION_KEY
+      : process.env.RUDDERSTACK_STAGING_KEY;
     const RUDDERSTACK_URL = process.env.RUDDERSTACK_URL;
 
     if (RUDDERSTACK_KEY && RUDDERSTACK_URL) {
-        RudderAnalytics.load(RUDDERSTACK_KEY, RUDDERSTACK_URL);
-        RudderAnalytics.ready(() => {
-            this.has_initialized = true;
-        });
+      RudderAnalytics.load(RUDDERSTACK_KEY, RUDDERSTACK_URL);
+      RudderAnalytics.ready(() => {
+        this.has_initialized = true;
+      });
     }
   }
 
   /**
-  * 
-  * @param user_id The user ID of the user to identify and associate all events with that particular user ID
-  * @param payload Additional information passed to indentify the user
-  */
+   *
+   * @param user_id The user ID of the user to identify and associate all events with that particular user ID
+   * @param payload Additional information passed to indentify the user
+   */
   identifyEvent = (user_id: string, payload: TEvents["identify"]) => {
     if (this.has_initialized) {
-        RudderAnalytics.identify(user_id, payload);
-        this.has_identified = true;
+      RudderAnalytics.identify(user_id, payload);
+      this.has_identified = true;
     }
   };
 
   /**
-  * Pushes page view event to Rudderstack
-  * 
-  * @param curret_page The name or URL of the current page to track the page view event
-  */
+   * Pushes page view event to Rudderstack
+   *
+   * @param curret_page The name or URL of the current page to track the page view event
+   */
   pageView(current_page: string, platform: string = "Deriv App") {
-    if (this.has_initialized && this.has_identified && current_page !== this.current_page) {
+    if (
+      this.has_initialized &&
+      this.has_identified &&
+      current_page !== this.current_page
+    ) {
       RudderAnalytics.page(platform, current_page);
       this.current_page = current_page;
     }
@@ -174,12 +181,12 @@ export class RudderStack {
   }
 
   /**
-  * Pushes track events to Rudderstack. When this method is called before `identifyEvent` method is called, the events tracked will be associated with an anonymous ID.
-  * Otherwise, if the events needs to be associated with a user ID, call `identifyEvent` with the user ID passed first before calling this method.
-  * 
-  * @param event The event name to track
-  * @param payload Additional information related to the event
-  */
+   * Pushes track events to Rudderstack. When this method is called before `identifyEvent` method is called, the events tracked will be associated with an anonymous ID.
+   * Otherwise, if the events needs to be associated with a user ID, call `identifyEvent` with the user ID passed first before calling this method.
+   *
+   * @param event The event name to track
+   * @param payload Additional information related to the event
+   */
   track<T extends keyof TEvents>(event: T, payload: TEvents[T]) {
     if (this.has_initialized && this.has_identified) {
       RudderAnalytics.track(event, payload);
