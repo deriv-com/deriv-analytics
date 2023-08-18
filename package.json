@@ -32,8 +32,7 @@
     "typescript": "^4.9.5"
   },
   "dependencies": {
-    "@rudderstack/analytics-js": "^3.0.0-beta.4",
-    "rudder-sdk-js": "^2.35.0"
+    "@rudderstack/analytics-js": "^3.0.0-beta.4"
   },
   "engines": {
     "node": "18.x",
