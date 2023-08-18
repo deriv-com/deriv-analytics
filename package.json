@@ -30,7 +30,7 @@
     "typescript": "^4.9.5"
   },
   "dependencies": {
-    "rudder-sdk-js": "^2.35.0"
+    "rudder-sdk-js": "2.40.2"
   },
   "engines": {
     "node": "18.x",
