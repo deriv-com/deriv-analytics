@@ -99,14 +99,23 @@ type TEvents = {
 };
 
 export class RudderStack {
-  rudderAnalytics: RudderAnalytics
+  rudderAnalytics: RudderAnalytics;
   has_identified = false;
   has_initialized = false;
   current_page = "";
+  private static _instance: RudderStack;
 
   constructor() {
-    this.rudderAnalytics = new RudderAnalytics()
+    this.rudderAnalytics = new RudderAnalytics();
     this.init();
+  }
+
+  public static getInstance() {
+    if (RudderStack._instance === null) {
+      RudderStack._instance = new RudderStack();
+      return RudderStack._instance;
+    }
+    return RudderStack._instance;
   }
 
   /**
@@ -196,4 +205,6 @@ export class RudderStack {
   }
 }
 
-export default new RudderStack();
+export default RudderStack;
+
+export const RudderStackInstance = RudderStack.getInstance();
