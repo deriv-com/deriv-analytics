@@ -1,17 +1,12 @@
 import { RudderStack } from "../src/rudderstack";
 
-jest.mock("@rudderstack/analytics-js", () => {
+jest.mock("rudder-sdk-js", () => {
+  const original_module = jest.requireActual("rudder-sdk-js");
   return {
-    RudderAnalytics: jest.fn().mockImplementation(() => {
-      return {
-        load: jest.fn(),
-        ready: (callback: () => any) => callback(),
-        track: jest.fn(),
-        identify: jest.fn(),
-        page: jest.fn(),
-        reset: jest.fn()
-      }
-    })
+    ...original_module,
+    load: jest.fn(),
+    ready: (callback: () => any) => callback(),
+    track: jest.fn(),
   };
 });
 

@@ -1,4 +1,4 @@
-import { RudderAnalytics } from "@rudderstack/analytics-js";
+import * as RudderAnalytics from "rudder-sdk-js";
 
 type SignupProvider = "email" | "phone" | "google" | "facebook" | "apple";
 
@@ -99,13 +99,11 @@ type TEvents = {
 };
 
 export class RudderStack {
-  rudderAnalytics: RudderAnalytics
   has_identified = false;
   has_initialized = false;
   current_page = "";
 
   constructor() {
-    this.rudderAnalytics = new RudderAnalytics()
     this.init();
   }
 
@@ -113,14 +111,14 @@ export class RudderStack {
    * @returns The anonymous ID assigned to the user before the identify event was called
    */
   getAnonymousId() {
-    return this.rudderAnalytics.getAnonymousId();
+    return RudderAnalytics.getAnonymousId();
   }
 
   /**
    * @returns The user ID that was assigned to the user after calling identify event
    */
   getUserId() {
-    return this.rudderAnalytics.getUserId();
+    return RudderAnalytics.getUserId();
   }
 
   /**
@@ -137,8 +135,8 @@ export class RudderStack {
     const RUDDERSTACK_URL = process.env.RUDDERSTACK_URL;
 
     if (RUDDERSTACK_KEY && RUDDERSTACK_URL) {
-      this.rudderAnalytics.load(RUDDERSTACK_KEY, RUDDERSTACK_URL);
-      this.rudderAnalytics.ready(() => {
+      RudderAnalytics.load(RUDDERSTACK_KEY, RUDDERSTACK_URL);
+      RudderAnalytics.ready(() => {
         this.has_initialized = true;
       });
     }
@@ -151,7 +149,7 @@ export class RudderStack {
    */
   identifyEvent = (user_id: string, payload: TEvents["identify"]) => {
     if (this.has_initialized) {
-      this.rudderAnalytics.identify(user_id, payload);
+      RudderAnalytics.identify(user_id, payload);
       this.has_identified = true;
     }
   };
@@ -167,7 +165,7 @@ export class RudderStack {
       this.has_identified &&
       current_page !== this.current_page
     ) {
-      this.rudderAnalytics.page(platform, current_page);
+      RudderAnalytics.page(platform, current_page);
       this.current_page = current_page;
     }
   }
@@ -177,7 +175,7 @@ export class RudderStack {
    */
   reset() {
     if (this.has_initialized) {
-      this.rudderAnalytics.reset();
+      RudderAnalytics.reset();
       this.has_identified = false;
     }
   }
@@ -191,7 +189,7 @@ export class RudderStack {
    */
   track<T extends keyof TEvents>(event: T, payload: TEvents[T]) {
     if (this.has_initialized && this.has_identified) {
-      this.rudderAnalytics.track(event, payload);
+      RudderAnalytics.track(event, payload);
     }
   }
 }

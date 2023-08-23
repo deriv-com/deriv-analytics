@@ -1,6 +1,6 @@
 {
   "name": "@deriv/analytics",
-  "version": "1.1.3-beta",
+  "version": "1.0.3",
   "description": "The analytics package contains all the utility functions used for tracking user events and sending them to the respective platform such as Rudderstack.",
   "keywords": [
     "rudderstack",
@@ -12,12 +12,10 @@
   "scripts": {
     "test": "./node_modules/.bin/jest",
     "build": "tsc",
-    "prepare": "npm run build",
-    "prepublishOnly": "npm test"
+    "prepare" : "npm run build",
+    "prepublishOnly" : "npm test"
   },
-  "files": [
-    "lib/**/*"
-  ],
+  "files": ["lib/**/*"],
   "repository": {
     "type": "git",
     "url": "https://github.com/binary-com/deriv-analytics"
@@ -32,7 +30,7 @@
     "typescript": "^4.9.5"
   },
   "dependencies": {
-    "@rudderstack/analytics-js": "^3.0.0-beta.4"
+    "rudder-sdk-js": "^2.35.0"
   },
   "engines": {
     "node": "18.x",
