@@ -206,5 +206,3 @@ export class RudderStack {
 }
 
 export default RudderStack;
-
-export const RudderStackInstance = RudderStack.getInstance();
