@@ -209,4 +209,4 @@ export class RudderStack {
   }
 }
 
-export default RudderStack;
+export default new RudderStack();
