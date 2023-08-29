@@ -6,7 +6,7 @@
     "rudderstack",
     "react"
   ],
-  "author": "Amir Ali",
+  "author": "Amir Ali, Addriene",
   "main": "lib/index.js",
   "types": "lib/index.d.ts",
   "scripts": {
