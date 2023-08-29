@@ -98,6 +98,10 @@ type TEvents = {
   identify: IdentifyAction;
 };
 
+type TTrackOptions = {
+  is_anonymous: boolean;
+};
+
 export class RudderStack {
   has_identified = false;
   has_initialized = false;
@@ -187,9 +191,20 @@ export class RudderStack {
    * @param event The event name to track
    * @param payload Additional information related to the event
    */
-  track<T extends keyof TEvents>(event: T, payload: TEvents[T]) {
-    if (this.has_initialized && this.has_identified) {
-      RudderAnalytics.track(event, payload);
+  track<T extends keyof TEvents>(
+    event: T,
+    payload: TEvents[T],
+    options?: TTrackOptions
+  ) {
+    if (
+      this.has_initialized &&
+      (options?.is_anonymous || this.has_identified)
+    ) {
+      try {
+        RudderAnalytics.track(event, payload);
+      } catch (err) {
+        console.error(err);
+      }
     }
   }
 }
