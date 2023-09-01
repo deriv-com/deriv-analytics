@@ -1,8 +1,8 @@
 import * as RudderAnalytics from "rudder-sdk-js";
 
-type SignupProvider = "email" | "phone" | "google" | "facebook" | "apple";
+export type SignupProvider = "email" | "phone" | "google" | "facebook" | "apple";
 
-type VirtualSignupFormAction = {
+export type VirtualSignupFormAction = {
   action:
     | "open"
     | "started"
@@ -22,7 +22,7 @@ type VirtualSignupFormAction = {
   app_id?: string;
 };
 
-type RealAccountSignupFormAction = {
+export type RealAccountSignupFormAction = {
   action:
     | "open"
     | "step_passed"
@@ -41,7 +41,7 @@ type RealAccountSignupFormAction = {
   landing_company: string;
 };
 
-type VirtualSignupEmailConfirmationAction = {
+export type VirtualSignupEmailConfirmationAction = {
   action: "received" | "expired" | "confirmed" | "error";
   signup_provider?: SignupProvider;
   form_source?: string;
@@ -49,7 +49,7 @@ type VirtualSignupEmailConfirmationAction = {
   error_message?: string;
 };
 
-type TradeTypesFormAction =
+export type TradeTypesFormAction =
   | {
       action: "open" | "close" | "info_close";
       trade_type_name?: string;
@@ -86,11 +86,11 @@ type TradeTypesFormAction =
       trade_type_name: string;
     };
 
-type IdentifyAction = {
+export type IdentifyAction = {
   language: string;
 };
 
-type TEvents = {
+export type TEvents = {
   ce_virtual_signup_form: VirtualSignupFormAction;
   ce_real_account_signup_form: RealAccountSignupFormAction;
   ce_virtual_signup_email_confirmation: VirtualSignupEmailConfirmationAction;
@@ -98,7 +98,7 @@ type TEvents = {
   identify: IdentifyAction;
 };
 
-type TTrackOptions = {
+export type TTrackOptions = {
   is_anonymous: boolean;
 };
 
@@ -106,10 +106,6 @@ export class RudderStack {
   has_identified = false;
   has_initialized = false;
   current_page = "";
-
-  constructor() {
-    this.init();
-  }
 
   /**
    * @returns The anonymous ID assigned to the user before the identify event was called
