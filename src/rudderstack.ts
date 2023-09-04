@@ -1,6 +1,11 @@
 import * as RudderAnalytics from "rudder-sdk-js";
 
-export type SignupProvider = "email" | "phone" | "google" | "facebook" | "apple";
+export type SignupProvider =
+  | "email"
+  | "phone"
+  | "google"
+  | "facebook"
+  | "apple";
 
 export type VirtualSignupFormAction = {
   action:
@@ -130,9 +135,12 @@ export class RudderStack {
     const is_production = process.env.CIRCLE_JOB === "release_production";
 
     const RUDDERSTACK_KEY = is_production
-      ? process.env.RUDDERSTACK_PRODUCTION_KEY
-      : process.env.RUDDERSTACK_STAGING_KEY;
-    const RUDDERSTACK_URL = process.env.RUDDERSTACK_URL;
+      ? process.env.RUDDERSTACK_PRODUCTION_KEY ||
+        process.env.GATSBY_RUDDERSTACK_PRODUCTION_KEY
+      : process.env.RUDDERSTACK_STAGING_KEY ||
+        process.env.GATSBY_RUDDERSTACK_STAGING_KEY;
+    const RUDDERSTACK_URL =
+      process.env.RUDDERSTACK_URL || process.env.GATSBY_RUDDERSTACK_URL;
 
     if (RUDDERSTACK_KEY && RUDDERSTACK_URL) {
       RudderAnalytics.load(RUDDERSTACK_KEY, RUDDERSTACK_URL);
