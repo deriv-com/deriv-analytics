@@ -112,6 +112,10 @@ export class RudderStack {
   has_initialized = false;
   current_page = "";
 
+  constructor() {
+    this.init();
+  }
+
   /**
    * @returns The anonymous ID assigned to the user before the identify event was called
    */
