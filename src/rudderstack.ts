@@ -1,8 +1,13 @@
 import * as RudderAnalytics from "rudder-sdk-js";
 
-type SignupProvider = "email" | "phone" | "google" | "facebook" | "apple";
+export type SignupProvider =
+  | "email"
+  | "phone"
+  | "google"
+  | "facebook"
+  | "apple";
 
-type VirtualSignupFormAction = {
+export type VirtualSignupFormAction = {
   action:
     | "open"
     | "started"
@@ -22,7 +27,7 @@ type VirtualSignupFormAction = {
   app_id?: string;
 };
 
-type RealAccountSignupFormAction = {
+export type RealAccountSignupFormAction = {
   action:
     | "open"
     | "step_passed"
@@ -41,7 +46,7 @@ type RealAccountSignupFormAction = {
   landing_company: string;
 };
 
-type VirtualSignupEmailConfirmationAction = {
+export type VirtualSignupEmailConfirmationAction = {
   action: "received" | "expired" | "confirmed" | "error";
   signup_provider?: SignupProvider;
   form_source?: string;
@@ -49,7 +54,7 @@ type VirtualSignupEmailConfirmationAction = {
   error_message?: string;
 };
 
-type TradeTypesFormAction =
+export type TradeTypesFormAction =
   | {
       action: "open" | "close" | "info_close";
       trade_type_name?: string;
@@ -86,11 +91,11 @@ type TradeTypesFormAction =
       trade_type_name: string;
     };
 
-type IdentifyAction = {
+export type IdentifyAction = {
   language: string;
 };
 
-type TEvents = {
+export type TEvents = {
   ce_virtual_signup_form: VirtualSignupFormAction;
   ce_real_account_signup_form: RealAccountSignupFormAction;
   ce_virtual_signup_email_confirmation: VirtualSignupEmailConfirmationAction;
@@ -98,7 +103,7 @@ type TEvents = {
   identify: IdentifyAction;
 };
 
-type TTrackOptions = {
+export type TTrackOptions = {
   is_anonymous: boolean;
 };
 
@@ -134,9 +139,12 @@ export class RudderStack {
     const is_production = process.env.CIRCLE_JOB === "release_production";
 
     const RUDDERSTACK_KEY = is_production
-      ? process.env.RUDDERSTACK_PRODUCTION_KEY
-      : process.env.RUDDERSTACK_STAGING_KEY;
-    const RUDDERSTACK_URL = process.env.RUDDERSTACK_URL;
+      ? process.env.RUDDERSTACK_PRODUCTION_KEY ||
+        process.env.GATSBY_RUDDERSTACK_PRODUCTION_KEY
+      : process.env.RUDDERSTACK_STAGING_KEY ||
+        process.env.GATSBY_RUDDERSTACK_STAGING_KEY;
+    const RUDDERSTACK_URL =
+      process.env.RUDDERSTACK_URL || process.env.GATSBY_RUDDERSTACK_URL;
 
     if (RUDDERSTACK_KEY && RUDDERSTACK_URL) {
       RudderAnalytics.load(RUDDERSTACK_KEY, RUDDERSTACK_URL);

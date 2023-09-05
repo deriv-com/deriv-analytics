@@ -1,1 +1,2 @@
-export { default as RudderStack } from './rudderstack';
+export * from "./rudderstack";
+export { default as RudderStack } from "./rudderstack";
