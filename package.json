@@ -1,6 +1,6 @@
 {
   "name": "@deriv/analytics",
-  "version": "1.2.1",
+  "version": "1.2.2",
   "description": "The analytics package contains all the utility functions used for tracking user events and sending them to the respective platform such as Rudderstack.",
   "keywords": [
     "rudderstack",
