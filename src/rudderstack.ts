@@ -95,12 +95,18 @@ export type IdentifyAction = {
   language: string;
 };
 
+export type ExperimentViewedEvent = {
+  experimentId: string;
+  variationId: string | number;
+};
+
 export type TEvents = {
   ce_virtual_signup_form: VirtualSignupFormAction;
   ce_real_account_signup_form: RealAccountSignupFormAction;
   ce_virtual_signup_email_confirmation: VirtualSignupEmailConfirmationAction;
   ce_trade_types_form: TradeTypesFormAction;
   identify: IdentifyAction;
+  experiment_viewed: ExperimentViewedEvent;
 };
 
 export type TTrackOptions = {
