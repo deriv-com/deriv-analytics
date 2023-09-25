@@ -113,14 +113,15 @@ export type TTrackOptions = {
   is_anonymous: boolean;
 };
 
+export type TInitParams = {
+  rudderstack_key: string;
+  rudderstack_url: string;
+};
+
 export class RudderStack {
   has_identified = false;
   has_initialized = false;
   current_page = "";
-
-  constructor() {
-    this.init();
-  }
 
   /**
    * @returns The anonymous ID assigned to the user before the identify event was called
@@ -137,28 +138,16 @@ export class RudderStack {
   }
 
   /**
-   * Initializes the Rudderstack SDK. Ensure that the appropriate environment variables are set before this is called.
-   * For local/staging environment, ensure that `RUDDERSTACK_STAGING_KEY` and `RUDDERSTACK_URL` is set.
-   * For production environment, ensure that `RUDDERSTACK_PRODUCTION_KEY` and `RUDDERSTACK_URL` is set.
+   * Initializes the Rudderstack SDK. Ensure that the appropriate values of the Rudderstack key and URL are passed.
    */
-  init() {
-    const is_production =
-      process.env.CIRCLE_JOB === "release_production" ||
-      !!process.env.GATSBY_RUDDERSTACK_PRODUCTION_KEY;
-
-    const RUDDERSTACK_KEY = is_production
-      ? process.env.RUDDERSTACK_PRODUCTION_KEY ||
-        process.env.GATSBY_RUDDERSTACK_PRODUCTION_KEY
-      : process.env.RUDDERSTACK_STAGING_KEY ||
-        process.env.GATSBY_RUDDERSTACK_STAGING_KEY;
-    const RUDDERSTACK_URL =
-      process.env.RUDDERSTACK_URL || process.env.GATSBY_RUDDERSTACK_URL;
-
-    if (RUDDERSTACK_KEY && RUDDERSTACK_URL) {
-      RudderAnalytics.load(RUDDERSTACK_KEY, RUDDERSTACK_URL);
+  init({ rudderstack_key, rudderstack_url }: TInitParams) {
+    if (rudderstack_key && rudderstack_url) {
+      RudderAnalytics.load(rudderstack_key, rudderstack_url);
       RudderAnalytics.ready(() => {
         this.has_initialized = true;
       });
+    } else {
+      console.error('Please provide "rudderstack_key" and "rudderstack_url"');
     }
   }
 
