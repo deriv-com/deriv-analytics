@@ -95,12 +95,18 @@ export type IdentifyAction = {
   language: string;
 };
 
+export type ExperimentViewedEvent = {
+  experimentId: string;
+  variationId: string | number;
+};
+
 export type TEvents = {
   ce_virtual_signup_form: VirtualSignupFormAction;
   ce_real_account_signup_form: RealAccountSignupFormAction;
   ce_virtual_signup_email_confirmation: VirtualSignupEmailConfirmationAction;
   ce_trade_types_form: TradeTypesFormAction;
   identify: IdentifyAction;
+  experiment_viewed: ExperimentViewedEvent;
 };
 
 export type TTrackOptions = {
@@ -136,7 +142,9 @@ export class RudderStack {
    * For production environment, ensure that `RUDDERSTACK_PRODUCTION_KEY` and `RUDDERSTACK_URL` is set.
    */
   init() {
-    const is_production = process.env.CIRCLE_JOB === "release_production";
+    const is_production =
+      process.env.CIRCLE_JOB === "release_production" ||
+      !!process.env.GATSBY_RUDDERSTACK_PRODUCTION_KEY;
 
     const RUDDERSTACK_KEY = is_production
       ? process.env.RUDDERSTACK_PRODUCTION_KEY ||
