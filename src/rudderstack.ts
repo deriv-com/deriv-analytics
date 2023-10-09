@@ -143,22 +143,17 @@ export class RudderStack {
    */
   init() {
     const is_production =
-      process.env.CIRCLE_JOB === "release_production" ||
-      !!process.env.GATSBY_RUDDERSTACK_PRODUCTION_KEY;
+        process.env.CIRCLE_JOB === 'release_production' || process.env.NODE_ENV === 'production'
 
     const RUDDERSTACK_KEY = is_production
-      ? process.env.RUDDERSTACK_PRODUCTION_KEY ||
-        process.env.GATSBY_RUDDERSTACK_PRODUCTION_KEY
-      : process.env.RUDDERSTACK_STAGING_KEY ||
-        process.env.GATSBY_RUDDERSTACK_STAGING_KEY;
-    const RUDDERSTACK_URL =
-      process.env.RUDDERSTACK_URL || process.env.GATSBY_RUDDERSTACK_URL;
+        ? '1oV5agvlcnCZ6IH94wCKM1oR8Pd'
+        : '1lN3tsFD2nruGFgM5F074DC2hMB'
 
-    if (RUDDERSTACK_KEY && RUDDERSTACK_URL) {
-      RudderAnalytics.load(RUDDERSTACK_KEY, RUDDERSTACK_URL);
+    if (RUDDERSTACK_KEY) {
+      RudderAnalytics.load(RUDDERSTACK_KEY, 'https://deriv-dataplane.rudderstack.com')
       RudderAnalytics.ready(() => {
-        this.has_initialized = true;
-      });
+        this.has_initialized = true
+      })
     }
   }
 
