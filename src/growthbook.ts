@@ -62,7 +62,7 @@ export class Growthbook<
         })
     }
 
-    useFeatureIsOn<K extends string & keyof AppFeatures = string>(id: K): boolean {
+    getFeatureIsOn<K extends string & keyof AppFeatures = string>(id: K): boolean {
         return useFeatureIsOn(id)
     }
     getFeatureValue<

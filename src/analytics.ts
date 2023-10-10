@@ -33,8 +33,8 @@ export class Analytics {
         })
     }
 
-    public static useFeatureIsOn(id: string) {
-        return Analytics._growthbook.useFeatureIsOn(id)
+    public static getFeatureIsOn(id: string) {
+        return Analytics._growthbook.getFeatureIsOn(id)
     }
     public static getFeatureValue(id: string, fallback: string) {
         return Analytics._growthbook.getFeatureValue(id, fallback)
