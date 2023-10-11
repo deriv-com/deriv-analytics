@@ -1,25 +1,34 @@
-import { GrowthBook, useFeatureIsOn } from '@growthbook/growthbook-react'
-import {WidenPrimitives} from "@growthbook/growthbook/src/types/growthbook";
+import { GrowthBook } from '@growthbook/growthbook-react'
 import * as RudderAnalytics from 'rudder-sdk-js'
 
-export type GrowthBookTypes = GrowthBook
+export type GrowthBookType = GrowthBook
 
 export type AttributesTypes = {
-    id: string
+    id?: string
     country: string
     user_language: string
     device_language: string
     device_type: string
 }
-export class Growthbook<
-    AppFeatures extends Record<string, any> = Record<string, any>
-> {
+export class Growthbook {
     GrowthBook
     private static _instance: Growthbook
 
     // we have to pass settings due the specific framework implementation
-    constructor(growthbook_settings: any) {
-        this.GrowthBook = new GrowthBook<GrowthBook>(growthbook_settings)
+    constructor(clientKey: string, decryptionKey: string, enableDevMode: boolean) {
+        this.GrowthBook = new GrowthBook<GrowthBook>({
+            apiHost: 'https://cdn.growthbook.io',
+            clientKey,
+            decryptionKey,
+            enableDevMode,
+            subscribeToChanges: true,
+            trackingCallback: (experiment, result) => {
+                RudderAnalytics.track('experiment_viewed', {
+                    experimentId: experiment.key,
+                    variationId: result.variationId,
+                })
+            },
+        })
         this.init()
     }
 
@@ -27,26 +36,10 @@ export class Growthbook<
     public static getGrowthBookInstance(
         clientKey: string,
         decryptionKey: string,
-        NODE_ENV: string,
+        enableDevMode: boolean,
     ) {
         if (!Growthbook._instance) {
-            Growthbook._instance = new Growthbook({
-                apiHost: 'https://cdn.growthbook.io',
-                clientKey,
-                decryptionKey,
-                enableDevMode: NODE_ENV !== 'production',
-                subscribeToChanges: true,
-                trackingCallback: (experiment: any, result: any) => {
-                    RudderAnalytics.track('experiment_viewed', {
-                        experimentId: experiment.key,
-                        variationId: result.variationId,
-                    })
-                },
-                // use it for development and testing purpose
-                // onFeatureUsage: (featureKey, result) => {
-                //     console.log('feature', featureKey, 'has value', result.value)
-                // },
-            })
+            Growthbook._instance = new Growthbook(clientKey, decryptionKey, enableDevMode)
             return Growthbook._instance
         }
         return Growthbook._instance
@@ -61,17 +54,13 @@ export class Growthbook<
             device_type,
         })
     }
-
-    getFeatureIsOn<K extends string & keyof AppFeatures = string>(id: K): boolean {
-        return useFeatureIsOn(id)
+    getFeatureState<K>(id: K) {
+        return this.GrowthBook.evalFeature(id)
     }
-    getFeatureValue<
-        V extends AppFeatures[K],
-        K extends string & keyof AppFeatures = string
-    >(key: K, defaultValue: V): WidenPrimitives<V> {
-        return this.GrowthBook.getFeatureValue(key, defaultValue)
+    getFeatureValue<K>(key: K) {
+        return this.GrowthBook.getFeatureValue(key, 'fallback')
     }
     init() {
-        this.GrowthBook.loadFeatures().catch((err) => console.error(err))
+        return this.GrowthBook.loadFeatures().catch((err) => console.error(err))
     }
 }
