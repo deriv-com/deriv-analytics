@@ -1,2 +1,1 @@
-export * from "./rudderstack";
-export { default as RudderStack } from "./rudderstack";
+export { Analytics, AnalyticsData } from './analytics'

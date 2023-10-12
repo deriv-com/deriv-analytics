@@ -1,139 +1,142 @@
-import * as RudderAnalytics from "rudder-sdk-js";
+import * as RudderAnalytics from 'rudder-sdk-js'
 
-export type SignupProvider =
-  | "email"
-  | "phone"
-  | "google"
-  | "facebook"
-  | "apple";
+export type SignupProvider = 'email' | 'phone' | 'google' | 'facebook' | 'apple'
 
 export type VirtualSignupFormAction = {
   action:
-    | "open"
-    | "started"
-    | "email_confirmation_sent"
-    | "email_confirmed"
-    | "signup_continued"
-    | "country_selection_screen_opened"
-    | "password_screen_opened"
-    | "signup_done"
-    | "signup_flow_error"
-    | "go_to_login";
-  signup_provider?: SignupProvider;
-  form_source?: string;
-  form_name?: string;
-  error_message?: string;
-  email?: string;
-  app_id?: string;
-};
+      | 'open'
+      | 'started'
+      | 'email_confirmation_sent'
+      | 'email_confirmed'
+      | 'signup_continued'
+      | 'country_selection_screen_opened'
+      | 'password_screen_opened'
+      | 'signup_done'
+      | 'signup_flow_error'
+      | 'go_to_login'
+  signup_provider?: SignupProvider
+  form_source?: string
+  form_name?: string
+  error_message?: string
+  email?: string
+  app_id?: string
+}
 
 export type RealAccountSignupFormAction = {
   action:
-    | "open"
-    | "step_passed"
-    | "save"
-    | "restore"
-    | "close"
-    | "real_signup_error"
-    | "other_error"
-    | "real_signup_finished";
-  step_codename?: string;
-  step_num?: number;
-  user_choice?: string;
-  source?: string;
-  form_name?: string;
-  real_signup_error_message?: string;
-  landing_company: string;
-};
+      | 'open'
+      | 'step_passed'
+      | 'save'
+      | 'restore'
+      | 'close'
+      | 'real_signup_error'
+      | 'other_error'
+      | 'real_signup_finished'
+  step_codename?: string
+  step_num?: number
+  user_choice?: string
+  source?: string
+  form_name?: string
+  real_signup_error_message?: string
+  landing_company: string
+}
 
 export type VirtualSignupEmailConfirmationAction = {
-  action: "received" | "expired" | "confirmed" | "error";
-  signup_provider?: SignupProvider;
-  form_source?: string;
-  email_md5?: string;
-  error_message?: string;
-};
+  action: 'received' | 'expired' | 'confirmed' | 'error'
+  signup_provider?: SignupProvider
+  form_source?: string
+  email_md5?: string
+  error_message?: string
+}
 
 export type TradeTypesFormAction =
-  | {
-      action: "open" | "close" | "info_close";
-      trade_type_name?: string;
-      tab_name?: string;
-      form_source?: string;
-      form_name?: string;
-      subform_name?: string;
-    }
-  | {
-      action: "choose_trade_type";
-      subform_name: "info_old" | "info_new";
-      form_name: string;
-      trade_type_name: string;
-    }
-  | {
-      action: "choose_trade_type";
-      subform_name: "trade_type";
-      tab_name: string;
-      form_name: string;
-      trade_type_name: string;
-    }
-  | {
-      action: "search";
-      search_string: string;
-    }
-  | {
-      action: "info_open";
-      tab_name: string;
-      trade_type_name: string;
-    }
-  | {
-      action: "info-switcher";
-      info_switcher_mode: string;
-      trade_type_name: string;
-    };
+    | {
+  action: 'open' | 'close' | 'info_close'
+  trade_type_name?: string
+  tab_name?: string
+  form_source?: string
+  form_name?: string
+  subform_name?: string
+}
+    | {
+  action: 'choose_trade_type'
+  subform_name: 'info_old' | 'info_new'
+  form_name: string
+  trade_type_name: string
+}
+    | {
+  action: 'choose_trade_type'
+  subform_name: 'trade_type'
+  tab_name: string
+  form_name: string
+  trade_type_name: string
+}
+    | {
+  action: 'search'
+  search_string: string
+}
+    | {
+  action: 'info_open'
+  tab_name: string
+  trade_type_name: string
+}
+    | {
+  action: 'info-switcher'
+  info_switcher_mode: string
+  trade_type_name: string
+}
 
 export type IdentifyAction = {
-  language: string;
-};
+  language: string
+}
 
 export type ExperimentViewedEvent = {
-  experimentId: string;
-  variationId: string | number;
-};
+  experimentId: string
+  variationId: string | number
+}
 
 export type TEvents = {
-  ce_virtual_signup_form: VirtualSignupFormAction;
-  ce_real_account_signup_form: RealAccountSignupFormAction;
-  ce_virtual_signup_email_confirmation: VirtualSignupEmailConfirmationAction;
-  ce_trade_types_form: TradeTypesFormAction;
-  identify: IdentifyAction;
-  experiment_viewed: ExperimentViewedEvent;
-};
+  ce_virtual_signup_form: VirtualSignupFormAction
+  ce_real_account_signup_form: RealAccountSignupFormAction
+  ce_virtual_signup_email_confirmation: VirtualSignupEmailConfirmationAction
+  ce_trade_types_form: TradeTypesFormAction
+  identify: IdentifyAction
+  experiment_viewed: ExperimentViewedEvent
+}
 
 export type TTrackOptions = {
-  is_anonymous: boolean;
-};
-
+  is_anonymous: boolean
+}
 export class RudderStack {
-  has_identified = false;
-  has_initialized = false;
-  current_page = "";
+  has_identified = false
+  has_initialized = false
+  current_page = ''
+  private static _instance: RudderStack
 
-  constructor() {
-    this.init();
+  constructor(RUDDERSTACK_KEY: string) {
+    this.init(RUDDERSTACK_KEY)
+  }
+
+  public static getRudderStackInstance(RUDDERSTACK_KEY: string) {
+    if (!RudderStack._instance) {
+      RudderStack._instance = new RudderStack(RUDDERSTACK_KEY)
+      return RudderStack._instance
+    }
+    return RudderStack._instance
   }
 
   /**
    * @returns The anonymous ID assigned to the user before the identify event was called
    */
   getAnonymousId() {
-    return RudderAnalytics.getAnonymousId();
+    return RudderAnalytics.getAnonymousId()
   }
 
   /**
    * @returns The user ID that was assigned to the user after calling identify event
    */
   getUserId() {
-    return RudderAnalytics.getUserId();
+    return RudderAnalytics.getUserId()
   }
 
   /**
@@ -141,52 +144,35 @@ export class RudderStack {
    * For local/staging environment, ensure that `RUDDERSTACK_STAGING_KEY` and `RUDDERSTACK_URL` is set.
    * For production environment, ensure that `RUDDERSTACK_PRODUCTION_KEY` and `RUDDERSTACK_URL` is set.
    */
-  init() {
-    const is_production =
-      process.env.CIRCLE_JOB === "release_production" ||
-      !!process.env.GATSBY_RUDDERSTACK_PRODUCTION_KEY;
-
-    const RUDDERSTACK_KEY = is_production
-      ? process.env.RUDDERSTACK_PRODUCTION_KEY ||
-        process.env.GATSBY_RUDDERSTACK_PRODUCTION_KEY
-      : process.env.RUDDERSTACK_STAGING_KEY ||
-        process.env.GATSBY_RUDDERSTACK_STAGING_KEY;
-    const RUDDERSTACK_URL =
-      process.env.RUDDERSTACK_URL || process.env.GATSBY_RUDDERSTACK_URL;
-
-    if (RUDDERSTACK_KEY && RUDDERSTACK_URL) {
-      RudderAnalytics.load(RUDDERSTACK_KEY, RUDDERSTACK_URL);
-      RudderAnalytics.ready(() => {
-        this.has_initialized = true;
-      });
-    }
+  init(RUDDERSTACK_KEY: string) {
+    RudderAnalytics.load(RUDDERSTACK_KEY, 'https://deriv-dataplane.rudderstack.com')
+    RudderAnalytics.ready(() => {
+      this.has_initialized = true
+      this.has_identified = !!(this.getUserId() || this.getAnonymousId())
+    })
   }
 
   /**
    *
    * @param user_id The user ID of the user to identify and associate all events with that particular user ID
-   * @param payload Additional information passed to indentify the user
+   * @param payload Additional information passed to identify the user
    */
-  identifyEvent = (user_id: string, payload: TEvents["identify"]) => {
+  identifyEvent = (user_id: string, payload: TEvents['identify']) => {
     if (this.has_initialized) {
-      RudderAnalytics.identify(user_id, payload);
-      this.has_identified = true;
+      RudderAnalytics.identify(user_id, payload)
+      this.has_identified = true
     }
-  };
+  }
 
   /**
    * Pushes page view event to Rudderstack
    *
    * @param curret_page The name or URL of the current page to track the page view event
    */
-  pageView(current_page: string, platform: string = "Deriv App") {
-    if (
-      this.has_initialized &&
-      this.has_identified &&
-      current_page !== this.current_page
-    ) {
-      RudderAnalytics.page(platform, current_page);
-      this.current_page = current_page;
+  pageView(current_page: string, platform = 'Deriv App') {
+    if (this.has_initialized && this.has_identified && current_page !== this.current_page) {
+      RudderAnalytics.page(platform, current_page)
+      this.current_page = current_page
     }
   }
 
@@ -195,8 +181,8 @@ export class RudderStack {
    */
   reset() {
     if (this.has_initialized) {
-      RudderAnalytics.reset();
-      this.has_identified = false;
+      RudderAnalytics.reset()
+      this.has_identified = false
     }
   }
 
@@ -207,22 +193,13 @@ export class RudderStack {
    * @param event The event name to track
    * @param payload Additional information related to the event
    */
-  track<T extends keyof TEvents>(
-    event: T,
-    payload: TEvents[T],
-    options?: TTrackOptions
-  ) {
-    if (
-      this.has_initialized &&
-      (options?.is_anonymous || this.has_identified)
-    ) {
+  track<T extends keyof TEvents>(event: T, payload: TEvents[T]) {
+    if (this.has_initialized && this.has_identified) {
       try {
-        RudderAnalytics.track(event, payload);
+        RudderAnalytics.track(event, payload)
       } catch (err) {
-        console.error(err);
+        console.error(err)
       }
     }
   }
 }
-
-export default new RudderStack();
