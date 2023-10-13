@@ -11,8 +11,10 @@
   "main": "lib/index.js",
   "types": "lib/index.d.ts",
   "scripts": {
+    "test": "./node_modules/.bin/jest",
     "build": "tsc",
-    "prepare": "npm run build"
+    "prepare": "npm run build",
+    "prepublishOnly": "npm test"
   },
   "files": [
     "lib/**/*"
