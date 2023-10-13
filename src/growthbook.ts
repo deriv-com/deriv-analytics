@@ -15,7 +15,7 @@ export type AttributesTypes = {
     device_type: string
 }
 export class Growthbook {
-    GrowthBook: GrowthBook
+    GrowthBook
     private static _instance: Growthbook
 
     // we have to pass settings due the specific framework implementation
