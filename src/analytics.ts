@@ -2,13 +2,12 @@ import { AttributesTypes, Growthbook } from './growthbook'
 import { RudderStack, SignupProvider, TEvents } from './rudderstack'
 
 export type AnalyticsData = { event: keyof TEvents; form_source: string; form_name: string }
-type ExtractAction<T> = T extends { action: infer A } ? A : never
-type ActionForEvent<E extends keyof TEvents> = ExtractAction<TEvents[E]>
+
 type Options = {
     growthbookKey: string
     growthbookDecryptionKey: string
     rudderstackKey: string
-    enableDevMode?: boolean
+    enableDevMode: boolean
 }
 
 export function createAnalyticsInstance(options?: Options) {
@@ -45,7 +44,7 @@ export function createAnalyticsInstance(options?: Options) {
 
     const track = <T extends keyof TEvents>(
         analyticsData: AnalyticsData,
-        action: ActionForEvent<T>,
+        action: any,
         signup_provider?: SignupProvider,
     ) => {
         _rudderstack.track(analyticsData.event, {

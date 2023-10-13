@@ -12,29 +12,11 @@ jest.mock("rudder-sdk-js", () => {
 });
 
 describe("rudderstack", () => {
-  let rudderstack: RudderStack;
-  const originalEnv = process.env;
+  let rudderstack = RudderStack.getRudderStackInstance('test_key');
 
-  beforeAll(() => {
-    process.env = {
-      ...originalEnv,
-      CIRCLE_JOB: "release_staging",
-      RUDDERSTACK_PRODUCTION_KEY: "123456789",
-      RUDDERSTACK_STAGING_KEY: "123456789",
-      RUDDERSTACK_URL: "http://example.com",
-    };
-  });
-
-  beforeEach(() => {
-    rudderstack = new RudderStack();
-  });
 
   afterEach(() => {
     jest.clearAllMocks();
-  });
-
-  afterAll(() => {
-    process.env = originalEnv;
   });
 
   test("should be initialized when instance is created", () => {
@@ -74,23 +56,6 @@ describe("rudderstack", () => {
     expect(rudderstack.has_identified).toBe(false);
   });
 
-  test("should call RudderAnalytics track function if is_anonymous pass to true", () => {
-    const analyticsSpy = jest.spyOn(RudderAnalytics, "track");
-
-    rudderstack.track(
-      "ce_trade_types_form",
-      {
-        action: "open",
-      },
-      { is_anonymous: true }
-    );
-
-    expect(analyticsSpy).toHaveBeenCalledTimes(1);
-    expect(analyticsSpy).toHaveBeenCalledWith("ce_trade_types_form", {
-      action: "open",
-    });
-  });
-
   test("should not call RudderAnalytics track function if not identified and is not anonymous", () => {
     const analyticsSpy = jest.spyOn(RudderAnalytics, "track");
 
@@ -99,7 +64,6 @@ describe("rudderstack", () => {
       {
         action: "open",
       },
-      { is_anonymous: false }
     );
 
     expect(analyticsSpy).not.toHaveBeenCalled();

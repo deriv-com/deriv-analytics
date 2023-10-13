@@ -1,7 +1,11 @@
-import { GrowthBook } from '@growthbook/growthbook-react'
+import { GrowthBook } from '@growthbook/growthbook'
 import * as RudderAnalytics from 'rudder-sdk-js'
 
-export type GrowthBookType = GrowthBook
+declare global {
+    interface Window {
+        _growthbook?: GrowthBook<Record<string, any>> | undefined;
+    }
+}
 
 export type AttributesTypes = {
     id?: string
@@ -11,7 +15,7 @@ export type AttributesTypes = {
     device_type: string
 }
 export class Growthbook {
-    GrowthBook
+    GrowthBook: GrowthBook
     private static _instance: Growthbook
 
     // we have to pass settings due the specific framework implementation
@@ -54,10 +58,12 @@ export class Growthbook {
             device_type,
         })
     }
-    getFeatureState<K>(id: K) {
+    getFeatureState<K, V>(id: K) {
+        // @ts-ignore
         return this.GrowthBook.evalFeature(id)
     }
-    getFeatureValue<K>(key: K, defaultValue: string) {
+    getFeatureValue<K, V>(key: K, defaultValue: V) {
+        // @ts-ignore
         return this.GrowthBook.getFeatureValue(key, defaultValue)
     }
     setUrl(href: string) {
