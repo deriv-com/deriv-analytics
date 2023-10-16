@@ -1,8 +1,7 @@
 import { AttributesTypes, Growthbook } from './growthbook'
-import { RudderStack, SignupProvider, TEvents } from './rudderstack'
-
-export type AnalyticsData = { event: keyof TEvents; form_source: string; form_name: string }
-
+import { RudderStack, } from './rudderstack'
+import { TEvents } from './types'
+type AnalyticsData<T extends keyof TEvents> = { event: T } & TEvents[T]
 type Options = {
     growthbookKey: string
     growthbookDecryptionKey: string
@@ -41,19 +40,17 @@ export function createAnalyticsInstance(options?: Options) {
         _growthbook.getFeatureValue(id, defaultValue)
     const setUrl = (href: string) => _growthbook.setUrl(href)
     const getId = () => _rudderstack.getUserId() || _rudderstack.getAnonymousId()
-
     const track = <T extends keyof TEvents>(
-        analyticsData: AnalyticsData,
-        action: any,
-        signup_provider?: SignupProvider,
+        action: TEvents[T]['action'],
+        analyticsData: AnalyticsData<T>,
     ) => {
         _rudderstack.track(analyticsData.event, {
-            action,
-            signup_provider,
-            form_source: analyticsData.form_source,
-            form_name: analyticsData.form_name,
+            ...analyticsData, action
         })
     }
+
+    const analyticsData: Parameters<typeof track>[1] = {event: 'ce_virtual_signup_email_confirmation', signup_provider: 'email'}
+    track('open', analyticsData)
 
     const getInstances = () => ({ ab: _growthbook, tracking: _rudderstack })
 
