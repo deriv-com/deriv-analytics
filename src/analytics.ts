@@ -41,9 +41,7 @@ export function createAnalyticsInstance(options?: Options) {
     const getId = () => _rudderstack.getUserId() || _rudderstack.getAnonymousId()
 
     let coreData = {}
-    const setCoreAnalyticsData = (data: TCoreTrackData) => {
-        coreData = {...data}
-    }
+    const setCoreAnalyticsData = (data: TCoreTrackData) => { coreData = {...data} }
     const trackEvent = <T extends keyof TEvents>(
         event: T,
         analyticsData: TEvents[T],
