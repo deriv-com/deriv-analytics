@@ -56,6 +56,7 @@ type DbotTypes = {
 };
 
 export type TEvents = {
+    ce_partner_account_signup_form: PartnerAccountSignupForm
     ce_virtual_signup_form: VirtualSignupForm
     ce_real_account_signup_form: RealAccountSignupForm
     ce_virtual_signup_email_confirmation: VirtualSignupEmailConfirmation
