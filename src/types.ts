@@ -65,6 +65,7 @@ export type TEvents = {
 }
 
 export type TCoreTrackData = {
+    language: string
     account_type:  'CR' | 'VR' | 'MF' | 'VRTC'
     device_type: 'mobile' | 'desktop'
 }
