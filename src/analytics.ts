@@ -50,9 +50,6 @@ export function createAnalyticsInstance(options?: Options) {
     ) => {
         _rudderstack.track(event, {...coreData, ...analyticsData})
     }
-
-    trackEvent('ce_virtual_signup_form', {action: 'open', signup_provider: 'google', app_id: '8'})
-
     const getInstances = () => ({ ab: _growthbook, tracking: _rudderstack })
 
     return {
