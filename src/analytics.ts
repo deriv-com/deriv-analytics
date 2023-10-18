@@ -1,5 +1,5 @@
 import { AttributesTypes, Growthbook } from './growthbook'
-import { RudderStack, } from './rudderstack'
+import { RudderStack } from './rudderstack'
 import { TCoreTrackData, TEvents } from './types'
 
 type Options = {
@@ -42,12 +42,14 @@ export function createAnalyticsInstance(options?: Options) {
     const getId = () => _rudderstack.getUserId() || _rudderstack.getAnonymousId()
 
     let coreData = {}
-    const setCoreAnalyticsData = (data: TCoreTrackData) => { coreData = {...data} }
-    const trackEvent = <T extends keyof TEvents>(
-        event: T,
-        analyticsData: TEvents[T],
-    ) => {
-        _rudderstack.track(event, {...coreData, ...analyticsData})
+    const setCoreAnalyticsData = (data: TCoreTrackData) => {
+        _rudderstack.identifyEvent(getId(), { language: data.language })
+        // @ts-ignore
+        delete data['language']
+        coreData = { ...data }
+    }
+    const trackEvent = <T extends keyof TEvents>(event: T, analyticsData: TEvents[T]) => {
+        _rudderstack.track(event, { ...coreData, ...analyticsData })
     }
     const getInstances = () => ({ ab: _growthbook, tracking: _rudderstack })
 

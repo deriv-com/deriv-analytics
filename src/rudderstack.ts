@@ -1,5 +1,5 @@
 import * as RudderAnalytics from 'rudder-sdk-js'
-import {TEvents} from "./types";
+import { TEvents } from './types'
 
 export class RudderStack {
   has_identified = false
@@ -52,10 +52,8 @@ export class RudderStack {
    * @param payload Additional information passed to identify the user
    */
   identifyEvent = (user_id: string, payload: { language: string }) => {
-    if (this.has_initialized) {
-      RudderAnalytics.identify(user_id, payload)
-      this.has_identified = true
-    }
+    RudderAnalytics.identify(user_id, payload)
+    this.has_identified = true
   }
 
   /**
