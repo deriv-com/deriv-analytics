@@ -23,7 +23,7 @@ $ npm i @deriv/analytics
 
 To proper initialisation of the package, pass proper keys in special function in special for init functions place:
 
-```
+```js
 Analytics?.initialise({
     growthbookKey: process.env.GROWTHBOOK_CLIENT_KEY,
     growthbookDecryptionKey: process.env.GROWTHBOOK_DECRYPTION_KEY,
@@ -34,7 +34,18 @@ Analytics?.initialise({
             : process.env.RUDDERSTACK_PRODUCTION_KEY,
     })
 ```
-To make good strategy for A/B testing we need to create some condition depends on data.
+
+Set core data to pass in each event:
+
+```js
+Analytics?.setCoreAnalyticsData({
+    device_type: this.device_type,
+    account_type: this.account_type
+})
+```
+
+To make good strategy for A/B testing we need to create some condition depends on data:
+
 ```js
     Analytics?.setAttributes({
         user_language: Cookies.get('user_language') || getLanguage(),
@@ -55,20 +66,28 @@ To start using it, let's observe on SDK usage examples:
 ```js
 import { Analytics, AnalyticsData } from '@deriv/analytics';
 
-const analyticsData: Parameters<typeof track>[1] = {
-    event: 'ce_virtual_signup_form',
+// Tracking features
+Analytics?.trackEvent('ce_virtual_signup_form', {
+    action: 'open',
     form_source: window.location.hostname,
     form_name: 'default_diel_deriv',
     signup_provider: 'email',
-    ...
-}
+})
 
-// tracking features
-// if needed to change something like signup_provider
-analyticsData.signup_provider = 'google'
-Analytics?.track('started', analyticsData)
-// the same as
-Analytics?.track({action: 'started'}, { event: 'ce_virtual_signup_form', ...
+// the same as example below, to not to add repetable properties again and again
+const analyticsData: Parameters<typeof Analytics.trackEvent>[1] = {
+    form_source: window.location.hostname,
+    form_name: 'default_diel_deriv',
+}
+Analytics?.trackEvent('ce_virtual_signup_form', {
+    action: 'open',
+    signup_provider: 'email',
+    ...analyticsData
+})
+Analytics?.trackEvent('ce_virtual_signup_form', {
+    action: 'close',
+    signup_provider: 'google',
+    ...analyticsData
 })
 
 // A/B testing features
@@ -78,7 +97,7 @@ const common_test = Analytics?.getFeatureValue('common-test', 'fallback') // ret
 
 If you need to get entire instance or user_id directly:
 ```js
-const {ab, tracking} = Analytics?.getInstances()
+const { ab, tracking } = Analytics?.getInstances()
 const user_id = Analytics.getId() // provide anonymous or real user id
 ```
 
