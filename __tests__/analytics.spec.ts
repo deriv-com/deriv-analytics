@@ -16,7 +16,7 @@ describe('createAnalyticsInstance happened', () => {
         expect(analytics).toHaveProperty('getFeatureValue');
         expect(analytics).toHaveProperty('setUrl');
         expect(analytics).toHaveProperty('getId');
-        expect(analytics).toHaveProperty('track');
+        expect(analytics).toHaveProperty('trackEvent');
         expect(analytics).toHaveProperty('getInstances');
     });
 });

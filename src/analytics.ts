@@ -1,6 +1,7 @@
 import { AttributesTypes, Growthbook } from './growthbook'
 import { RudderStack, } from './rudderstack'
-import {TCoreTrackData, TEvents} from './types'
+import { TCoreTrackData, TEvents } from './types'
+
 type Options = {
     growthbookKey: string
     growthbookDecryptionKey: string
