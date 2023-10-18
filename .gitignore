@@ -1,3 +1,6 @@
 /node_modules
 /DS_Store
 /lib
+/.idea/sonarlint/issuestore/index.pb
+/.idea/vcs.xml
+/.idea/workspace.xml
