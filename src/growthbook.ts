@@ -1,18 +1,11 @@
 import { GrowthBook } from '@growthbook/growthbook'
 import * as RudderAnalytics from 'rudder-sdk-js'
+import { TAttributes } from "./types";
 
 declare global {
     interface Window {
         _growthbook?: GrowthBook<Record<string, any>> | undefined;
     }
-}
-
-export type AttributesTypes = {
-    id?: string
-    country: string
-    user_language: string
-    device_language: string
-    device_type: string
 }
 export class Growthbook {
     GrowthBook
@@ -49,7 +42,7 @@ export class Growthbook {
         return Growthbook._instance
     }
 
-    setAttributes({ id, country, user_language, device_language, device_type }: AttributesTypes) {
+    setAttributes({ id, country, user_language, device_language, device_type }: Omit<TAttributes, 'account_type'>) {
         return this.GrowthBook.setAttributes({
             id,
             country,

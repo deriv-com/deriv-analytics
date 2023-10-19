@@ -54,6 +54,7 @@ To make good strategy for A/B testing we need to create some condition depends o
         country:
             JSON.parse(JSON.parse(Cookies.get('website_status')).website_status).clients_country ||
             ' ',
+        account_type
     })
 ```
 
