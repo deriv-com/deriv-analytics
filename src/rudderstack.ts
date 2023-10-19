@@ -1,37 +1,40 @@
-import * as RudderAnalytics from 'rudder-sdk-js'
-import { TEvents } from './types'
+import * as RudderAnalytics from "rudder-sdk-js";
+import { TEvents } from "./types";
 
 export class RudderStack {
-  has_identified = false
-  has_initialized = false
-  current_page = ''
-  private static _instance: RudderStack
+  has_identified = false;
+  has_initialized = false;
+  current_page = "";
+  account_type = "";
+
+  private static _instance: RudderStack;
 
   constructor(RUDDERSTACK_KEY: string) {
-    this.init(RUDDERSTACK_KEY)
+    this.init(RUDDERSTACK_KEY);
   }
 
   public static getRudderStackInstance(RUDDERSTACK_KEY: string) {
     if (!RudderStack._instance) {
-      RudderStack._instance = new RudderStack(RUDDERSTACK_KEY)
-      return RudderStack._instance
+      RudderStack._instance = new RudderStack(RUDDERSTACK_KEY);
+      return RudderStack._instance;
     }
-    return RudderStack._instance
+    return RudderStack._instance;
   }
 
   /**
    * @returns The anonymous ID assigned to the user before the identify event was called
    */
   getAnonymousId() {
-    return RudderAnalytics.getAnonymousId()
+    return RudderAnalytics.getAnonymousId();
   }
 
   /**
    * @returns The user ID that was assigned to the user after calling identify event
    */
   getUserId() {
-    return RudderAnalytics.getUserId()
+    return RudderAnalytics.getUserId();
   }
+
 
   /**
    * Initializes the Rudderstack SDK. Ensure that the appropriate environment variables are set before this is called.
@@ -39,11 +42,14 @@ export class RudderStack {
    * For production environment, ensure that `RUDDERSTACK_PRODUCTION_KEY` and `RUDDERSTACK_URL` is set.
    */
   init(RUDDERSTACK_KEY: string) {
-    RudderAnalytics.load(RUDDERSTACK_KEY, 'https://deriv-dataplane.rudderstack.com')
+    RudderAnalytics.load(
+      RUDDERSTACK_KEY,
+      "https://deriv-dataplane.rudderstack.com"
+    );
     RudderAnalytics.ready(() => {
-      this.has_initialized = true
-      this.has_identified = !!(this.getUserId() || this.getAnonymousId())
-    })
+      this.has_initialized = true;
+      this.has_identified = !!(this.getUserId() || this.getAnonymousId());
+    });
   }
 
   /**
@@ -52,20 +58,28 @@ export class RudderStack {
    * @param payload Additional information passed to identify the user
    */
   identifyEvent = (user_id: string, payload: { language: string }) => {
-    RudderAnalytics.identify(user_id, payload)
-    this.has_identified = true
-  }
+    RudderAnalytics.identify(user_id, payload);
+    this.has_identified = true;
+  };
 
   /**
    * Pushes page view event to Rudderstack
    *
    * @param curret_page The name or URL of the current page to track the page view event
    */
-  pageView(current_page: string, platform = 'Deriv App') {
-    if (this.has_initialized && this.has_identified && current_page !== this.current_page) {
-      RudderAnalytics.page(platform, current_page)
-      this.current_page = current_page
+  pageView(current_page: string, platform = "Deriv App") {
+    if (
+      this.has_initialized &&
+      this.has_identified &&
+      current_page !== this.current_page
+    ) {
+      RudderAnalytics.page(platform, current_page);
+      this.current_page = current_page;
     }
+  }
+
+  setAccountType(account_type: string) {
+    this.account_type = account_type;
   }
 
   /**
@@ -73,8 +87,8 @@ export class RudderStack {
    */
   reset() {
     if (this.has_initialized) {
-      RudderAnalytics.reset()
-      this.has_identified = false
+      RudderAnalytics.reset();
+      this.has_identified = false;
     }
   }
 
@@ -88,9 +102,12 @@ export class RudderStack {
   track<T extends keyof TEvents>(event: T, payload: TEvents[T]) {
     if (this.has_initialized && this.has_identified) {
       try {
-        RudderAnalytics.track(event, payload)
+        RudderAnalytics.track(event, {
+          ...(payload || {}),
+          account_type: this.account_type,
+        });
       } catch (err) {
-        console.error(err)
+        console.error(err);
       }
     }
   }
