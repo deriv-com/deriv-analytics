@@ -35,15 +35,6 @@ Analytics?.initialise({
     })
 ```
 
-Set core data to pass in each event:
-
-```js
-Analytics?.setCoreAnalyticsData({
-    device_type: this.device_type,
-    account_type: this.account_type
-})
-```
-
 To make good strategy for A/B testing we need to create some condition depends on data:
 
 ```js
@@ -54,6 +45,7 @@ To make good strategy for A/B testing we need to create some condition depends o
         country:
             JSON.parse(JSON.parse(Cookies.get('website_status')).website_status).clients_country ||
             ' ',
+        account_type
     })
 ```
 
