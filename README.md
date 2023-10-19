@@ -11,7 +11,7 @@ The analytics package contains all the utility functions used for tracking user 
 
 ### What is Analytics?
 
-Cross-project, connected user tracking events with A/B testing features 
+Cross-project, connected user tracking events with A/B testing features
 
 ### Installation
 
@@ -32,29 +32,19 @@ Analytics?.initialise({
         process.env.NODE_ENV !== 'production'
             ? process.env.RUDDERSTACK_STAGING_KEY
             : process.env.RUDDERSTACK_PRODUCTION_KEY,
-    })
-```
-
-Set core data to pass in each event:
-
-```js
-Analytics?.setCoreAnalyticsData({
-    device_type: this.device_type,
-    account_type: this.account_type
 })
 ```
 
 To make good strategy for A/B testing we need to create some condition depends on data:
 
 ```js
-    Analytics?.setAttributes({
-        user_language: Cookies.get('user_language') || getLanguage(),
-        device_language: (isBrowser() && navigator?.language) || ' ',
-        device_type: isMobile ? 'mobile' : 'web',
-        country:
-            JSON.parse(JSON.parse(Cookies.get('website_status')).website_status).clients_country ||
-            ' ',
-    })
+Analytics?.setAttributes({
+    user_language: Cookies.get('user_language') || getLanguage(),
+    device_language: (isBrowser() && navigator?.language) || ' ',
+    device_type: isMobile ? 'mobile' : 'web',
+    country: JSON.parse(JSON.parse(Cookies.get('website_status')).website_status).clients_country || ' ',
+    account_type,
+})
 ```
 
 And you finally can use the tracking events and A/B testing features
@@ -96,8 +86,8 @@ const common_test = Analytics?.getFeatureValue('common-test', 'fallback') // ret
 ```
 
 If you need to get entire instance or user_id directly:
+
 ```js
 const { ab, tracking } = Analytics?.getInstances()
 const user_id = Analytics.getId() // provide anonymous or real user id
 ```
-

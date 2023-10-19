@@ -1,13 +1,7 @@
 import { GrowthBook } from '@growthbook/growthbook'
 import * as RudderAnalytics from 'rudder-sdk-js'
 
-declare global {
-    interface Window {
-        _growthbook?: GrowthBook<Record<string, any>> | undefined
-    }
-}
-
-export type AttributesTypes = {
+type AttributesTypes = {
     id?: string
     country: string
     user_language: string

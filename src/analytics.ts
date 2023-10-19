@@ -1,6 +1,6 @@
-import { AttributesTypes, Growthbook } from './growthbook'
+import { Growthbook } from './growthbook'
 import { RudderStack } from './rudderstack'
-import { TCoreTrackData, TEvents } from './types'
+import { TCoreAttributes, TEvents } from './types'
 
 type Options = {
     growthbookKey: string
@@ -20,15 +20,18 @@ export function createAnalyticsInstance(options?: Options) {
     if (options) {
         initialise(options)
     }
-
-    const setAttributes = ({ country, user_language, device_language, device_type }: AttributesTypes) => {
+    let coreData = {}
+    const setAttributes = ({ country, user_language, device_language, device_type, account_type }: TCoreAttributes) => {
+        const user_id = getId()
         _growthbook.setAttributes({
-            id: getId(),
+            id: user_id,
             country,
             user_language,
             device_language,
             device_type,
         })
+        _rudderstack.identifyEvent(user_id, { language: user_language })
+        coreData = { user_language, account_type }
     }
 
     const getFeatureState = (id: string) => _growthbook.getFeatureState(id)?.experimentResult?.name
@@ -36,13 +39,6 @@ export function createAnalyticsInstance(options?: Options) {
     const setUrl = (href: string) => _growthbook.setUrl(href)
     const getId = () => _rudderstack.getUserId() || _rudderstack.getAnonymousId()
 
-    let coreData = {}
-    const setCoreAnalyticsData = (data: TCoreTrackData) => {
-        _rudderstack.identifyEvent(getId(), { language: data.language })
-        // @ts-ignore
-        delete data['language']
-        coreData = { ...data }
-    }
     /**
      * Pushes page view event to Rudderstack
      *
@@ -60,7 +56,6 @@ export function createAnalyticsInstance(options?: Options) {
     return {
         initialise,
         setAttributes,
-        setCoreAnalyticsData,
         getFeatureState,
         getFeatureValue,
         setUrl,

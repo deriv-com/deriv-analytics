@@ -146,8 +146,11 @@ export type TEvents = {
     ce_market_types_form: MarketTypesFormAction
 }
 
-export type TCoreTrackData = {
-    language: string
-    account_type: 'CR' | 'VR' | 'MF' | 'VRTC'
+export type TCoreAttributes = {
+    id?: string
+    country: string
+    user_language: string
+    device_language: string
     device_type: 'mobile' | 'desktop'
+    account_type: string
 }
