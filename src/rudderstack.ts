@@ -70,6 +70,10 @@ export class RudderStack {
         }
     }
 
+    setAccountType(account_type: string) {
+        this.account_type = account_type
+    }
+
     /**
      * Pushes reset event to rudderstack
      */
