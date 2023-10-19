@@ -64,7 +64,7 @@ export type TEvents = {
     ce_bot_dashboard_form: DbotTypes
 }
 
-export type TAttributes = {
+export type TCoreAttributes = {
     id?: string
     country: string
     user_language: string

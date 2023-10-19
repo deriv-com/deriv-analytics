@@ -1,6 +1,6 @@
 import { Growthbook } from './growthbook'
 import { RudderStack } from './rudderstack'
-import { TAttributes, TEvents } from './types'
+import { TCoreAttributes, TEvents } from './types'
 
 type Options = {
     growthbookKey: string
@@ -25,7 +25,7 @@ export function createAnalyticsInstance(options?: Options) {
         initialise(options)
     }
     let coreData = {}
-    const setAttributes = ( { country,  user_language, device_language, device_type, account_type }: TAttributes) => {
+    const setAttributes = ( { country,  user_language, device_language, device_type, account_type }: TCoreAttributes) => {
         const user_id = getId()
         _growthbook.setAttributes({
             id: user_id,
