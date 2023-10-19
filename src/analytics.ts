@@ -26,14 +26,15 @@ export function createAnalyticsInstance(options?: Options) {
     }
     let coreData = {}
     const setAttributes = ( { country,  user_language, device_language, device_type, account_type }: TAttributes) => {
+        const user_id = getId()
         _growthbook.setAttributes({
-            id: getId(),
+            id: user_id,
             country,
             user_language,
             device_language,
             device_type,
         })
-        _rudderstack.identifyEvent(getId(), { language: user_language })
+        _rudderstack.identifyEvent(user_id, { language: user_language })
         coreData = { user_language, account_type }
     }
 
