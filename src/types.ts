@@ -189,6 +189,15 @@ type ReportsFormAction =
           form_source: string
       }
 
+type ChartTypesFormAction = {
+    action: 'open' | 'close' | 'choose_chart_type' | 'choose_time_interval'
+    form_name: string
+    chart_type_name: string
+    time_interval_name: string
+    account_type: string
+    device_type: string
+}
+
 export type TEvents = {
     ce_partner_account_signup_form: PartnerAccountSignupForm
     ce_virtual_signup_form: VirtualSignupForm
@@ -199,6 +208,7 @@ export type TEvents = {
     ce_indicators_types_form: IndicatorsTypesFormAction
     ce_market_types_form: MarketTypesFormAction
     ce_reports_form: ReportsFormAction
+    ce_chart_types_form: ChartTypesFormAction
 }
 
 export type TCoreAttributes = {
