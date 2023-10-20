@@ -1,6 +1,5 @@
 import { GrowthBook } from '@growthbook/growthbook'
 import * as RudderAnalytics from 'rudder-sdk-js'
-import { TCoreAttributes } from "./types";
 
 type AttributesTypes = {
     id?: string
@@ -32,11 +31,7 @@ export class Growthbook {
     }
 
     // for make instance by singleton
-    public static getGrowthBookInstance(
-        clientKey: string,
-        decryptionKey: string,
-        enableDevMode: boolean,
-    ) {
+    public static getGrowthBookInstance(clientKey: string, decryptionKey: string, enableDevMode: boolean) {
         if (!Growthbook._instance) {
             Growthbook._instance = new Growthbook(clientKey, decryptionKey, enableDevMode)
             return Growthbook._instance
@@ -65,6 +60,6 @@ export class Growthbook {
         return this.GrowthBook.setURL(href)
     }
     init() {
-        return this.GrowthBook.loadFeatures().catch((err) => console.error(err))
+        return this.GrowthBook.loadFeatures().catch(err => console.error(err))
     }
 }
