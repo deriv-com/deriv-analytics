@@ -21,8 +21,16 @@ export function createAnalyticsInstance(options?: Options) {
         initialise(options)
     }
     let coreData = {}
-    const setAttributes = ({ country, user_language, device_language, device_type, account_type }: TCoreAttributes) => {
-        const user_id = getId()
+    const setAttributes = ({
+        country,
+        user_language,
+        device_language,
+        device_type,
+        account_type,
+        user_id,
+        app_id,
+    }: TCoreAttributes) => {
+        const user_identity = user_id ? user_id : getId()
         _growthbook.setAttributes({
             id: user_id,
             country,
@@ -30,8 +38,8 @@ export function createAnalyticsInstance(options?: Options) {
             device_language,
             device_type,
         })
-        _rudderstack.identifyEvent(user_id, { language: user_language })
-        coreData = { user_language, account_type }
+        _rudderstack.identifyEvent(user_identity, { language: user_language })
+        coreData = { user_language, account_type, app_id }
     }
 
     const getFeatureState = (id: string) => _growthbook.getFeatureState(id)?.experimentResult?.name
@@ -46,6 +54,10 @@ export function createAnalyticsInstance(options?: Options) {
      */
     const pageView = (current_page: string, platform = 'Deriv App') => {
         _rudderstack.pageView(current_page, platform)
+    }
+
+    const reset = () => {
+        _rudderstack.reset()
     }
 
     const trackEvent = <T extends keyof TEvents>(event: T, analyticsData: TEvents[T]) => {
@@ -63,6 +75,7 @@ export function createAnalyticsInstance(options?: Options) {
         trackEvent,
         getInstances,
         pageView,
+        reset,
     }
 }
 

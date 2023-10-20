@@ -70,6 +70,7 @@ type TradeTypesForm = {
     search_string?: string
     info_switcher_mode?: 'description' | 'glossary'
     form_source?: string
+    form_name?: string
     subform_name?: string
     account_type?: string
 }
@@ -153,4 +154,6 @@ export type TCoreAttributes = {
     device_language: string
     device_type: 'mobile' | 'desktop'
     account_type?: string
+    user_id?: string
+    app_id?: string
 }
