@@ -114,7 +114,7 @@ type IndicatorsTypesFormAction = {
     indicators_category_name?: string
     search_string?: string
     subform_name?: string
-    account_type: string
+    account_type?: string
     device_type: string
 }
 
@@ -131,7 +131,7 @@ type MarketTypesFormAction = {
     market_type_name: string
     search_string?: string
     tab_market_name?: string
-    account_type: string
+    account_type?: string
     device_type: string
 }
 
@@ -152,5 +152,5 @@ export type TCoreAttributes = {
     user_language: string
     device_language: string
     device_type: 'mobile' | 'desktop'
-    account_type: string
+    account_type?: string
 }
