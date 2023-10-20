@@ -48,10 +48,6 @@ export function createAnalyticsInstance(options?: Options) {
         _rudderstack.pageView(current_page, platform)
     }
 
-    const setAccountType = (account_type: string) => {
-        _rudderstack.setAccountType(account_type)
-    }
-
     const trackEvent = <T extends keyof TEvents>(event: T, analyticsData: TEvents[T]) => {
         _rudderstack.track(event, { ...coreData, ...analyticsData })
     }
@@ -67,7 +63,6 @@ export function createAnalyticsInstance(options?: Options) {
         trackEvent,
         getInstances,
         pageView,
-        setAccountType,
     }
 }
 

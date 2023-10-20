@@ -5,7 +5,6 @@ export class RudderStack {
     has_identified = false
     has_initialized = false
     current_page = ''
-    account_type = ''
 
     private static _instance: RudderStack
 
@@ -70,10 +69,6 @@ export class RudderStack {
         }
     }
 
-    setAccountType(account_type: string) {
-        this.account_type = account_type
-    }
-
     /**
      * Pushes reset event to rudderstack
      */
@@ -94,10 +89,7 @@ export class RudderStack {
     track<T extends keyof TEvents>(event: T, payload: TEvents[T]) {
         if (this.has_initialized && this.has_identified) {
             try {
-                RudderAnalytics.track(event, {
-                    account_type: this.account_type,
-                    ...(payload || {}),
-                })
+                RudderAnalytics.track(event, payload)
             } catch (err) {
                 console.error(err)
             }
