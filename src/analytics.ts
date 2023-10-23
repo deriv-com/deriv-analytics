@@ -37,11 +37,13 @@ export function createAnalyticsInstance(options?: Options) {
             ...(device_type !== undefined && { device_type }),
         };
         const user_identity = user_id ? user_id : getId()
+
+        !_rudderstack.has_identified && _rudderstack.identifyEvent(user_identity, { language: user_language || 'en' })
         _growthbook.setAttributes({
             id: user_id,
             attributes
         })
-        _rudderstack.identifyEvent(user_identity, { language: user_language || 'en' })
+
         coreData = {
             ...(user_language !== undefined && { user_language }),
             ...(account_type !== undefined && { account_type }),
