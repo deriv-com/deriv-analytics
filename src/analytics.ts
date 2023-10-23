@@ -30,16 +30,24 @@ export function createAnalyticsInstance(options?: Options) {
         user_id,
         app_id,
     }: TCoreAttributes) => {
+        const attributes = {
+            ...(country !== undefined && { country }),
+            ...(user_language !== undefined && { user_language }),
+            ...(device_language !== undefined && { device_language }),
+            ...(device_type !== undefined && { device_type }),
+        };
         const user_identity = user_id ? user_id : getId()
         _growthbook.setAttributes({
             id: user_id,
-            country,
-            user_language,
-            device_language,
-            device_type,
+            attributes
         })
-        _rudderstack.identifyEvent(user_identity, { language: user_language })
-        coreData = { user_language, account_type, app_id }
+        _rudderstack.identifyEvent(user_identity, { language: user_language || 'en' })
+        coreData = {
+            ...(user_language !== undefined && { user_language }),
+            ...(account_type !== undefined && { account_type }),
+            ...(app_id !== undefined && { app_id }),
+            ...(device_type !== undefined && { device_type }),
+        };
     }
 
     const getFeatureState = (id: string) => _growthbook.getFeatureState(id)?.experimentResult?.name

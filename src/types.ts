@@ -203,10 +203,10 @@ export type TEvents = {
 
 export type TCoreAttributes = {
     id?: string
-    country: string
-    user_language: string
-    device_language: string
-    device_type: 'mobile' | 'desktop'
+    country?: string
+    user_language?: string
+    device_language?: string
+    device_type?: 'mobile' | 'desktop'
     account_type?: string
     user_id?: string
     app_id?: string
