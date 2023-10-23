@@ -1,13 +1,6 @@
 import { GrowthBook } from '@growthbook/growthbook'
 import * as RudderAnalytics from 'rudder-sdk-js'
-
-type AttributesTypes = {
-    id?: string
-    country: string
-    user_language: string
-    device_language: string
-    device_type: string
-}
+import { TGrowthbookAttributes } from './types'
 export class Growthbook {
     GrowthBook
     private static _instance: Growthbook
@@ -39,13 +32,13 @@ export class Growthbook {
         return Growthbook._instance
     }
 
-    setAttributes({ id, country, user_language, device_language, device_type }: AttributesTypes) {
+    setAttributes({ id, country, user_language, device_language, device_type }: TGrowthbookAttributes) {
         return this.GrowthBook.setAttributes({
             id,
-            country,
-            user_language,
-            device_language,
-            device_type,
+            ...(country !== undefined && { country }),
+            ...(user_language !== undefined && { user_language }),
+            ...(device_language !== undefined && { device_language }),
+            ...(device_type !== undefined && { device_type }),
         })
     }
     getFeatureState<K, V>(id: K) {

@@ -31,15 +31,23 @@ export function createAnalyticsInstance(options?: Options) {
         app_id,
     }: TCoreAttributes) => {
         const user_identity = user_id ? user_id : getId()
+
+        !user_identity && _rudderstack.identifyEvent(user_identity, { language: user_language || 'en' })
+
         _growthbook.setAttributes({
-            id: user_id,
+            id: user_identity || getId(),
             country,
             user_language,
             device_language,
             device_type,
         })
-        _rudderstack.identifyEvent(user_identity, { language: user_language })
-        coreData = { user_language, account_type, app_id }
+
+        coreData = {
+            ...(user_language !== undefined && { user_language }),
+            ...(account_type !== undefined && { account_type }),
+            ...(app_id !== undefined && { app_id }),
+            ...(device_type !== undefined && { device_type }),
+        }
     }
 
     const getFeatureState = (id: string) => _growthbook.getFeatureState(id)?.experimentResult?.name
