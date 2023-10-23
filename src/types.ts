@@ -1,3 +1,16 @@
+export type TGrowthbookAttributes = {
+    id: string
+    country?: string
+    user_language?: string
+    device_language?: string
+    device_type?: string
+}
+export type TCoreAttributes = {
+    account_type?: string
+    user_id?: string
+    app_id?: string
+} & TGrowthbookAttributes
+
 type SignupProvider = 'email' | 'phone' | 'google' | 'facebook' | 'apple'
 
 type PartnerAccountSignupForm = {
@@ -209,15 +222,4 @@ export type TEvents = {
     ce_market_types_form: MarketTypesFormAction
     ce_reports_form: ReportsFormAction
     ce_chart_types_form: ChartTypesFormAction
-}
-
-export type TCoreAttributes = {
-    id?: string
-    country?: string
-    user_language?: string
-    device_language?: string
-    device_type?: 'mobile' | 'desktop'
-    account_type?: string
-    user_id?: string
-    app_id?: string
 }
