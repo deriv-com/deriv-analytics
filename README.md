@@ -39,11 +39,12 @@ To make good strategy for A/B testing we need to create some condition depends o
 
 ```js
 Analytics?.setAttributes({
-    user_language: Cookies.get('user_language') || getLanguage(),
-    device_language: (isBrowser() && navigator?.language) || ' ',
-    device_type: isMobile ? 'mobile' : 'web',
-    country: JSON.parse(JSON.parse(Cookies.get('website_status')).website_status).clients_country || ' ',
-    account_type,
+    user_language: getLanguage(),
+    device_language: navigator?.language,
+    device_type: is_mobile ? 'mobile' : 'web',
+    country: this.country,
+    account_type: this.account_type,
+    app_id: this.app_id,
 })
 ```
 
