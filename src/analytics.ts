@@ -3,8 +3,8 @@ import { RudderStack } from './rudderstack'
 import { TCoreAttributes, TEvents } from './types'
 
 type Options = {
-    growthbookKey: string
-    growthbookDecryptionKey: string
+    growthbookKey?: string
+    growthbookDecryptionKey?: string
     rudderstackKey: string
     enableDevMode: boolean
 }
@@ -14,13 +14,16 @@ export function createAnalyticsInstance(options?: Options) {
 
     const initialise = ({ growthbookKey, growthbookDecryptionKey, rudderstackKey, enableDevMode }: Options) => {
         _rudderstack = RudderStack.getRudderStackInstance(rudderstackKey)
-        _growthbook = Growthbook.getGrowthBookInstance(growthbookKey, growthbookDecryptionKey, enableDevMode)
+
+        if (growthbookKey && growthbookDecryptionKey) {
+            _growthbook = Growthbook.getGrowthBookInstance(growthbookKey, growthbookDecryptionKey, enableDevMode)
+        }
     }
 
     if (options) {
         initialise(options)
     }
-    let coreData = {}
+    let coreData: Partial<TCoreAttributes> = {}
     const setAttributes = ({
         country,
         user_language,
@@ -32,21 +35,23 @@ export function createAnalyticsInstance(options?: Options) {
     }: TCoreAttributes) => {
         const user_identity = user_id ? user_id : getId()
 
-        !user_identity && _rudderstack.identifyEvent(user_identity, { language: user_language || 'en' })
-
-        _growthbook.setAttributes({
-            id: user_identity || getId(),
-            country,
-            user_language,
-            device_language,
-            device_type,
-        })
+        // Check if we have Growthbook instance
+        if (_growthbook) {
+            _growthbook.setAttributes({
+                id: user_identity || getId(),
+                country,
+                user_language,
+                device_language,
+                device_type,
+            })
+        }
 
         coreData = {
             ...(user_language !== undefined && { user_language }),
             ...(account_type !== undefined && { account_type }),
             ...(app_id !== undefined && { app_id }),
             ...(device_type !== undefined && { device_type }),
+            ...(user_identity !== undefined && { user_identity }),
         }
     }
 
@@ -64,6 +69,12 @@ export function createAnalyticsInstance(options?: Options) {
         _rudderstack.pageView(current_page, platform)
     }
 
+    const identifyEvent = () => {
+        if (coreData?.user_identity) {
+            _rudderstack.identifyEvent(coreData?.user_identity, { language: coreData?.user_language || 'en' })
+        }
+    }
+
     const reset = () => {
         _rudderstack.reset()
     }
@@ -76,6 +87,7 @@ export function createAnalyticsInstance(options?: Options) {
     return {
         initialise,
         setAttributes,
+        identifyEvent,
         getFeatureState,
         getFeatureValue,
         setUrl,
