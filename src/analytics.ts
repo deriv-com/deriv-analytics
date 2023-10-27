@@ -3,8 +3,8 @@ import { RudderStack } from './rudderstack'
 import { TCoreAttributes, TEvents } from './types'
 
 type Options = {
-    growthbookKey: string
-    growthbookDecryptionKey: string
+    growthbookKey?: string
+    growthbookDecryptionKey?: string
     rudderstackKey: string
     enableDevMode: boolean
 }
@@ -14,7 +14,10 @@ export function createAnalyticsInstance(options?: Options) {
 
     const initialise = ({ growthbookKey, growthbookDecryptionKey, rudderstackKey, enableDevMode }: Options) => {
         _rudderstack = RudderStack.getRudderStackInstance(rudderstackKey)
-        _growthbook = Growthbook.getGrowthBookInstance(growthbookKey, growthbookDecryptionKey, enableDevMode)
+
+        if (growthbookKey && growthbookDecryptionKey) {
+            _growthbook = Growthbook.getGrowthBookInstance(growthbookKey, growthbookDecryptionKey, enableDevMode)
+        }
     }
 
     if (options) {
@@ -34,13 +37,16 @@ export function createAnalyticsInstance(options?: Options) {
 
         !user_identity && _rudderstack.identifyEvent(user_identity, { language: user_language || 'en' })
 
-        _growthbook.setAttributes({
-            id: user_identity || getId(),
-            country,
-            user_language,
-            device_language,
-            device_type,
-        })
+        // Check if we have Growthbook instance
+        if (_growthbook) {
+            _growthbook.setAttributes({
+                id: user_identity || getId(),
+                country,
+                user_language,
+                device_language,
+                device_type,
+            })
+        }
 
         coreData = {
             ...(user_language !== undefined && { user_language }),
