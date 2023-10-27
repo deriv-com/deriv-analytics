@@ -23,7 +23,7 @@ export function createAnalyticsInstance(options?: Options) {
     if (options) {
         initialise(options)
     }
-    let coreData = {}
+    let coreData: Partial<TCoreAttributes> = {}
     const setAttributes = ({
         country,
         user_language,
@@ -34,8 +34,6 @@ export function createAnalyticsInstance(options?: Options) {
         app_id,
     }: TCoreAttributes) => {
         const user_identity = user_id ? user_id : getId()
-
-        !user_identity && _rudderstack.identifyEvent(user_identity, { language: user_language || 'en' })
 
         // Check if we have Growthbook instance
         if (_growthbook) {
@@ -53,6 +51,7 @@ export function createAnalyticsInstance(options?: Options) {
             ...(account_type !== undefined && { account_type }),
             ...(app_id !== undefined && { app_id }),
             ...(device_type !== undefined && { device_type }),
+            ...(user_identity !== undefined && { user_identity }),
         }
     }
 
@@ -70,6 +69,12 @@ export function createAnalyticsInstance(options?: Options) {
         _rudderstack.pageView(current_page, platform)
     }
 
+    const identifyEvent = () => {
+        if (coreData?.user_identity) {
+            _rudderstack.identifyEvent(coreData?.user_identity, { language: coreData?.user_language || 'en' })
+        }
+    }
+
     const reset = () => {
         _rudderstack.reset()
     }
@@ -82,6 +87,7 @@ export function createAnalyticsInstance(options?: Options) {
     return {
         initialise,
         setAttributes,
+        identifyEvent,
         getFeatureState,
         getFeatureValue,
         setUrl,
