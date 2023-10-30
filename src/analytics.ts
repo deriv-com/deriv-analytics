@@ -32,6 +32,8 @@ export function createAnalyticsInstance(options?: Options) {
         user_id,
         app_id,
     }: TCoreAttributes) => {
+        if (!_growthbook && !_rudderstack) return
+
         const user_identity = user_id ? user_id : getId()
 
         // Check if we have Growthbook instance
@@ -54,10 +56,10 @@ export function createAnalyticsInstance(options?: Options) {
         }
     }
 
-    const getFeatureState = (id: string) => _growthbook.getFeatureState(id)?.experimentResult?.name
-    const getFeatureValue = (id: string, defaultValue: string) => _growthbook.getFeatureValue(id, defaultValue)
-    const setUrl = (href: string) => _growthbook.setUrl(href)
-    const getId = () => _rudderstack?.getUserId() || _rudderstack.getAnonymousId()
+    const getFeatureState = (id: string) => _growthbook?.getFeatureState(id)?.experimentResult?.name
+    const getFeatureValue = (id: string, defaultValue: string) => _growthbook?.getFeatureValue(id, defaultValue)
+    const setUrl = (href: string) => _growthbook?.setUrl(href)
+    const getId = () => _rudderstack?.getUserId() || _rudderstack?.getAnonymousId()
 
     /**
      * Pushes page view event to Rudderstack
@@ -65,20 +67,26 @@ export function createAnalyticsInstance(options?: Options) {
      * @param curret_page The name or URL of the current page to track the page view event
      */
     const pageView = (current_page: string, platform = 'Deriv App') => {
+        if (!_rudderstack) return
+
         _rudderstack?.pageView(current_page, platform)
     }
 
     const identifyEvent = () => {
-        if (coreData?.user_identity) {
+        if (coreData?.user_identity && _rudderstack) {
             _rudderstack?.identifyEvent(coreData?.user_identity, { language: coreData?.user_language || 'en' })
         }
     }
 
     const reset = () => {
+        if (!_rudderstack) return
+
         _rudderstack?.reset()
     }
 
     const trackEvent = <T extends keyof TEvents>(event: T, analyticsData: TEvents[T]) => {
+        if (!_rudderstack) return
+
         _rudderstack?.track(event, { ...coreData, ...analyticsData })
     }
     const getInstances = () => ({ ab: _growthbook, tracking: _rudderstack })
