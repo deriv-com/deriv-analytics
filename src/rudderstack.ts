@@ -40,11 +40,13 @@ export class RudderStack {
      * For production environment, ensure that `RUDDERSTACK_PRODUCTION_KEY` and `RUDDERSTACK_URL` is set.
      */
     init(RUDDERSTACK_KEY: string) {
-        RudderAnalytics.load(RUDDERSTACK_KEY, 'https://deriv-dataplane.rudderstack.com')
-        RudderAnalytics.ready(() => {
-            this.has_initialized = true
-            this.has_identified = !!(this.getUserId() || !!this.getAnonymousId())
-        })
+        if (RUDDERSTACK_KEY) {
+            RudderAnalytics.load(RUDDERSTACK_KEY, 'https://deriv-dataplane.rudderstack.com')
+            RudderAnalytics.ready(() => {
+                this.has_initialized = true
+                this.has_identified = !!(this.getUserId() || !!this.getAnonymousId())
+            })
+        }
     }
 
     /**

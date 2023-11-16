@@ -9,6 +9,7 @@ export type TCoreAttributes = {
     account_type?: string
     user_id?: string
     app_id?: string
+    user_identity?: string
 } & TGrowthbookAttributes
 
 type SignupProvider = 'email' | 'phone' | 'google' | 'facebook' | 'apple'
