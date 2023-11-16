@@ -14,24 +14,6 @@ export type TCoreAttributes = {
 
 type SignupProvider = 'email' | 'phone' | 'google' | 'facebook' | 'apple'
 
-type PartnerAccountSignupForm = {
-    action:
-        | 'open'
-        | 'close'
-        | 'open_wizard'
-        | 'step_passed'
-        | 'step_back'
-        | 'close_wizard'
-        | 'restore_wizard'
-        | 'partners_signup_error'
-        | 'other_error'
-        | 'real_signup_finished'
-    step_codename: string
-    step_num: number
-    form_source: string
-    form_name: string
-    partner_signup_error_message?: string
-}
 type VirtualSignupForm = {
     action?:
         | 'open'
@@ -51,6 +33,20 @@ type VirtualSignupForm = {
     email?: string
     app_id?: string
 }
+type EmailVerificationForm = {
+    action?:
+        | 'verify_popup_opened'
+        | 'verify_popup_closed'
+        | 'verify_popup_cta'
+        | 'email_verification_sent'
+        | 'email_verification_opened'
+        | 'success_popup_opened'
+        | 'success_popup_closed'
+        | 'success_popup_cta'
+    form_source?: 'ce_tradershub_real_form' | 'ce_virtual_signup_form' | 'account_setting'
+    form_name?: string
+    app_id?: string
+}
 type RealAccountSignupForm = {
     action?:
         | 'open'
@@ -68,6 +64,46 @@ type RealAccountSignupForm = {
     form_name?: string
     real_signup_error_message?: string
     landing_company: string
+}
+type RealAccountSignupIdentifyForm = {
+    action?:
+        | 'open'
+        | 'step_passed'
+        | 'step_back'
+        | 'save'
+        | 'close'
+        | 'real_signup_error'
+        | 'other_error'
+        | 'real_signup_finished'
+    step_codename?: string
+    step_num?: string
+    user_choice?: string
+    source?: string
+    form_name?: string
+    real_signup_error_message?: string
+    landing_company?: string
+}
+type PartnerAccountSignupForm = {
+    action:
+        | 'open'
+        | 'open_wizard'
+        | 'step_passed'
+        | 'step_back'
+        | 'push_learn_more'
+        | 'close_wizard'
+        | 'close'
+        | 'partners_signup_error'
+        | 'other_error'
+        | 'try_submit'
+        | 'failed_popup_cta'
+        | 'success_popup_opened'
+        | 'success_popup_cta'
+    step_codename?: string
+    step_num?: number
+    user_choice?: string
+    form_source?: string
+    form_name?: 'ce_partner_account_signup_form'
+    partner_signup_error_message?: string
 }
 
 type VirtualSignupEmailConfirmation = {
@@ -211,11 +247,20 @@ type ChartTypesFormAction = {
     account_type: string
     device_type: string
 }
+type TradersHubOnboardingForm = {
+    action?: 'open' | 'close' | 'step_passed' | 'step_back' | 'choose_step_navigation'
+    form_source?: 'tradershub_dashboard_form' | 'tradershub_first_entrance' | '7_step'
+    step_num?: number
+    step_codename?: string
+}
 
 export type TEvents = {
-    ce_partner_account_signup_form: PartnerAccountSignupForm
     ce_virtual_signup_form: VirtualSignupForm
+    ce_email_verification_form: EmailVerificationForm
     ce_real_account_signup_form: RealAccountSignupForm
+    ce_real_account_signup_setup_form: RealAccountSignupForm
+    ce_real_account_signup_identity_form: RealAccountSignupIdentifyForm
+    ce_partner_account_signup_form: PartnerAccountSignupForm
     ce_virtual_signup_email_confirmation: VirtualSignupEmailConfirmation
     ce_trade_types_form: TradeTypesForm
     ce_bot_dashboard_form: DbotTypes
