@@ -84,7 +84,7 @@ type TradersHubOnboardingFormAction = {
     step_num?: number
     step_codename?: string
     account_type: string | null
-    device_type: string
+    device_type?: string
 }
 
 type TradeTypesForm = {
