@@ -105,7 +105,6 @@ type PartnerAccountSignupForm = {
     form_name?: 'ce_partner_account_signup_form'
     partner_signup_error_message?: string
 }
-
 type VirtualSignupEmailConfirmation = {
     action?: 'received' | 'expired' | 'confirmed' | 'error'
     signup_provider?: SignupProvider
@@ -148,7 +147,6 @@ type DbotTypes = {
     bot_last_modified_time?: number
     bot_name?: string
 }
-
 type IndicatorsTypesFormAction = {
     action:
         | 'open'
@@ -168,7 +166,6 @@ type IndicatorsTypesFormAction = {
     account_type?: string
     device_type: string
 }
-
 type MarketTypesFormAction = {
     action:
         | 'open'
@@ -185,7 +182,6 @@ type MarketTypesFormAction = {
     account_type?: string
     device_type: string
 }
-
 type ReportsFormAction =
     | {
           action: 'choose_report_type'
@@ -268,4 +264,5 @@ export type TEvents = {
     ce_market_types_form: MarketTypesFormAction
     ce_reports_form: ReportsFormAction
     ce_chart_types_form: ChartTypesFormAction
+    ce_tradershub_onboarding_form: TradersHubOnboardingForm
 }
