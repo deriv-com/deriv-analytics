@@ -77,6 +77,16 @@ type VirtualSignupEmailConfirmation = {
     email_md5?: string
     error_message?: string
 }
+
+type TradersHubOnboardingFormAction = {
+    action: 'open' | 'close' | 'step_passed' | 'step_back' | 'choose_step_navigation'
+    form_source: 'tradershub_dashboard_form' | 'tradershub_first_entrance' | '7_step'
+    step_num?: number
+    step_codename?: string
+    account_type: string | null
+    device_type: string
+}
+
 type TradeTypesForm = {
     action?: 'open' | 'close' | 'choose_trade_type' | 'search' | 'info_open' | 'info_switcher' | 'info_close'
     trade_type_name?: string
@@ -223,4 +233,5 @@ export type TEvents = {
     ce_market_types_form: MarketTypesFormAction
     ce_reports_form: ReportsFormAction
     ce_chart_types_form: ChartTypesFormAction
+    ce_tradershub_onboarding_form: TradersHubOnboardingFormAction
 }
