@@ -1,6 +1,7 @@
 import { GrowthBook } from '@growthbook/growthbook'
 import * as RudderAnalytics from 'rudder-sdk-js'
 import { TGrowthbookAttributes } from './types'
+
 export class Growthbook {
     GrowthBook
     private static _instance: Growthbook
@@ -14,10 +15,20 @@ export class Growthbook {
             enableDevMode,
             subscribeToChanges: true,
             trackingCallback: (experiment, result) => {
-                RudderAnalytics.track('experiment_viewed', {
-                    experimentId: experiment.key,
-                    variationId: result.variationId,
-                })
+                if (window.dataLayer) {
+                    window.dataLayer.push({
+                        event: 'experiment_viewed',
+                        event_category: 'experiment',
+                        rudder_anonymous_id: RudderAnalytics.getAnonymousId(),
+                        experiment_id: experiment.key,
+                        variation_id: result.variationId,
+                    })
+                } else {
+                    RudderAnalytics.track('experiment_viewed', {
+                        experimentId: experiment.key,
+                        variationId: result.variationId,
+                    })
+                }
             },
         })
         this.init()
@@ -53,6 +64,6 @@ export class Growthbook {
         return this.GrowthBook.setURL(href)
     }
     init() {
-        return this.GrowthBook.loadFeatures().catch(err => console.error(err))
+        this.GrowthBook.loadFeatures().catch(err => console.error(err))
     }
 }
