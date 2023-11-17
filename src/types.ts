@@ -243,7 +243,7 @@ type ChartTypesFormAction = {
     account_type: string
     device_type: string
 }
-type TradersHubOnboardingForm = {
+type TradersHubOnboardingFormAction = {
     action?: 'open' | 'close' | 'step_passed' | 'step_back' | 'choose_step_navigation'
     form_source?: 'tradershub_dashboard_form' | 'tradershub_first_entrance' | '7_step'
     step_num?: number
@@ -264,5 +264,5 @@ export type TEvents = {
     ce_market_types_form: MarketTypesFormAction
     ce_reports_form: ReportsFormAction
     ce_chart_types_form: ChartTypesFormAction
-    ce_tradershub_onboarding_form: TradersHubOnboardingForm
+    ce_tradershub_onboarding_form: TradersHubOnboardingFormAction
 }
