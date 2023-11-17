@@ -10,7 +10,7 @@ export type TCoreAttributes = {
     user_id?: string
     app_id?: string
     user_identity?: string
-} & TGrowthbookAttributes
+} & Partial<TGrowthbookAttributes>
 
 type SignupProvider = 'email' | 'phone' | 'google' | 'facebook' | 'apple'
 
@@ -245,7 +245,7 @@ type ChartTypesFormAction = {
 }
 type TradersHubOnboardingFormAction = {
     action?: 'open' | 'close' | 'step_passed' | 'step_back' | 'choose_step_navigation'
-    form_source?: 'tradershub_dashboard_form' | 'tradershub_first_entrance' | '7_step'
+    form_source?: 'tradershub_dashboard_form' | 'tradershub_first_entrance' | 'repeat_tour'
     step_num?: number
     step_codename?: string
 }
