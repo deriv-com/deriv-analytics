@@ -83,7 +83,7 @@ type TradersHubOnboardingFormAction = {
     form_source: 'tradershub_dashboard_form' | 'tradershub_first_entrance' | '7_step'
     step_num?: number
     step_codename?: string
-    account_type: string | null
+    account_type?: string
     device_type?: string
 }
 
