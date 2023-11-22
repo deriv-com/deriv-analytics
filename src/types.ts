@@ -60,7 +60,7 @@ type RealAccountSignupForm = {
     step_codename?: string
     step_num?: number
     user_choice?: string
-    source?: string
+    form_source?: string
     form_name?: string
     real_signup_error_message?: string
     landing_company: string
@@ -78,7 +78,7 @@ type RealAccountSignupIdentifyForm = {
     step_codename?: string
     step_num?: string
     user_choice?: string
-    source?: string
+    form_source?: string
     form_name?: string
     real_signup_error_message?: string
     landing_company?: string
