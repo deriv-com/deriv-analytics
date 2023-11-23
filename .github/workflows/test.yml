@@ -1,4 +1,4 @@
-name: Deriv Api Docs Production Workflow
+name: Deriv Analytics Test Workflow
 on:
   pull_request:
     branches:
