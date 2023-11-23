@@ -1,0 +1,25 @@
+name: Deriv Api Docs Production Workflow
+on:
+  pull_request:
+    branches:
+      - master
+  push:
+    branches:
+      - master
+jobs:
+  build_and_publish:
+    name: Builds and Publishes to Cloudflare Pages Production
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Setup Node
+        uses: ./.github/actions/setup_node
+      - name: Install dependencies
+        uses: ./.github/actions/npm_install_from_cache
+      - name: Invalidate NPM Cache
+        if: github.event_name == 'push' && github.ref == 'refs/heads/master'
+        uses: "./.github/actions/invalidate_npm_cache"
+      - name: Test
+        run: npm run prepublishOnly
+        shell: bash
