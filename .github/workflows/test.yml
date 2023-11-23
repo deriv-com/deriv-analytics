@@ -8,7 +8,7 @@ on:
       - master
 jobs:
   build_and_publish:
-    name: Builds and Publishes to Cloudflare Pages Production
+    name: Install Dependencies and Test
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
