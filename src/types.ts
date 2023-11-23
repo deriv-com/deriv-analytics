@@ -123,7 +123,7 @@ type TradeTypesForm = {
     subform_name?: string
     account_type?: string
 }
-type DbotTypes = {
+type BotDashboardForm = {
     action?:
         | 'open'
         | 'close'
@@ -146,6 +146,32 @@ type DbotTypes = {
     delete_popup_respond?: string
     bot_last_modified_time?: number
     bot_name?: string
+}
+type BotQuickStrategyForm = {
+    action?:
+        | 'open'
+        | 'close'
+        | 'choose_strategy'
+        | 'switch_strategy_mode'
+        | 'choose_asset'
+        | 'choose_trade_type'
+        | 'choose_trade_type_mode'
+        | 'choose_duration'
+        | 'change_parameter_value'
+        | 'info_popup_open'
+        | 'run_strategy'
+    form_source?: 'bot_dashboard' | 'bot_builder_form'
+    strategy_type?: "d'alembert" | 'martingale' | "oscar's-grind"
+    strategy_switcher_mode?: 'trade-parameters' | 'description' | null
+    asset_type?: 'gbp-basket' | 'eur-basket' | 'etc'
+    trade_type?: 'rise/fall' | 'rise-equals/fall-equals' | 'etc'
+    trade_type_mode?: 'rise' | 'fall' | 'rise-equals' | 'fall-equals' | 'etc'
+    duration_type?: 'ticks' | 'seconds' | 'minutes' | 'hours' | 'days'
+    parameter_type?: 'initial-stake' | 'duration' | 'profit-threshold' | 'loss-threshold' | 'size-unit' | 'max-stake'
+    parameter_value?: string
+    plus_push_amount?: string
+    minus_push_amount?: string
+    manual_parameter_input?: 'yes' | 'no'
 }
 type IndicatorsTypesFormAction = {
     action:
@@ -259,7 +285,8 @@ export type TEvents = {
     ce_partner_account_signup_form: PartnerAccountSignupForm
     ce_virtual_signup_email_confirmation: VirtualSignupEmailConfirmation
     ce_trade_types_form: TradeTypesForm
-    ce_bot_dashboard_form: DbotTypes
+    ce_bot_dashboard_form: BotDashboardForm
+    ce_bot_quick_strategy_form: BotQuickStrategyForm
     ce_indicators_types_form: IndicatorsTypesFormAction
     ce_market_types_form: MarketTypesFormAction
     ce_reports_form: ReportsFormAction
