@@ -162,7 +162,7 @@ type BotQuickStrategyForm = {
         | 'run_strategy'
     form_source?: 'bot_dashboard' | 'bot_builder_form'
     strategy_type?: "d'alembert" | 'martingale' | "oscar's-grind"
-    strategy_switcher_mode?: 'trade-parameters' | 'description' | null
+    strategy_switcher_mode?: 'trade-parameters' | 'description'
     asset_type?: 'gbp-basket' | 'eur-basket' | 'etc'
     trade_type?: 'rise/fall' | 'rise-equals/fall-equals' | 'etc'
     trade_type_mode?: 'rise' | 'fall' | 'rise-equals' | 'fall-equals' | 'etc'
