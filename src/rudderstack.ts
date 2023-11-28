@@ -8,11 +8,11 @@ export class RudderStack {
 
     private static _instance: RudderStack
 
-    constructor(RUDDERSTACK_KEY: string) {
+    constructor(RUDDERSTACK_KEY: string | undefined) {
         this.init(RUDDERSTACK_KEY)
     }
 
-    public static getRudderStackInstance(RUDDERSTACK_KEY: string) {
+    public static getRudderStackInstance(RUDDERSTACK_KEY: string | undefined) {
         if (!RudderStack._instance) {
             RudderStack._instance = new RudderStack(RUDDERSTACK_KEY)
             return RudderStack._instance
@@ -39,7 +39,7 @@ export class RudderStack {
      * For local/staging environment, ensure that `RUDDERSTACK_STAGING_KEY` and `RUDDERSTACK_URL` is set.
      * For production environment, ensure that `RUDDERSTACK_PRODUCTION_KEY` and `RUDDERSTACK_URL` is set.
      */
-    init(RUDDERSTACK_KEY: string) {
+    init(RUDDERSTACK_KEY: string | undefined) {
         if (RUDDERSTACK_KEY) {
             RudderAnalytics.load(RUDDERSTACK_KEY, 'https://deriv-dataplane.rudderstack.com')
             RudderAnalytics.ready(() => {
@@ -64,9 +64,9 @@ export class RudderStack {
      *
      * @param curret_page The name or URL of the current page to track the page view event
      */
-    pageView(current_page: string, platform = 'Deriv App') {
+    pageView(current_page: string, platform = 'Deriv App', user_id: string) {
         if (this.has_initialized && this.has_identified && current_page !== this.current_page) {
-            RudderAnalytics.page(platform, current_page, { user_id: this.getUserId() })
+            RudderAnalytics.page(platform, current_page, { user_id })
             this.current_page = current_page
         }
     }

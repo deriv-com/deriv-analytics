@@ -5,8 +5,7 @@ import { TCoreAttributes, TEvents } from './types'
 type Options = {
     growthbookKey?: string
     growthbookDecryptionKey?: string
-    rudderstackKey: string
-    enableDevMode: boolean
+    rudderstackKey?: string
 }
 
 export function createAnalyticsInstance(options?: Options) {
@@ -72,7 +71,7 @@ export function createAnalyticsInstance(options?: Options) {
     const pageView = (current_page: string, platform = 'Deriv App') => {
         if (!_rudderstack) return
 
-        _rudderstack?.pageView(current_page, platform)
+        _rudderstack?.pageView(current_page, platform, getId())
     }
 
     const identifyEvent = () => {
