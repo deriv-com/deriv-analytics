@@ -27,7 +27,6 @@ To proper initialisation of the package, pass proper keys in special function in
 Analytics?.initialise({
     growthbookKey: process.env.GROWTHBOOK_CLIENT_KEY, // optional key to enable A/B tests
     growthbookDecryptionKey: process.env.GROWTHBOOK_DECRYPTION_KEY, // optional key to enable A/B tests
-    enableDevMode: process.env.NODE_ENV !== 'production', // mandatory key to enable userevent tracking
     // mandatory key to enable userevent tracking
     rudderstackKey:
         process.env.NODE_ENV !== 'production'
@@ -65,6 +64,7 @@ const user_id = Analytics?.getId() // get an user anon or real id
 Analytics?.trackEvent('ce_virtual_signup_form', {
     action: 'open',
     form_name: 'default_diel_deriv',
+    form_source: document?.referrer,
     signup_provider: 'email',
 })
 
@@ -92,4 +92,10 @@ If you need to get entire instance directly:
 
 ```js
 const { ab, tracking } = Analytics?.getInstances()
+```
+
+If you want to check you ID
+
+```js
+window.getMyId()
 ```

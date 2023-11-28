@@ -66,7 +66,7 @@ export class RudderStack {
      */
     pageView(current_page: string, platform = 'Deriv App') {
         if (this.has_initialized && this.has_identified && current_page !== this.current_page) {
-            RudderAnalytics.page(platform, current_page)
+            RudderAnalytics.page(platform, current_page, { user_id: this.getUserId() })
             this.current_page = current_page
         }
     }

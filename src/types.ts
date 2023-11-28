@@ -121,7 +121,6 @@ type TradeTypesForm = {
     form_source?: string
     form_name?: string
     subform_name?: string
-    account_type?: string
 }
 type BotDashboardForm = {
     action?:
@@ -189,8 +188,6 @@ type IndicatorsTypesFormAction = {
     indicators_category_name?: string
     search_string?: string
     subform_name?: string
-    account_type?: string
-    device_type: string
 }
 type MarketTypesFormAction = {
     action:
@@ -201,12 +198,10 @@ type MarketTypesFormAction = {
         | 'info_redirect'
         | 'add_to_favorites'
         | 'delete_from_favorites'
-    form_name: string
-    market_type_name: string
+    form_name?: string
+    market_type_name?: string
     search_string?: string
     tab_market_name?: string
-    account_type?: string
-    device_type: string
 }
 type ReportsFormAction =
     | {
@@ -262,12 +257,10 @@ type ReportsFormAction =
       }
 
 type ChartTypesFormAction = {
-    action: 'open' | 'close' | 'choose_chart_type' | 'choose_time_interval'
-    form_name: string
-    chart_type_name: string
-    time_interval_name: string
-    account_type: string
-    device_type: string
+    action?: 'open' | 'close' | 'choose_chart_type' | 'choose_time_interval'
+    form_name?: string
+    chart_type_name?: string
+    time_interval_name?: string
 }
 type TradersHubOnboardingFormAction = {
     action?: 'open' | 'close' | 'step_passed' | 'step_back' | 'choose_step_navigation'

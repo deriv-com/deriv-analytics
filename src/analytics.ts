@@ -12,10 +12,10 @@ type Options = {
 export function createAnalyticsInstance(options?: Options) {
     let _growthbook: Growthbook, _rudderstack: RudderStack
 
-    const initialise = ({ growthbookKey, growthbookDecryptionKey, rudderstackKey, enableDevMode }: Options) => {
+    const initialise = ({ growthbookKey, growthbookDecryptionKey, rudderstackKey }: Options) => {
         _rudderstack = RudderStack.getRudderStackInstance(rudderstackKey)
         if (growthbookKey && growthbookDecryptionKey) {
-            _growthbook = Growthbook.getGrowthBookInstance(growthbookKey, growthbookDecryptionKey, enableDevMode)
+            _growthbook = Growthbook.getGrowthBookInstance(growthbookKey, growthbookDecryptionKey)
         }
     }
 
@@ -60,6 +60,9 @@ export function createAnalyticsInstance(options?: Options) {
     const getFeatureValue = (id: string, defaultValue: string) => _growthbook?.getFeatureValue(id, defaultValue)
     const setUrl = (href: string) => _growthbook?.setUrl(href)
     const getId = () => _rudderstack?.getUserId() || _rudderstack?.getAnonymousId()
+
+    // for QA testing purposes
+    window.getMyId = () => getId()
 
     /**
      * Pushes page view event to Rudderstack
