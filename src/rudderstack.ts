@@ -8,11 +8,11 @@ export class RudderStack {
 
     private static _instance: RudderStack
 
-    constructor(RUDDERSTACK_KEY: string | undefined) {
+    constructor(RUDDERSTACK_KEY: string) {
         this.init(RUDDERSTACK_KEY)
     }
 
-    public static getRudderStackInstance(RUDDERSTACK_KEY: string | undefined) {
+    public static getRudderStackInstance(RUDDERSTACK_KEY: string) {
         if (!RudderStack._instance) {
             RudderStack._instance = new RudderStack(RUDDERSTACK_KEY)
             return RudderStack._instance
@@ -39,7 +39,7 @@ export class RudderStack {
      * For local/staging environment, ensure that `RUDDERSTACK_STAGING_KEY` and `RUDDERSTACK_URL` is set.
      * For production environment, ensure that `RUDDERSTACK_PRODUCTION_KEY` and `RUDDERSTACK_URL` is set.
      */
-    init(RUDDERSTACK_KEY: string | undefined) {
+    init(RUDDERSTACK_KEY: string) {
         if (RUDDERSTACK_KEY) {
             RudderAnalytics.load(RUDDERSTACK_KEY, 'https://deriv-dataplane.rudderstack.com')
             RudderAnalytics.ready(() => {

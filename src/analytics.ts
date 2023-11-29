@@ -5,7 +5,7 @@ import { TCoreAttributes, TEvents } from './types'
 type Options = {
     growthbookKey?: string
     growthbookDecryptionKey?: string
-    rudderstackKey?: string
+    rudderstackKey: string
 }
 
 export function createAnalyticsInstance(options?: Options) {
