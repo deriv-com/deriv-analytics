@@ -27,12 +27,8 @@ To proper initialisation of the package, pass proper keys in special function in
 Analytics?.initialise({
     growthbookKey: process.env.GROWTHBOOK_CLIENT_KEY, // optional key to enable A/B tests
     growthbookDecryptionKey: process.env.GROWTHBOOK_DECRYPTION_KEY, // optional key to enable A/B tests
-    enableDevMode: process.env.NODE_ENV !== 'production', // mandatory key to enable userevent tracking
     // mandatory key to enable userevent tracking
-    rudderstackKey:
-        process.env.NODE_ENV !== 'production'
-            ? process.env.RUDDERSTACK_STAGING_KEY
-            : process.env.RUDDERSTACK_PRODUCTION_KEY,
+    rudderstackKey: RUDDERSTACK_KEY,
 })
 ```
 
@@ -53,7 +49,7 @@ And you finally can use the tracking events and A/B testing features
 To start using it, let's observe on SDK usage examples:
 
 ```js
-import { Analytics, AnalyticsData } from '@deriv/analytics';
+import { Analytics } from '@deriv/analytics';
 
 // Tracking features:
 Analytics?.identifyEvent() // inentify the user
@@ -65,6 +61,7 @@ const user_id = Analytics?.getId() // get an user anon or real id
 Analytics?.trackEvent('ce_virtual_signup_form', {
     action: 'open',
     form_name: 'default_diel_deriv',
+    form_source: document?.referrer,
     signup_provider: 'email',
 })
 
@@ -92,4 +89,10 @@ If you need to get entire instance directly:
 
 ```js
 const { ab, tracking } = Analytics?.getInstances()
+```
+
+If you want to check your ID
+
+```js
+window.getMyId()
 ```

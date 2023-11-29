@@ -6,16 +6,15 @@ type Options = {
     growthbookKey?: string
     growthbookDecryptionKey?: string
     rudderstackKey: string
-    enableDevMode: boolean
 }
 
 export function createAnalyticsInstance(options?: Options) {
     let _growthbook: Growthbook, _rudderstack: RudderStack
 
-    const initialise = ({ growthbookKey, growthbookDecryptionKey, rudderstackKey, enableDevMode }: Options) => {
+    const initialise = ({ growthbookKey, growthbookDecryptionKey, rudderstackKey }: Options) => {
         _rudderstack = RudderStack.getRudderStackInstance(rudderstackKey)
         if (growthbookKey && growthbookDecryptionKey) {
-            _growthbook = Growthbook.getGrowthBookInstance(growthbookKey, growthbookDecryptionKey, enableDevMode)
+            _growthbook = Growthbook.getGrowthBookInstance(growthbookKey, growthbookDecryptionKey)
         }
     }
 
@@ -61,6 +60,9 @@ export function createAnalyticsInstance(options?: Options) {
     const setUrl = (href: string) => _growthbook?.setUrl(href)
     const getId = () => _rudderstack?.getUserId() || _rudderstack?.getAnonymousId()
 
+    // for QA testing purposes
+    window.getMyId = getId
+
     /**
      * Pushes page view event to Rudderstack
      *
@@ -69,7 +71,7 @@ export function createAnalyticsInstance(options?: Options) {
     const pageView = (current_page: string, platform = 'Deriv App') => {
         if (!_rudderstack) return
 
-        _rudderstack?.pageView(current_page, platform)
+        _rudderstack?.pageView(current_page, platform, getId())
     }
 
     const identifyEvent = () => {

@@ -35,7 +35,7 @@ describe('rudderstack', () => {
             language: 'en',
         })
 
-        rudderstack?.pageView('app.deriv.com')
+        rudderstack?.pageView('app.deriv.com', 'Deriv app', 'user_id')
 
         expect(rudderstack.current_page).not.toBe('')
     })

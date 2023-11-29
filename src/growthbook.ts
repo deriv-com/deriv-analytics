@@ -7,13 +7,13 @@ export class Growthbook {
     private static _instance: Growthbook
 
     // we have to pass settings due the specific framework implementation
-    constructor(clientKey: string, decryptionKey: string, enableDevMode: boolean) {
+    constructor(clientKey: string, decryptionKey: string) {
         this.GrowthBook = new GrowthBook<GrowthBook>({
             apiHost: 'https://cdn.growthbook.io',
             clientKey,
             decryptionKey,
-            enableDevMode,
             subscribeToChanges: true,
+            enableDevMode: window?.location.hostname.includes('localhost'),
             trackingCallback: (experiment, result) => {
                 if (window.dataLayer) {
                     window.dataLayer.push({
@@ -35,9 +35,9 @@ export class Growthbook {
     }
 
     // for make instance by singleton
-    public static getGrowthBookInstance(clientKey: string, decryptionKey: string, enableDevMode: boolean) {
+    public static getGrowthBookInstance(clientKey: string, decryptionKey: string) {
         if (!Growthbook._instance) {
-            Growthbook._instance = new Growthbook(clientKey, decryptionKey, enableDevMode)
+            Growthbook._instance = new Growthbook(clientKey, decryptionKey)
             return Growthbook._instance
         }
         return Growthbook._instance

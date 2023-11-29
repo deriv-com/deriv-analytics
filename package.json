@@ -1,13 +1,13 @@
 {
   "name": "@deriv/analytics",
-  "version": "1.4.3",
+  "version": "1.4.4",
   "description": "The analytics package contains all the utility functions used for tracking user events and sending them to the respective platform such as Rudderstack.",
   "keywords": [
     "rudderstack",
     "growthbook",
     "react"
   ],
-  "author": "Amir Ali, Addriene",
+  "author": "Amir Ali, Addriene, Nikita",
   "main": "lib/index.js",
   "types": "lib/index.d.ts",
   "scripts": {

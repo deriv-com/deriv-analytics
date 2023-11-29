@@ -64,9 +64,9 @@ export class RudderStack {
      *
      * @param curret_page The name or URL of the current page to track the page view event
      */
-    pageView(current_page: string, platform = 'Deriv App') {
+    pageView(current_page: string, platform = 'Deriv App', user_id: string) {
         if (this.has_initialized && this.has_identified && current_page !== this.current_page) {
-            RudderAnalytics.page(platform, current_page)
+            RudderAnalytics.page(platform, current_page, { user_id })
             this.current_page = current_page
         }
     }
