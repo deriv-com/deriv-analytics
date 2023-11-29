@@ -61,7 +61,7 @@ export function createAnalyticsInstance(options?: Options) {
     const getId = () => _rudderstack?.getUserId() || _rudderstack?.getAnonymousId()
 
     // for QA testing purposes
-    window.getMyId = () => getId()
+    window.getMyId = getId
 
     /**
      * Pushes page view event to Rudderstack
