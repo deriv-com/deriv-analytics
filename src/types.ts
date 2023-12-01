@@ -264,7 +264,7 @@ export type BotTypes = {
     parameter_value?: string;
     plus_push_amount?: string;
     minus_push_amount?: string;
-    manual_parameter_inputt?: string;
+    manual_parameter_input?: string;
 };
 
 export type TEvents = {
