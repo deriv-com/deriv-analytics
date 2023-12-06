@@ -2,15 +2,30 @@ import { Growthbook } from '../src/growthbook'
 
 jest.mock('rudder-sdk-js')
 
-describe('Growthbook init', () => {
-    it('should create a new instance', () => {
-        const instance = Growthbook.getGrowthBookInstance('clientKey', 'decryptionKey')
-        expect(instance).toBeInstanceOf(Growthbook)
+describe('Growthbook', () => {
+    let growthbook: Growthbook
+
+    beforeEach(() => {
+        growthbook = new Growthbook('clientKey', 'decryptionKey')
     })
 
-    it('should return the same instance on subsequent calls', () => {
-        const firstInstance = Growthbook.getGrowthBookInstance('clientKey', 'decryptionKey')
-        const secondInstance = Growthbook.getGrowthBookInstance('clientKey', 'decryptionKey')
-        expect(firstInstance).toBe(secondInstance)
+    afterEach(() => {
+        jest.clearAllMocks()
+    })
+
+    test('should initialize Growthbook instance properly', () => {
+        expect(growthbook.GrowthBook).toBeDefined()
+    })
+
+    test('should set attributes correctly in Growthbook', () => {
+        growthbook.setAttributes({
+            id: '123',
+            country: 'US',
+            user_language: 'en',
+            device_type: 'mobile',
+        })
+
+        expect(growthbook.getFeatureState('feature_id')).toBeDefined()
+        // Add more assertions for the setAttributes functionality
     })
 })

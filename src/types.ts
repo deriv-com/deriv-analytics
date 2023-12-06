@@ -63,7 +63,7 @@ type RealAccountSignupForm = {
     form_source?: string
     form_name?: string
     real_signup_error_message?: string
-    landing_company: string
+    landing_company?: string
 }
 type RealAccountSignupIdentifyForm = {
     action?:
@@ -171,6 +171,20 @@ type BotQuickStrategyForm = {
     plus_push_amount?: string
     minus_push_amount?: string
     manual_parameter_input?: 'yes' | 'no'
+}
+type BotBuilderForm = {
+    action?: 'open' | 'close' | 'search'
+    form_source?: 'bot_header_form' | 'bot_dashboard_form'
+    search_string?: string
+}
+type BotTutorialForm = {
+    action?: 'open' | 'close' | 'search'
+    form_source?:
+        | 'bot_header_form'
+        | 'bot_dashboard_form-shortcut'
+        | 'bot_dashboard_form-edit'
+        | 'bot_dashboard_form-open'
+    search_string?: string
 }
 type IndicatorsTypesFormAction = {
     action:
@@ -280,6 +294,8 @@ export type TEvents = {
     ce_trade_types_form: TradeTypesForm
     ce_bot_dashboard_form: BotDashboardForm
     ce_bot_quick_strategy_form: BotQuickStrategyForm
+    ce_bot_builder_form: BotBuilderForm
+    ce_bot_tutorial_form: BotTutorialForm
     ce_indicators_types_form: IndicatorsTypesFormAction
     ce_market_types_form: MarketTypesFormAction
     ce_reports_form: ReportsFormAction
