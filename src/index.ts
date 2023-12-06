@@ -1,2 +1,2 @@
 export { Analytics } from './analytics'
-export { TEvents } from './types'
+export { TEvents, BotTActions, BotTypes } from './types'
