@@ -39,4 +39,14 @@ describe('RudderStack', () => {
         expect(RudderAnalytics.page).not.toHaveBeenCalled()
         expect(RudderAnalytics.track).toHaveBeenCalled()
     })
+
+    test('should get anonymous ID from RudderStack', () => {
+        const anonymousId = '12345'
+        ;(RudderAnalytics.getAnonymousId as jest.Mock).mockReturnValue(anonymousId)
+
+        const result = rudderstack.getAnonymousId()
+
+        expect(RudderAnalytics.getAnonymousId).toHaveBeenCalled()
+        expect(result).toBe(anonymousId)
+    })
 })

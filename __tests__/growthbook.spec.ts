@@ -26,6 +26,33 @@ describe('Growthbook', () => {
         })
 
         expect(growthbook.getFeatureState('feature_id')).toBeDefined()
-        // Add more assertions for the setAttributes functionality
+    })
+
+    test('should get feature state in Growthbook', () => {
+        const evalFeatureMock = jest.spyOn(growthbook.GrowthBook, 'evalFeature')
+        const featureId = 'FeatureID'
+
+        growthbook.getFeatureState(featureId)
+
+        expect(evalFeatureMock).toHaveBeenCalledWith(featureId)
+    })
+
+    test('should get feature value in Growthbook', () => {
+        const getFeatureValueMock = jest.spyOn(growthbook.GrowthBook, 'getFeatureValue')
+        const featureKey = 'FeatureKey'
+        const defaultValue = 'DefaultValue'
+
+        growthbook.getFeatureValue(featureKey, defaultValue)
+
+        expect(getFeatureValueMock).toHaveBeenCalledWith(featureKey, defaultValue)
+    })
+
+    test('should set URL in Growthbook', () => {
+        const setUrlMock = jest.spyOn(growthbook.GrowthBook, 'setURL')
+        const url = 'https://example.com'
+
+        growthbook.setUrl(url)
+
+        expect(setUrlMock).toHaveBeenCalledWith(url)
     })
 })
