@@ -83,6 +83,12 @@ type RealAccountSignupIdentifyForm = {
     real_signup_error_message?: string
     landing_company?: string
 }
+type QuestionnaireForm = {
+    action: 'open' | 'choose_answer' | 'close'
+    question_code?: string
+    question_content?: string
+    answer_code?: string
+}
 type PartnerAccountSignupForm = {
     action:
         | 'open'
@@ -289,6 +295,7 @@ export type TEvents = {
     ce_real_account_signup_form: RealAccountSignupForm
     ce_real_account_signup_setup_form: RealAccountSignupForm
     ce_real_account_signup_identity_form: RealAccountSignupIdentifyForm
+    ce_questionnaire_form: QuestionnaireForm
     ce_partner_account_signup_form: PartnerAccountSignupForm
     ce_virtual_signup_email_confirmation: VirtualSignupEmailConfirmation
     ce_trade_types_form: TradeTypesForm
