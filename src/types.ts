@@ -83,6 +83,22 @@ type RealAccountSignupIdentifyForm = {
     real_signup_error_message?: string
     landing_company?: string
 }
+type LoginForm = {
+    action:
+        | 'open'
+        | 'login_cta'
+        | 'go_to_forgot'
+        | 'email_reset_password_sent'
+        | 'email_reset_password_opened'
+        | 'reset_password_continued'
+        | 'reset_password_done'
+        | 'login_flow_error'
+        | 'go_to_signup'
+    login_provider?: 'email' | 'phone' | 'google' | 'facebook' | 'apple'
+    form_source?: 'virtual_signup_form' | 'deriv.com (log in CTA)' | 'mobile_derivGo' | string
+    error_message?: string
+    email?: string
+}
 type QuestionnaireForm = {
     action: 'open' | 'choose_answer' | 'close'
     question_code?: string
@@ -288,6 +304,9 @@ type TradersHubOnboardingFormAction = {
     step_num?: number
     step_codename?: string
 }
+type UpgradeMT5BannerAction = {
+    action: 'push_cta_upgrade'
+}
 
 export type TEvents = {
     ce_virtual_signup_form: VirtualSignupForm
@@ -295,17 +314,19 @@ export type TEvents = {
     ce_real_account_signup_form: RealAccountSignupForm
     ce_real_account_signup_setup_form: RealAccountSignupForm
     ce_real_account_signup_identity_form: RealAccountSignupIdentifyForm
+    ce_login_form: LoginForm
     ce_questionnaire_form: QuestionnaireForm
     ce_partner_account_signup_form: PartnerAccountSignupForm
     ce_virtual_signup_email_confirmation: VirtualSignupEmailConfirmation
-    ce_trade_types_form: TradeTypesForm
     ce_bot_dashboard_form: BotDashboardForm
     ce_bot_quick_strategy_form: BotQuickStrategyForm
     ce_bot_builder_form: BotBuilderForm
     ce_bot_tutorial_form: BotTutorialForm
     ce_indicators_types_form: IndicatorsTypesFormAction
+    ce_trade_types_form: TradeTypesForm
+    ce_chart_types_form: ChartTypesFormAction
     ce_market_types_form: MarketTypesFormAction
     ce_reports_form: ReportsFormAction
-    ce_chart_types_form: ChartTypesFormAction
     ce_tradershub_onboarding_form: TradersHubOnboardingFormAction
+    ce_upgrade_mt5_banner: UpgradeMT5BannerAction
 }
