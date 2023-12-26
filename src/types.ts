@@ -305,7 +305,7 @@ type TradersHubOnboardingFormAction = {
     step_codename?: string
 }
 type UpgradeMT5BannerAction = {
-    action: 'push_cta_upgrade'
+    action: 'open' | 'push_cta_upgrade'
 }
 
 export type TEvents = {
