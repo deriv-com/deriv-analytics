@@ -100,6 +100,7 @@ export function createAnalyticsInstance(options?: Options) {
         identifyEvent,
         getFeatureState,
         getFeatureValue,
+        isFeatureOn,
         setUrl,
         getId,
         trackEvent,
