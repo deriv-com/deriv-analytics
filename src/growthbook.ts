@@ -55,12 +55,16 @@ export class Growthbook {
         // @ts-ignore
         return this.GrowthBook.evalFeature(id)
     }
-    getFeatureValue<K, V>(key: K, defaultValue: V) {
+    getFeatureValue<K, V>(key: K, defaultValue?: V) {
         // @ts-ignore
         return this.GrowthBook.getFeatureValue(key, defaultValue)
     }
     setUrl(href: string) {
         return this.GrowthBook.setURL(href)
+    }
+    isOn(key: string) {
+        // @ts-ignore
+        return this.GrowthBook.isOn(key)
     }
     init() {
         this.GrowthBook.loadFeatures().catch(err => console.error(err))
