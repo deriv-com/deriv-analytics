@@ -23,12 +23,11 @@ export class Growthbook {
                         experiment_id: experiment.key,
                         variation_id: result.variationId,
                     })
-                } else {
-                    RudderAnalytics.track('experiment_viewed', {
-                        experimentId: experiment.key,
-                        variationId: result.variationId,
-                    })
                 }
+                RudderAnalytics.track('experiment_viewed', {
+                    experimentId: experiment.key,
+                    variationId: result.variationId,
+                })
             },
         })
         this.init()
