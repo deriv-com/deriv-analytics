@@ -1,4 +1,4 @@
-# `@deriv/analytics`
+# `@deriv-com/analytics`
 
 The analytics package contains all the utility functions used for tracking user events and sending them to the respective platform such as Rudderstack and GrowthBook.
 
@@ -18,7 +18,7 @@ Cross-project, connected user tracking events with A/B testing features
 To install the package, run the following command:
 
 ```
-$ npm i @deriv/analytics
+$ npm i @deriv-com/analytics
 ```
 
 To proper initialisation of the package, pass proper keys in special function in special for init functions place:
@@ -49,7 +49,7 @@ And you finally can use the tracking events and A/B testing features
 To start using it, let's observe on SDK usage examples:
 
 ```js
-import { Analytics } from '@deriv/analytics';
+import { Analytics } from '@deriv-com/analytics';
 
 // Tracking features:
 Analytics?.identifyEvent() // inentify the user
