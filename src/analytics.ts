@@ -56,7 +56,8 @@ export function createAnalyticsInstance(options?: Options) {
     }
 
     const getFeatureState = (id: string) => _growthbook?.getFeatureState(id)?.experimentResult?.name
-    const getFeatureValue = <T>(id: string, defaultValue: T) => _growthbook?.getFeatureValue(id, defaultValue)
+    const getFeatureValue = <T>(id: string, defaultValue?: T) => _growthbook?.getFeatureValue(id, defaultValue)
+    const isFeatureOn = (key: string) => _growthbook?.isOn(key)
     const setUrl = (href: string) => _growthbook?.setUrl(href)
     const getId = () => _rudderstack?.getUserId() || _rudderstack?.getAnonymousId()
 
