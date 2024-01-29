@@ -145,34 +145,38 @@ type TradeTypesForm = {
     subform_name?: string
 }
 type BotDashboardForm = {
-    action?:
-        | 'open'
-        | 'close'
-        | 'search'
-        | 'delete'
-        | 'yes'
-        | 'no'
-        | 'search_string'
-        | 'choose_shortcut'
-        | 'bot_last_modified_time'
-        | 'delete_popup_respond'
-        | 'push_open_button'
-        | 'push_user_guide'
-        | 'save_your_bot'
-        | 'choose_your_bot'
+    action?: 
+        | 'open' 
+        | 'close' 
+        | 'search' 
+        | 'delete' 
+        | 'yes' 
+        | 'no' 
+        | 'search_string' 
+        | 'choose_shortcut' 
+        | 'bot_last_modified_time' 
+        | 'delete_popup_respond' 
+        | 'push_open_button' 
+        | 'push_user_guide' 
+        | 'save_your_bot' 
+        | 'edit_your_bot' 
+        | 'choose_your_bot' 
         | 'delete_your_bot'
-    shortcut_name?: string
-    form_source?: string
-    search_string?: string
-    delete_popup_respond?: string
-    bot_last_modified_time?: number
-    bot_name?: string
-}
+    shortcut_name?: string;
+    form_source?: string;
+    form_name?: string;
+    search_string?: string;
+    delete_popup_respond?: string;
+    bot_last_modified_time?: number;
+    bot_name?: string;
+    bot_status?: string;
+    preview_mode?: string;
+};
 type BotQuickStrategyForm = {
     action?:
         | 'open'
         | 'close'
-        | 'choose_strategy'
+        | 'choose_strategy_type'
         | 'switch_strategy_mode'
         | 'choose_asset'
         | 'choose_trade_type'
@@ -181,19 +185,27 @@ type BotQuickStrategyForm = {
         | 'change_parameter_value'
         | 'info_popup_open'
         | 'run_strategy'
-    form_source?: 'bot_dashboard' | 'bot_builder_form'
-    strategy_type?: "d'alembert" | 'martingale' | "oscar's-grind"
-    strategy_switcher_mode?: 'trade-parameters' | 'description'
-    asset_type?: 'gbp-basket' | 'eur-basket' | 'etc'
-    trade_type?: 'rise/fall' | 'rise-equals/fall-equals' | 'etc'
-    trade_type_mode?: 'rise' | 'fall' | 'rise-equals' | 'fall-equals' | 'etc'
-    duration_type?: 'ticks' | 'seconds' | 'minutes' | 'hours' | 'days'
-    parameter_type?: 'initial-stake' | 'duration' | 'profit-threshold' | 'loss-threshold' | 'size-unit' | 'max-stake'
-    parameter_value?: string
-    plus_push_amount?: string
-    minus_push_amount?: string
-    manual_parameter_input?: 'yes' | 'no'
-}
+        | 'edit_strategy';
+    form_source?: 'ce_bot_dashboard_form' | 'ce_bot_builder_form';
+    form_name?: 'ce_bot_quick_strategy_form';
+    strategy_type?:
+        | `d'alembert`
+        | `martingale`
+        | `oscar's-grind`
+        | `reverse martingale`
+        | `reverse d'alembert`
+        | `1-3-2-6`;
+    strategy_switcher_mode?: 'learn more' | 'trade parameters';
+    asset_type?: string;
+    trade_type?: string;
+    trade_type_mode?: string;
+    duration_type?: 'ticks' | 'seconds' | 'minutes' | 'hours' | 'days';
+    parameter_type?: 'initial-stake' | 'duration' | 'profit-threshold' | 'loss-threshold' | 'size-unit' | 'max-stake';
+    parameter_value?: string | number | boolean;
+    plus_push_amount?: string;
+    minus_push_amount?: string;
+    manual_parameter_input?: 'yes' | 'no';
+};
 type BotBuilderForm = {
     action?: 'open' | 'close' | 'search'
     form_source?: 'bot_header_form' | 'bot_dashboard_form'
