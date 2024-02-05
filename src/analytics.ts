@@ -30,6 +30,10 @@ export function createAnalyticsInstance(options?: Options) {
         account_type,
         user_id,
         app_id,
+        utm_source,
+        utm_medium,
+        utm_campaign,
+        is_authorised,
     }: TCoreAttributes) => {
         if (!_growthbook && !_rudderstack) return
 
@@ -43,6 +47,10 @@ export function createAnalyticsInstance(options?: Options) {
                 user_language,
                 device_language,
                 device_type,
+                utm_source,
+                utm_medium,
+                utm_campaign,
+                is_authorised,
             })
         }
 
@@ -89,9 +97,12 @@ export function createAnalyticsInstance(options?: Options) {
 
     const trackEvent = <T extends keyof TEvents>(event: T, analyticsData: TEvents[T]) => {
         if (!_rudderstack) return
-
-        _rudderstack?.track(event, { ...coreData, ...analyticsData })
+        if (navigator?.onLine) {
+            console.log(event, { ...coreData, ...analyticsData })
+            _rudderstack?.track(event, { ...coreData, ...analyticsData })
+        }
     }
+
     const getInstances = () => ({ ab: _growthbook, tracking: _rudderstack })
 
     return {
