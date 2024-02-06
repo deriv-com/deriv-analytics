@@ -185,6 +185,9 @@ type BotQuickStrategyForm = {
         | 'change_parameter_value'
         | 'info_popup_open'
         | 'run_strategy'
+        | 'loss_threshold_warning_popup'
+        | 'learn_more_expansion'
+        | 'learn_more_collapse'
         | 'edit_strategy';
     form_source?: 'ce_bot_dashboard_form' | 'ce_bot_builder_form';
     form_name?: 'ce_bot_quick_strategy_form';
@@ -200,11 +203,14 @@ type BotQuickStrategyForm = {
     trade_type?: string;
     trade_type_mode?: string;
     duration_type?: 'ticks' | 'seconds' | 'minutes' | 'hours' | 'days';
-    parameter_type?: 'initial-stake' | 'duration' | 'profit-threshold' | 'loss-threshold' | 'size-unit' | 'max-stake';
+    parameter_type?: 'initial-stake' | 'duration' | 'profit-threshold' | 'loss-threshold' | 'size-unit' | 'max-stake' | string;
+    parameter_field_type?: 'input' | 'dropdown' | 'slider' | 'checkbox' | 'number';
     parameter_value?: string | number | boolean;
-    plus_push_amount?: string;
-    minus_push_amount?: string;
+    plus_minus_push?: 'yes' | 'no';
     manual_parameter_input?: 'yes' | 'no';
+    dont_show_checkbox?: 'yes' | 'no';
+    warning?: 'edit_the_amount' | 'yes_continue';
+    learn_more_title?: string;
 };
 type BotBuilderForm = {
     action?: 'open' | 'close' | 'search'
