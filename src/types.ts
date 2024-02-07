@@ -209,7 +209,7 @@ type BotQuickStrategyForm = {
     plus_minus_push?: 'yes' | 'no';
     manual_parameter_input?: 'yes' | 'no';
     dont_show_checkbox?: 'yes' | 'no';
-    warning?: 'edit_the_amount' | 'yes_continue';
+    cta_name?: 'edit_the_amount' | 'yes_continue';
     learn_more_title?: string;
 };
 type BotBuilderForm = {
