@@ -11,7 +11,7 @@ type Options = {
 export function createAnalyticsInstance(options?: Options) {
     let _growthbook: Growthbook,
         _rudderstack: RudderStack,
-        coreData: Partial<TCoreAttributes> = {},
+        core_data: Partial<TCoreAttributes> = {},
         cta_buttons: Record<keyof TEvents, boolean> | {} = {},
         offline_cache: any = {}
 
@@ -58,7 +58,7 @@ export function createAnalyticsInstance(options?: Options) {
             })
         }
 
-        coreData = {
+        core_data = {
             ...(user_language !== undefined && { user_language }),
             ...(account_type !== undefined && { account_type }),
             ...(app_id !== undefined && { app_id }),
@@ -84,8 +84,8 @@ export function createAnalyticsInstance(options?: Options) {
     }
 
     const identifyEvent = () => {
-        if (coreData?.user_identity && _rudderstack) {
-            _rudderstack?.identifyEvent(coreData?.user_identity, { language: coreData?.user_language || 'en' })
+        if (core_data?.user_identity && _rudderstack) {
+            _rudderstack?.identifyEvent(core_data?.user_identity, { language: core_data?.user_language || 'en' })
         }
     }
 
@@ -95,7 +95,7 @@ export function createAnalyticsInstance(options?: Options) {
         _rudderstack?.reset()
     }
 
-    const trackEvent = <T extends keyof TEvents>(event: T, analyticsData: TEvents[T]) => {
+    const trackEvent = <T extends keyof TEvents>(event: T, analytics_data: TEvents[T]) => {
         if (!_rudderstack) return
 
         if (navigator.onLine) {
@@ -107,10 +107,10 @@ export function createAnalyticsInstance(options?: Options) {
             }
             if (event in cta_buttons) {
                 // @ts-ignore
-                cta_buttons[event] && _rudderstack?.track(event, { ...coreData, ...analyticsData })
-            } else _rudderstack?.track(event, { ...coreData, ...analyticsData })
+                cta_buttons[event] && _rudderstack?.track(event, { ...core_data, ...analytics_data })
+            } else _rudderstack?.track(event, { ...core_data, ...analytics_data })
         } else {
-            offline_cache[event + analyticsData.action] = { event, payload: { ...coreData, ...analyticsData } }
+            offline_cache[event + analytics_data.action] = { event, payload: { ...core_data, ...analytics_data } }
         }
     }
 
