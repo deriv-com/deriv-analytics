@@ -9,7 +9,16 @@ type Options = {
 }
 
 export function createAnalyticsInstance(options?: Options) {
-    let _growthbook: Growthbook, _rudderstack: RudderStack
+    let _growthbook: Growthbook,
+        _rudderstack: RudderStack,
+        coreData: Partial<TCoreAttributes> = {},
+        cta_buttons: Record<keyof TEvents, boolean> | {} = {},
+        offline_cache: any = {}
+
+    let interval = setInterval(() => {
+        if (Object.keys(cta_buttons).length > 0) clearInterval(interval)
+        else cta_buttons = getFeatureValue('tracking-buttons-config', {})
+    }, 1000)
 
     const initialise = ({ growthbookKey, growthbookDecryptionKey, rudderstackKey }: Options) => {
         _rudderstack = RudderStack.getRudderStackInstance(rudderstackKey)
@@ -18,10 +27,6 @@ export function createAnalyticsInstance(options?: Options) {
         }
     }
 
-    if (options) {
-        initialise(options)
-    }
-    let coreData: Partial<TCoreAttributes> = {}
     const setAttributes = ({
         country,
         user_language,
@@ -36,7 +41,6 @@ export function createAnalyticsInstance(options?: Options) {
         is_authorised,
     }: TCoreAttributes) => {
         if (!_growthbook && !_rudderstack) return
-
         const user_identity = user_id ? user_id : getId()
 
         // Check if we have Growthbook instance
@@ -68,10 +72,6 @@ export function createAnalyticsInstance(options?: Options) {
     const isFeatureOn = (key: string) => _growthbook?.isOn(key)
     const setUrl = (href: string) => _growthbook?.setUrl(href)
     const getId = () => _rudderstack?.getUserId() || _rudderstack?.getAnonymousId()
-
-    // for QA testing purposes
-    window.getMyId = getId
-
     /**
      * Pushes page view event to Rudderstack
      *
@@ -97,9 +97,20 @@ export function createAnalyticsInstance(options?: Options) {
 
     const trackEvent = <T extends keyof TEvents>(event: T, analyticsData: TEvents[T]) => {
         if (!_rudderstack) return
-        if (navigator?.onLine) {
-            console.log(event, { ...coreData, ...analyticsData })
-            _rudderstack?.track(event, { ...coreData, ...analyticsData })
+
+        if (navigator.onLine) {
+            if (Object.keys(offline_cache).length > 0) {
+                Object.keys(offline_cache).map(cache => {
+                    _rudderstack.track(offline_cache[cache].event, offline_cache[cache].payload)
+                    delete offline_cache[cache]
+                })
+            }
+            if (event in cta_buttons) {
+                // @ts-ignore
+                cta_buttons[event] && _rudderstack?.track(event, { ...coreData, ...analyticsData })
+            } else _rudderstack?.track(event, { ...coreData, ...analyticsData })
+        } else {
+            offline_cache[event + analyticsData.action] = { event, payload: { ...coreData, ...analyticsData } }
         }
     }
 
