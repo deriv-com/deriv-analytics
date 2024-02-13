@@ -66,18 +66,18 @@ Analytics?.trackEvent('ce_virtual_signup_form', {
 })
 
 // the same as example below, to not to add repetable properties again and again
-const analyticsData: Parameters<typeof Analytics.trackEvent>[1] = {
+const analytics_data: Parameters<typeof Analytics.trackEvent>[1] = {
     form_name: 'default_diel_deriv',
 }
 Analytics?.trackEvent('ce_virtual_signup_form', {
     action: 'open',
     signup_provider: 'email',
-    ...analyticsData
+    ...analytics_data
 })
 Analytics?.trackEvent('ce_virtual_signup_form', {
     action: 'close',
     signup_provider: 'google',
-    ...analyticsData
+    ...analytics_data
 })
 
 // A/B testing features

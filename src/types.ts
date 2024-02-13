@@ -4,6 +4,10 @@ export type TGrowthbookAttributes = {
     user_language?: string
     device_language?: string
     device_type?: string
+    utm_source?: string
+    utm_medium?: 'ppc-native' | 'affiliate' | 'common' | string
+    utm_campaign?: string
+    is_authorised?: boolean
 }
 export type TCoreAttributes = {
     account_type?: string

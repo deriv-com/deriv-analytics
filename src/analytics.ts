@@ -9,7 +9,16 @@ type Options = {
 }
 
 export function createAnalyticsInstance(options?: Options) {
-    let _growthbook: Growthbook, _rudderstack: RudderStack
+    let _growthbook: Growthbook,
+        _rudderstack: RudderStack,
+        core_data: Partial<TCoreAttributes> = {},
+        cta_buttons: Record<keyof TEvents, boolean> | {} = {},
+        offline_cache: any = {}
+
+    let interval = setInterval(() => {
+        if (Object.keys(cta_buttons).length > 0) clearInterval(interval)
+        else cta_buttons = getFeatureValue('tracking-buttons-config', {})
+    }, 1000)
 
     const initialise = ({ growthbookKey, growthbookDecryptionKey, rudderstackKey }: Options) => {
         _rudderstack = RudderStack.getRudderStackInstance(rudderstackKey)
@@ -18,10 +27,6 @@ export function createAnalyticsInstance(options?: Options) {
         }
     }
 
-    if (options) {
-        initialise(options)
-    }
-    let coreData: Partial<TCoreAttributes> = {}
     const setAttributes = ({
         country,
         user_language,
@@ -30,9 +35,12 @@ export function createAnalyticsInstance(options?: Options) {
         account_type,
         user_id,
         app_id,
+        utm_source,
+        utm_medium,
+        utm_campaign,
+        is_authorised,
     }: TCoreAttributes) => {
         if (!_growthbook && !_rudderstack) return
-
         const user_identity = user_id ? user_id : getId()
 
         // Check if we have Growthbook instance
@@ -43,10 +51,14 @@ export function createAnalyticsInstance(options?: Options) {
                 user_language,
                 device_language,
                 device_type,
+                utm_source,
+                utm_medium,
+                utm_campaign,
+                is_authorised,
             })
         }
 
-        coreData = {
+        core_data = {
             ...(user_language !== undefined && { user_language }),
             ...(account_type !== undefined && { account_type }),
             ...(app_id !== undefined && { app_id }),
@@ -60,10 +72,6 @@ export function createAnalyticsInstance(options?: Options) {
     const isFeatureOn = (key: string) => _growthbook?.isOn(key)
     const setUrl = (href: string) => _growthbook?.setUrl(href)
     const getId = () => _rudderstack?.getUserId() || _rudderstack?.getAnonymousId()
-
-    // for QA testing purposes
-    window.getMyId = getId
-
     /**
      * Pushes page view event to Rudderstack
      *
@@ -76,8 +84,8 @@ export function createAnalyticsInstance(options?: Options) {
     }
 
     const identifyEvent = () => {
-        if (coreData?.user_identity && _rudderstack) {
-            _rudderstack?.identifyEvent(coreData?.user_identity, { language: coreData?.user_language || 'en' })
+        if (core_data?.user_identity && _rudderstack) {
+            _rudderstack?.identifyEvent(core_data?.user_identity, { language: core_data?.user_language || 'en' })
         }
     }
 
@@ -87,11 +95,25 @@ export function createAnalyticsInstance(options?: Options) {
         _rudderstack?.reset()
     }
 
-    const trackEvent = <T extends keyof TEvents>(event: T, analyticsData: TEvents[T]) => {
+    const trackEvent = <T extends keyof TEvents>(event: T, analytics_data: TEvents[T]) => {
         if (!_rudderstack) return
 
-        _rudderstack?.track(event, { ...coreData, ...analyticsData })
+        if (navigator.onLine) {
+            if (Object.keys(offline_cache).length > 0) {
+                Object.keys(offline_cache).map(cache => {
+                    _rudderstack.track(offline_cache[cache].event, offline_cache[cache].payload)
+                    delete offline_cache[cache]
+                })
+            }
+            if (event in cta_buttons) {
+                // @ts-ignore
+                cta_buttons[event] && _rudderstack?.track(event, { ...core_data, ...analytics_data })
+            } else _rudderstack?.track(event, { ...core_data, ...analytics_data })
+        } else {
+            offline_cache[event + analytics_data.action] = { event, payload: { ...core_data, ...analytics_data } }
+        }
     }
+
     const getInstances = () => ({ ab: _growthbook, tracking: _rudderstack })
 
     return {

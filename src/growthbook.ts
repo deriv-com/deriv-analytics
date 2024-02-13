@@ -42,13 +42,27 @@ export class Growthbook {
         return Growthbook._instance
     }
 
-    setAttributes({ id, country, user_language, device_language, device_type }: TGrowthbookAttributes) {
+    setAttributes({
+        id,
+        country,
+        user_language,
+        device_language,
+        device_type,
+        utm_source,
+        utm_medium,
+        utm_campaign,
+        is_authorised,
+    }: TGrowthbookAttributes) {
         return this.GrowthBook.setAttributes({
             id,
             ...(country !== undefined && { country }),
             ...(user_language !== undefined && { user_language }),
             ...(device_language !== undefined && { device_language }),
             ...(device_type !== undefined && { device_type }),
+            ...(utm_source !== undefined && { utm_source }),
+            ...(utm_medium !== undefined && { utm_medium }),
+            ...(utm_campaign !== undefined && { utm_campaign }),
+            ...(is_authorised !== undefined && { is_authorised }),
         })
     }
     getFeatureState<K, V>(id: K) {
