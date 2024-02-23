@@ -109,28 +109,19 @@ type QuestionnaireForm = {
     question_content?: string
     answer_code?: string
 }
-type PartnerAccountSignupForm = {
-    action:
-        | 'open'
-        | 'open_wizard'
-        | 'step_passed'
-        | 'step_back'
-        | 'push_learn_more'
-        | 'close_wizard'
-        | 'close'
-        | 'partners_signup_error'
-        | 'other_error'
-        | 'try_submit'
-        | 'failed_popup_cta'
-        | 'success_popup_opened'
-        | 'success_popup_cta'
-    step_codename?: string
-    step_num?: number
-    user_choice?: string
-    form_source?: string
-    form_name?: 'ce_partner_account_signup_form'
-    partner_signup_error_message?: string
-}
+type PartnerAccountSignupForm =
+    | { action: 'open_wizard'; email: string }
+    | { action: 'step_passed'; step_num: number; step_codename: string }
+    | { action: 'step_back'; step_num: number; step_codename: string }
+    | { action: 'push_learn_more' }
+    | { action: 'close_wizard' }
+    | { action: 'partners_signup_error'; partner_signup_error_message: string; form_name?: string }
+    | { action: 'other_error'; partner_signup_error_message?: string }
+    | { action: 'try_submit' }
+    | { action: 'failed_popup_cta' }
+    | { action: 'success_popup_opened'; user_choice: string; success_source: string; affiliate_id: string }
+    | { action: 'success_popup_cta' }
+
 type VirtualSignupEmailConfirmation = {
     action?: 'received' | 'expired' | 'confirmed' | 'error'
     signup_provider?: SignupProvider
@@ -149,33 +140,33 @@ type TradeTypesForm = {
     subform_name?: string
 }
 type BotDashboardForm = {
-    action?: 
-        | 'open' 
-        | 'close' 
-        | 'search' 
-        | 'delete' 
-        | 'yes' 
-        | 'no' 
-        | 'search_string' 
-        | 'choose_shortcut' 
-        | 'bot_last_modified_time' 
-        | 'delete_popup_respond' 
-        | 'push_open_button' 
-        | 'push_user_guide' 
-        | 'save_your_bot' 
-        | 'edit_your_bot' 
-        | 'choose_your_bot' 
+    action?:
+        | 'open'
+        | 'close'
+        | 'search'
+        | 'delete'
+        | 'yes'
+        | 'no'
+        | 'search_string'
+        | 'choose_shortcut'
+        | 'bot_last_modified_time'
+        | 'delete_popup_respond'
+        | 'push_open_button'
+        | 'push_user_guide'
+        | 'save_your_bot'
+        | 'edit_your_bot'
+        | 'choose_your_bot'
         | 'delete_your_bot'
-    shortcut_name?: string;
-    form_source?: string;
-    form_name?: string;
-    search_string?: string;
-    delete_popup_respond?: string;
-    bot_last_modified_time?: number;
-    bot_name?: string;
-    bot_status?: string;
-    preview_mode?: string;
-};
+    shortcut_name?: string
+    form_source?: string
+    form_name?: string
+    search_string?: string
+    delete_popup_respond?: string
+    bot_last_modified_time?: number
+    bot_name?: string
+    bot_status?: string
+    preview_mode?: string
+}
 type BotQuickStrategyForm = {
     action?:
         | 'open'
@@ -192,30 +183,37 @@ type BotQuickStrategyForm = {
         | 'loss_threshold_warning_popup'
         | 'learn_more_expansion'
         | 'learn_more_collapse'
-        | 'edit_strategy';
-    form_source?: 'ce_bot_dashboard_form' | 'ce_bot_builder_form';
-    form_name?: 'ce_bot_quick_strategy_form';
+        | 'edit_strategy'
+    form_source?: 'ce_bot_dashboard_form' | 'ce_bot_builder_form'
+    form_name?: 'ce_bot_quick_strategy_form'
     strategy_type?:
         | `d'alembert`
         | `martingale`
         | `oscar's-grind`
         | `reverse martingale`
         | `reverse d'alembert`
-        | `1-3-2-6`;
-    strategy_switcher_mode?: 'learn more' | 'trade parameters';
-    asset_type?: string;
-    trade_type?: string;
-    trade_type_mode?: string;
-    duration_type?: 'ticks' | 'seconds' | 'minutes' | 'hours' | 'days';
-    parameter_type?: 'initial-stake' | 'duration' | 'profit-threshold' | 'loss-threshold' | 'size-unit' | 'max-stake' | string;
-    parameter_field_type?: 'input' | 'dropdown' | 'slider' | 'checkbox' | 'number';
-    parameter_value?: string | number | boolean;
-    plus_minus_push?: 'yes' | 'no';
-    manual_parameter_input?: 'yes' | 'no';
-    dont_show_checkbox?: 'yes' | 'no';
-    cta_name?: 'edit_the_amount' | 'yes_continue';
-    learn_more_title?: string;
-};
+        | `1-3-2-6`
+    strategy_switcher_mode?: 'learn more' | 'trade parameters'
+    asset_type?: string
+    trade_type?: string
+    trade_type_mode?: string
+    duration_type?: 'ticks' | 'seconds' | 'minutes' | 'hours' | 'days'
+    parameter_type?:
+        | 'initial-stake'
+        | 'duration'
+        | 'profit-threshold'
+        | 'loss-threshold'
+        | 'size-unit'
+        | 'max-stake'
+        | string
+    parameter_field_type?: 'input' | 'dropdown' | 'slider' | 'checkbox' | 'number'
+    parameter_value?: string | number | boolean
+    plus_minus_push?: 'yes' | 'no'
+    manual_parameter_input?: 'yes' | 'no'
+    dont_show_checkbox?: 'yes' | 'no'
+    cta_name?: 'edit_the_amount' | 'yes_continue'
+    learn_more_title?: string
+}
 type BotBuilderForm = {
     action?: 'open' | 'close' | 'search'
     form_source?: 'bot_header_form' | 'bot_dashboard_form'

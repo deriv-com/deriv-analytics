@@ -1,5 +1,5 @@
 import * as RudderAnalytics from 'rudder-sdk-js'
-import { TEvents } from './types'
+import { TCoreAttributes, TEvents } from './types'
 
 export class RudderStack {
     has_identified = false
@@ -88,10 +88,11 @@ export class RudderStack {
      * @param event The event name to track
      * @param payload Additional information related to the event
      */
-    track<T extends keyof TEvents>(event: T, payload: TEvents[T]) {
+    track<T extends keyof TEvents>(event: T, payload: TEvents[T] & Partial<TCoreAttributes>) {
+        const clean_payload = Object.fromEntries(Object.entries(payload).filter(([_, value]) => value !== undefined))
         if (this.has_initialized && this.has_identified) {
             try {
-                RudderAnalytics.track(event, payload)
+                RudderAnalytics.track(event, clean_payload)
             } catch (err) {
                 console.error(err)
             }

@@ -2,13 +2,17 @@ import { GrowthBook } from '@growthbook/growthbook'
 import * as RudderAnalytics from 'rudder-sdk-js'
 import { TGrowthbookAttributes } from './types'
 
+export type GrowthbookConfigs = {
+    'tracking-buttons-config': Record<string, boolean>
+}
+
 export class Growthbook {
     GrowthBook
     private static _instance: Growthbook
 
     // we have to pass settings due the specific framework implementation
     constructor(clientKey: string, decryptionKey: string) {
-        this.GrowthBook = new GrowthBook<GrowthBook>({
+        this.GrowthBook = new GrowthBook<GrowthbookConfigs>({
             apiHost: 'https://cdn.growthbook.io',
             clientKey,
             decryptionKey,
@@ -69,8 +73,7 @@ export class Growthbook {
         // @ts-ignore
         return this.GrowthBook.evalFeature(id)
     }
-    getFeatureValue<K, V>(key: K, defaultValue?: V) {
-        // @ts-ignore
+    getFeatureValue<K extends keyof GrowthbookConfigs, V extends GrowthbookConfigs[K]>(key: K, defaultValue: V) {
         return this.GrowthBook.getFeatureValue(key, defaultValue)
     }
     setUrl(href: string) {

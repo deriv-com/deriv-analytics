@@ -1,4 +1,4 @@
-import { Growthbook } from './growthbook'
+import { Growthbook, GrowthbookConfigs } from './growthbook'
 import { RudderStack } from './rudderstack'
 import { TCoreAttributes, TEvents } from './types'
 
@@ -12,12 +12,12 @@ export function createAnalyticsInstance(options?: Options) {
     let _growthbook: Growthbook,
         _rudderstack: RudderStack,
         core_data: Partial<TCoreAttributes> = {},
-        cta_buttons: Record<keyof TEvents, boolean> | {} = {},
-        offline_cache: any = {}
+        tracking_config: { [key: string]: boolean } = {},
+        offline_cache: { [key: string]: { event: keyof TEvents; payload: TEvents[keyof TEvents] } } = {}
 
     let interval = setInterval(() => {
-        if (Object.keys(cta_buttons).length > 0) clearInterval(interval)
-        else cta_buttons = getFeatureValue('tracking-buttons-config', {})
+        if (Object.keys(tracking_config).length > 0) clearInterval(interval)
+        else tracking_config = getFeatureValue('tracking-buttons-config', {})
     }, 1000)
 
     const initialise = ({ growthbookKey, growthbookDecryptionKey, rudderstackKey }: Options) => {
@@ -41,7 +41,7 @@ export function createAnalyticsInstance(options?: Options) {
         is_authorised,
     }: TCoreAttributes) => {
         if (!_growthbook && !_rudderstack) return
-        const user_identity = user_id ? user_id : getId()
+        const user_identity = user_id ?? getId()
 
         // Check if we have Growthbook instance
         if (_growthbook) {
@@ -68,7 +68,10 @@ export function createAnalyticsInstance(options?: Options) {
     }
 
     const getFeatureState = (id: string) => _growthbook?.getFeatureState(id)?.experimentResult?.name
-    const getFeatureValue = <T>(id: string, defaultValue?: T) => _growthbook?.getFeatureValue(id, defaultValue)
+    const getFeatureValue = <K extends keyof GrowthbookConfigs, V extends GrowthbookConfigs[K]>(
+        id: K,
+        defaultValue: V
+    ) => _growthbook?.getFeatureValue(id, defaultValue)
     const isFeatureOn = (key: string) => _growthbook?.isOn(key)
     const setUrl = (href: string) => _growthbook?.setUrl(href)
     const getId = () => _rudderstack?.getUserId() || _rudderstack?.getAnonymousId()
@@ -100,14 +103,13 @@ export function createAnalyticsInstance(options?: Options) {
 
         if (navigator.onLine) {
             if (Object.keys(offline_cache).length > 0) {
-                Object.keys(offline_cache).map(cache => {
+                Object.keys(offline_cache).forEach(cache => {
                     _rudderstack.track(offline_cache[cache].event, offline_cache[cache].payload)
                     delete offline_cache[cache]
                 })
             }
-            if (event in cta_buttons) {
-                // @ts-ignore
-                cta_buttons[event] && _rudderstack?.track(event, { ...core_data, ...analytics_data })
+            if (event in tracking_config) {
+                tracking_config[event] && _rudderstack?.track(event, { ...core_data, ...analytics_data })
             } else _rudderstack?.track(event, { ...core_data, ...analytics_data })
         } else {
             offline_cache[event + analytics_data.action] = { event, payload: { ...core_data, ...analytics_data } }
