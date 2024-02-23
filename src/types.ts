@@ -149,33 +149,33 @@ type TradeTypesForm = {
     subform_name?: string
 }
 type BotDashboardForm = {
-    action?: 
-        | 'open' 
-        | 'close' 
-        | 'search' 
-        | 'delete' 
-        | 'yes' 
-        | 'no' 
-        | 'search_string' 
-        | 'choose_shortcut' 
-        | 'bot_last_modified_time' 
-        | 'delete_popup_respond' 
-        | 'push_open_button' 
-        | 'push_user_guide' 
-        | 'save_your_bot' 
-        | 'edit_your_bot' 
-        | 'choose_your_bot' 
+    action?:
+        | 'open'
+        | 'close'
+        | 'search'
+        | 'delete'
+        | 'yes'
+        | 'no'
+        | 'search_string'
+        | 'choose_shortcut'
+        | 'bot_last_modified_time'
+        | 'delete_popup_respond'
+        | 'push_open_button'
+        | 'push_user_guide'
+        | 'save_your_bot'
+        | 'edit_your_bot'
+        | 'choose_your_bot'
         | 'delete_your_bot'
-    shortcut_name?: string;
-    form_source?: string;
-    form_name?: string;
-    search_string?: string;
-    delete_popup_respond?: string;
-    bot_last_modified_time?: number;
-    bot_name?: string;
-    bot_status?: string;
-    preview_mode?: string;
-};
+    shortcut_name?: string
+    form_source?: string
+    form_name?: string
+    search_string?: string
+    delete_popup_respond?: string
+    bot_last_modified_time?: number
+    bot_name?: string
+    bot_status?: string
+    preview_mode?: string
+}
 type BotQuickStrategyForm = {
     action?:
         | 'open'
@@ -192,30 +192,37 @@ type BotQuickStrategyForm = {
         | 'loss_threshold_warning_popup'
         | 'learn_more_expansion'
         | 'learn_more_collapse'
-        | 'edit_strategy';
-    form_source?: 'ce_bot_dashboard_form' | 'ce_bot_builder_form';
-    form_name?: 'ce_bot_quick_strategy_form';
+        | 'edit_strategy'
+    form_source?: 'ce_bot_dashboard_form' | 'ce_bot_builder_form'
+    form_name?: 'ce_bot_quick_strategy_form'
     strategy_type?:
         | `d'alembert`
         | `martingale`
         | `oscar's-grind`
         | `reverse martingale`
         | `reverse d'alembert`
-        | `1-3-2-6`;
-    strategy_switcher_mode?: 'learn more' | 'trade parameters';
-    asset_type?: string;
-    trade_type?: string;
-    trade_type_mode?: string;
-    duration_type?: 'ticks' | 'seconds' | 'minutes' | 'hours' | 'days';
-    parameter_type?: 'initial-stake' | 'duration' | 'profit-threshold' | 'loss-threshold' | 'size-unit' | 'max-stake' | string;
-    parameter_field_type?: 'input' | 'dropdown' | 'slider' | 'checkbox' | 'number';
-    parameter_value?: string | number | boolean;
-    plus_minus_push?: 'yes' | 'no';
-    manual_parameter_input?: 'yes' | 'no';
-    dont_show_checkbox?: 'yes' | 'no';
-    cta_name?: 'edit_the_amount' | 'yes_continue';
-    learn_more_title?: string;
-};
+        | `1-3-2-6`
+    strategy_switcher_mode?: 'learn more' | 'trade parameters'
+    asset_type?: string
+    trade_type?: string
+    trade_type_mode?: string
+    duration_type?: 'ticks' | 'seconds' | 'minutes' | 'hours' | 'days'
+    parameter_type?:
+        | 'initial-stake'
+        | 'duration'
+        | 'profit-threshold'
+        | 'loss-threshold'
+        | 'size-unit'
+        | 'max-stake'
+        | string
+    parameter_field_type?: 'input' | 'dropdown' | 'slider' | 'checkbox' | 'number'
+    parameter_value?: string | number | boolean
+    plus_minus_push?: 'yes' | 'no'
+    manual_parameter_input?: 'yes' | 'no'
+    dont_show_checkbox?: 'yes' | 'no'
+    cta_name?: 'edit_the_amount' | 'yes_continue'
+    learn_more_title?: string
+}
 type BotBuilderForm = {
     action?: 'open' | 'close' | 'search'
     form_source?: 'bot_header_form' | 'bot_dashboard_form'
@@ -320,6 +327,24 @@ type ChartTypesFormAction = {
     chart_type_name?: string
     time_interval_name?: string
 }
+type ContractsSetupForm = {
+    form_name: string
+    trade_type_name: string
+} & (
+    | {
+          action: 'change_parameter_value'
+          duration_type?: string
+          input_type?: string
+          parameter_field_type?: string
+          parameter_type?: string
+          parameter_value?: string
+      }
+    | {
+          action: 'run_contract'
+          switcher_duration_mode_name?: string
+          switcher_stakepayout_mode_name?: string
+      }
+)
 type TradersHubOnboardingFormAction = {
     action?: 'open' | 'close' | 'step_passed' | 'step_back' | 'choose_step_navigation'
     form_source?: 'tradershub_dashboard_form' | 'tradershub_first_entrance' | 'repeat_tour'
@@ -344,6 +369,7 @@ export type TEvents = {
     ce_bot_quick_strategy_form: BotQuickStrategyForm
     ce_bot_builder_form: BotBuilderForm
     ce_bot_tutorial_form: BotTutorialForm
+    ce_contracts_set_up_form: ContractsSetupForm
     ce_indicators_types_form: IndicatorsTypesFormAction
     ce_trade_types_form: TradeTypesForm
     ce_chart_types_form: ChartTypesFormAction
