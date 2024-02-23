@@ -3,7 +3,11 @@ import * as RudderAnalytics from 'rudder-sdk-js'
 import { TGrowthbookAttributes } from './types'
 
 export type GrowthbookConfigs = {
+    // feature flags for framework needs
     'tracking-buttons-config': Record<string, boolean>
+} & {
+    // any feature flags from growthbook
+    [key: string]: Record<string, boolean> | string | boolean | []
 }
 
 export class Growthbook {
@@ -38,7 +42,7 @@ export class Growthbook {
     }
 
     // for make instance by singleton
-    public static getGrowthBookInstance(clientKey: string, decryptionKey: string) {
+    public static getGrowthBookInstance = (clientKey: string, decryptionKey: string) => {
         if (!Growthbook._instance) {
             Growthbook._instance = new Growthbook(clientKey, decryptionKey)
             return Growthbook._instance
@@ -46,7 +50,7 @@ export class Growthbook {
         return Growthbook._instance
     }
 
-    setAttributes({
+    setAttributes = ({
         id,
         country,
         user_language,
@@ -56,8 +60,8 @@ export class Growthbook {
         utm_medium,
         utm_campaign,
         is_authorised,
-    }: TGrowthbookAttributes) {
-        return this.GrowthBook.setAttributes({
+    }: TGrowthbookAttributes) => {
+        this.GrowthBook.setAttributes({
             id,
             ...(country !== undefined && { country }),
             ...(user_language !== undefined && { user_language }),
@@ -69,21 +73,12 @@ export class Growthbook {
             ...(is_authorised !== undefined && { is_authorised }),
         })
     }
-    getFeatureState<K, V>(id: K) {
-        // @ts-ignore
-        return this.GrowthBook.evalFeature(id)
+    getFeatureValue = <K extends keyof GrowthbookConfigs, V extends GrowthbookConfigs[K]>(key: K, defaultValue: V) => {
+        return this.GrowthBook.getFeatureValue(key as string, defaultValue)
     }
-    getFeatureValue<K extends keyof GrowthbookConfigs, V extends GrowthbookConfigs[K]>(key: K, defaultValue: V) {
-        return this.GrowthBook.getFeatureValue(key, defaultValue)
-    }
-    setUrl(href: string) {
-        return this.GrowthBook.setURL(href)
-    }
-    isOn(key: string) {
-        // @ts-ignore
-        return this.GrowthBook.isOn(key)
-    }
-    init() {
-        this.GrowthBook.loadFeatures().catch(err => console.error(err))
-    }
+    getFeatureState = (id: string) => this.GrowthBook.evalFeature(id)
+    setUrl = (href: string) => this.GrowthBook.setURL(href)
+    isOn = (key: string) => this.GrowthBook.isOn(key)
+
+    init = () => this.GrowthBook.loadFeatures().catch(err => console.error(err))
 }

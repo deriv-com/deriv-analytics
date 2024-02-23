@@ -71,7 +71,7 @@ export function createAnalyticsInstance(options?: Options) {
     const getFeatureValue = <K extends keyof GrowthbookConfigs, V extends GrowthbookConfigs[K]>(
         id: K,
         defaultValue: V
-    ) => _growthbook?.getFeatureValue(id, defaultValue)
+    ) => _growthbook?.getFeatureValue(id as string, defaultValue)
     const isFeatureOn = (key: string) => _growthbook?.isOn(key)
     const setUrl = (href: string) => _growthbook?.setUrl(href)
     const getId = () => _rudderstack?.getUserId() || _rudderstack?.getAnonymousId()
