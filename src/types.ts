@@ -328,17 +328,23 @@ type ChartTypesFormAction = {
     time_interval_name?: string
 }
 type ContractsSetupForm = {
-    action: 'change_parameter_value' | 'run_contract'
-    duration_type?: string
     form_name: string
-    input_type?: string
-    parameter_field_type?: string
-    parameter_type?: string
-    parameter_value?: string
     trade_type_name: string
-    switcher_duration_mode_name?: string
-    switcher_stakepayout_mode_name?: string
-}
+} & (
+    | {
+          action: 'change_parameter_value'
+          duration_type?: string
+          input_type?: string
+          parameter_field_type?: string
+          parameter_type?: string
+          parameter_value?: string
+      }
+    | {
+          action: 'run_contract'
+          switcher_duration_mode_name?: string
+          switcher_stakepayout_mode_name?: string
+      }
+)
 type TradersHubOnboardingFormAction = {
     action?: 'open' | 'close' | 'step_passed' | 'step_back' | 'choose_step_navigation'
     form_source?: 'tradershub_dashboard_form' | 'tradershub_first_entrance' | 'repeat_tour'
