@@ -15,15 +15,15 @@ export function createAnalyticsInstance(options?: Options) {
         tracking_config: { [key: string]: boolean } = {},
         offline_cache: { [key: string]: { event: keyof TEvents; payload: TEvents[keyof TEvents] } } = {}
 
-    let interval = setInterval(() => {
-        if (Object.keys(tracking_config).length > 0) clearInterval(interval)
-        else tracking_config = getFeatureValue('tracking-buttons-config', {})
-    }, 1000)
-
     const initialise = ({ growthbookKey, growthbookDecryptionKey, rudderstackKey }: Options) => {
         _rudderstack = RudderStack.getRudderStackInstance(rudderstackKey)
         if (growthbookKey && growthbookDecryptionKey) {
             _growthbook = Growthbook.getGrowthBookInstance(growthbookKey, growthbookDecryptionKey)
+
+            let interval = setInterval(() => {
+                if (Object.keys(tracking_config).length > 0) clearInterval(interval)
+                else tracking_config = getFeatureValue('tracking-buttons-config', {})
+            }, 1000)
         }
     }
 
