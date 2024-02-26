@@ -318,6 +318,24 @@ type ChartTypesFormAction = {
     chart_type_name?: string
     time_interval_name?: string
 }
+type ContractsSetupForm = {
+    form_name: string
+    trade_type_name: string
+} & (
+    | {
+          action: 'change_parameter_value'
+          duration_type?: string
+          input_type?: string
+          parameter_field_type?: string
+          parameter_type?: string
+          parameter_value?: string
+      }
+    | {
+          action: 'run_contract'
+          switcher_duration_mode_name?: string
+          switcher_stakepayout_mode_name?: string
+      }
+)
 type TradersHubOnboardingFormAction = {
     action?: 'open' | 'close' | 'step_passed' | 'step_back' | 'choose_step_navigation'
     form_source?: 'tradershub_dashboard_form' | 'tradershub_first_entrance' | 'repeat_tour'
@@ -342,6 +360,7 @@ export type TEvents = {
     ce_bot_quick_strategy_form: BotQuickStrategyForm
     ce_bot_builder_form: BotBuilderForm
     ce_bot_tutorial_form: BotTutorialForm
+    ce_contracts_set_up_form: ContractsSetupForm
     ce_indicators_types_form: IndicatorsTypesFormAction
     ce_trade_types_form: TradeTypesForm
     ce_chart_types_form: ChartTypesFormAction
