@@ -109,28 +109,19 @@ type QuestionnaireForm = {
     question_content?: string
     answer_code?: string
 }
-type PartnerAccountSignupForm = {
-    action:
-        | 'open'
-        | 'open_wizard'
-        | 'step_passed'
-        | 'step_back'
-        | 'push_learn_more'
-        | 'close_wizard'
-        | 'close'
-        | 'partners_signup_error'
-        | 'other_error'
-        | 'try_submit'
-        | 'failed_popup_cta'
-        | 'success_popup_opened'
-        | 'success_popup_cta'
-    step_codename?: string
-    step_num?: number
-    user_choice?: string
-    form_source?: string
-    form_name?: 'ce_partner_account_signup_form'
-    partner_signup_error_message?: string
-}
+type PartnerAccountSignupForm =
+    | { action: 'open_wizard'; email: string }
+    | { action: 'step_passed'; step_num: number; step_codename: string }
+    | { action: 'step_back'; step_num: number; step_codename: string }
+    | { action: 'push_learn_more' }
+    | { action: 'close_wizard' }
+    | { action: 'partners_signup_error'; partner_signup_error_message: string; form_name?: string }
+    | { action: 'other_error'; partner_signup_error_message?: string }
+    | { action: 'try_submit' }
+    | { action: 'failed_popup_cta' }
+    | { action: 'success_popup_opened'; user_choice: string; success_source: string; affiliate_id: string }
+    | { action: 'success_popup_cta' }
+
 type VirtualSignupEmailConfirmation = {
     action?: 'received' | 'expired' | 'confirmed' | 'error'
     signup_provider?: SignupProvider

@@ -1,18 +1,17 @@
 import * as RudderAnalytics from 'rudder-sdk-js'
-import { TEvents } from './types'
+import { TCoreAttributes, TEvents } from './types'
 
 export class RudderStack {
     has_identified = false
     has_initialized = false
     current_page = ''
-
     private static _instance: RudderStack
 
     constructor(RUDDERSTACK_KEY: string) {
         this.init(RUDDERSTACK_KEY)
     }
 
-    public static getRudderStackInstance(RUDDERSTACK_KEY: string) {
+    public static getRudderStackInstance = (RUDDERSTACK_KEY: string) => {
         if (!RudderStack._instance) {
             RudderStack._instance = new RudderStack(RUDDERSTACK_KEY)
             return RudderStack._instance
@@ -23,23 +22,19 @@ export class RudderStack {
     /**
      * @returns The anonymous ID assigned to the user before the identify event was called
      */
-    getAnonymousId() {
-        return RudderAnalytics.getAnonymousId()
-    }
+    getAnonymousId = () => RudderAnalytics.getAnonymousId()
 
     /**
      * @returns The user ID that was assigned to the user after calling identify event
      */
-    getUserId() {
-        return RudderAnalytics.getUserId()
-    }
+    getUserId = () => RudderAnalytics.getUserId()
 
     /**
      * Initializes the Rudderstack SDK. Ensure that the appropriate environment variables are set before this is called.
      * For local/staging environment, ensure that `RUDDERSTACK_STAGING_KEY` and `RUDDERSTACK_URL` is set.
      * For production environment, ensure that `RUDDERSTACK_PRODUCTION_KEY` and `RUDDERSTACK_URL` is set.
      */
-    init(RUDDERSTACK_KEY: string) {
+    init = (RUDDERSTACK_KEY: string) => {
         if (RUDDERSTACK_KEY) {
             RudderAnalytics.load(RUDDERSTACK_KEY, 'https://deriv-dataplane.rudderstack.com')
             RudderAnalytics.ready(() => {
@@ -64,7 +59,7 @@ export class RudderStack {
      *
      * @param curret_page The name or URL of the current page to track the page view event
      */
-    pageView(current_page: string, platform = 'Deriv App', user_id: string) {
+    pageView = (current_page: string, platform = 'Deriv App', user_id: string) => {
         if (this.has_initialized && this.has_identified && current_page !== this.current_page) {
             RudderAnalytics.page(platform, current_page, { user_id })
             this.current_page = current_page
@@ -74,7 +69,7 @@ export class RudderStack {
     /**
      * Pushes reset event to rudderstack
      */
-    reset() {
+    reset = () => {
         if (this.has_initialized) {
             RudderAnalytics.reset()
             this.has_identified = false
@@ -88,10 +83,11 @@ export class RudderStack {
      * @param event The event name to track
      * @param payload Additional information related to the event
      */
-    track<T extends keyof TEvents>(event: T, payload: TEvents[T]) {
+    track = <T extends keyof TEvents>(event: T, payload: TEvents[T] & Partial<TCoreAttributes>) => {
+        const clean_payload = Object.fromEntries(Object.entries(payload).filter(([_, value]) => value !== undefined))
         if (this.has_initialized && this.has_identified) {
             try {
-                RudderAnalytics.track(event, payload)
+                RudderAnalytics.track(event, clean_payload)
             } catch (err) {
                 console.error(err)
             }
