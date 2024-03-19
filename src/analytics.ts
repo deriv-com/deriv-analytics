@@ -5,18 +5,26 @@ import { TCoreAttributes, TEvents } from './types'
 type Options = {
     growthbookKey?: string
     growthbookDecryptionKey?: string
-    rudderstackKey: string
+    rudderstackKey?: string
 }
 
 export function createAnalyticsInstance(options?: Options) {
     let _growthbook: Growthbook,
-        _rudderstack: RudderStack,
+        _rudderstack: RudderStack | null,
         core_data: Partial<TCoreAttributes> = {},
         tracking_config: { [key: string]: boolean } = {},
         offline_cache: { [key: string]: { event: keyof TEvents; payload: TEvents[keyof TEvents] } } = {}
 
     const initialise = ({ growthbookKey, growthbookDecryptionKey, rudderstackKey }: Options) => {
-        _rudderstack = RudderStack.getRudderStackInstance(rudderstackKey)
+        // If Rudderstack is disabled in Firebase remote config
+        if (!rudderstackKey) {
+            // If Rudderstack is already initialized, remove the instance
+            if (_rudderstack) _rudderstack = null
+        } else {
+            // If Rudderstack is enabled in Firebase remote config but its not yet initialized
+            if (!_rudderstack) _rudderstack = RudderStack.getRudderStackInstance(rudderstackKey)
+        }
+
         if (growthbookKey && growthbookDecryptionKey) {
             _growthbook = Growthbook.getGrowthBookInstance(growthbookKey, growthbookDecryptionKey)
 
@@ -41,12 +49,12 @@ export function createAnalyticsInstance(options?: Options) {
         is_authorised,
     }: TCoreAttributes) => {
         if (!_growthbook && !_rudderstack) return
-        const user_identity = user_id ?? getId()
+        const user_identity = user_id || getId()
 
-        // Check if we have Growthbook instance
-        if (_growthbook) {
+        // Check if we have Growthbook instance and initialize only if there is user ID from growthbook or rudderstack
+        if (_growthbook && user_identity) {
             _growthbook.setAttributes({
-                id: user_identity || getId(),
+                id: user_identity,
                 country,
                 user_language,
                 device_language,
@@ -74,7 +82,11 @@ export function createAnalyticsInstance(options?: Options) {
     ) => _growthbook?.getFeatureValue(id as string, defaultValue)
     const isFeatureOn = (key: string) => _growthbook?.isOn(key)
     const setUrl = (href: string) => _growthbook?.setUrl(href)
-    const getId = () => _rudderstack?.getUserId() || _rudderstack?.getAnonymousId()
+    const getId = () => {
+        if (!_rudderstack) return
+
+        return _rudderstack.getUserId() || _rudderstack.getAnonymousId()
+    }
     /**
      * Pushes page view event to Rudderstack
      *
@@ -83,7 +95,9 @@ export function createAnalyticsInstance(options?: Options) {
     const pageView = (current_page: string, platform = 'Deriv App') => {
         if (!_rudderstack) return
 
-        _rudderstack?.pageView(current_page, platform, getId())
+        // Asserts getId() returns string since Rudderstack instance is already checked to be
+        const rudderstackId = getId() as string
+        _rudderstack.pageView(current_page, platform, rudderstackId)
     }
 
     const identifyEvent = () => {
@@ -104,7 +118,7 @@ export function createAnalyticsInstance(options?: Options) {
         if (navigator.onLine) {
             if (Object.keys(offline_cache).length > 0) {
                 Object.keys(offline_cache).forEach(cache => {
-                    _rudderstack.track(offline_cache[cache].event, offline_cache[cache].payload)
+                    if (_rudderstack) _rudderstack.track(offline_cache[cache].event, offline_cache[cache].payload)
                     delete offline_cache[cache]
                 })
             }
