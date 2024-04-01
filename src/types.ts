@@ -345,6 +345,20 @@ type TradersHubOnboardingFormAction = {
 type UpgradeMT5BannerAction = {
     action: 'open' | 'push_cta_upgrade'
 }
+type PerformanceMetricsAction = {
+    action:
+        | 'create_mt5_account_time'
+        | 'create_dxtrade_account_time'
+        | 'create_ctrader_account_time'
+        | 'load_cashier_time'
+        | 'login_time'
+        | 'redirect_from_deriv_com_time'
+        | 'signup_time'
+        | 'switch_currency_accounts_time'
+        | 'switch_from_demo_to_real_time'
+        | 'switch_from_real_to_demo_time'
+    value: number
+}
 
 export type TEvents = {
     ce_virtual_signup_form: VirtualSignupForm
@@ -368,4 +382,5 @@ export type TEvents = {
     ce_reports_form: ReportsFormAction
     ce_tradershub_onboarding_form: TradersHubOnboardingFormAction
     ce_upgrade_mt5_banner: UpgradeMT5BannerAction
+    ce_performance_metrics: PerformanceMetricsAction
 }
