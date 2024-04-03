@@ -346,6 +346,22 @@ type UpgradeMT5BannerAction = {
     action: 'open' | 'push_cta_upgrade'
 }
 
+type TradersHubDashboardFormAction = {
+    action?:
+        | 'open'
+        | 'close'
+        | 'switch_account_mode'
+        | 'account_open'
+        | 'account_get'
+        | 'account_logo_push'
+        | 'reset_balance'
+        | 'deposit_balance'
+        | 'compare_accounts_push'
+    form_source?: 'deriv_apps_dashboard' | 'tradershub_onboarding_form' | 'deriv_trader' | 'dtrader_account_form'
+    account_mode?: 'demo' | 'real'
+    account_name?: string
+}
+
 export type TEvents = {
     ce_virtual_signup_form: VirtualSignupForm
     ce_email_verification_form: EmailVerificationForm
@@ -368,4 +384,5 @@ export type TEvents = {
     ce_reports_form: ReportsFormAction
     ce_tradershub_onboarding_form: TradersHubOnboardingFormAction
     ce_upgrade_mt5_banner: UpgradeMT5BannerAction
+    ce_tradershub_dashboard_form: TradersHubDashboardFormAction
 }
