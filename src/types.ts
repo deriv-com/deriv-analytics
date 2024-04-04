@@ -351,6 +351,8 @@ type TradersHubPerformanceMetricsAction = {
         | 'create_dxtrade_account_time'
         | 'create_ctrader_account_time'
         | 'load_cashier_time'
+        | 'load_crypto_deposit_cashier_time'
+        | 'load_fiat_deposit_cashier_time'
         | 'login_time'
         | 'redirect_from_deriv_com_time'
         | 'signup_time'
