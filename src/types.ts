@@ -342,6 +342,11 @@ type TradersHubOnboardingFormAction = {
     step_num?: number
     step_codename?: string
 }
+type TradersHubBannerAction = {
+    action: 'open' | 'close' | 'click_download'
+    account_mode: 'demo' | 'real'
+    banner_name: 'forex-ebook' | 'stock-ebook' | 'cryptocurrencies-ebook' | 'synthetic-indices-ebook' | 'chart-patterns'
+}
 type UpgradeMT5BannerAction = {
     action: 'open' | 'push_cta_upgrade'
 }
@@ -367,5 +372,6 @@ export type TEvents = {
     ce_market_types_form: MarketTypesFormAction
     ce_reports_form: ReportsFormAction
     ce_tradershub_onboarding_form: TradersHubOnboardingFormAction
+    ce_tradershub_banner: TradersHubBannerAction
     ce_upgrade_mt5_banner: UpgradeMT5BannerAction
 }
