@@ -1,4 +1,4 @@
-import { GrowthBook } from '@growthbook/growthbook'
+import { Context, GrowthBook } from '@growthbook/growthbook'
 import * as RudderAnalytics from 'rudder-sdk-js'
 import { TGrowthbookAttributes } from './types'
 
@@ -15,11 +15,14 @@ export class Growthbook {
     private static _instance: Growthbook
 
     // we have to pass settings due the specific framework implementation
-    constructor(clientKey: string, decryptionKey: string) {
+    constructor(clientKey: string, decryptionKey: string, settings: Partial<Context> = {}) {
         this.GrowthBook = new GrowthBook<GrowthbookConfigs>({
             apiHost: 'https://cdn.growthbook.io',
             clientKey,
             decryptionKey,
+            antiFlicker: true,
+            navigateDelay: 0,
+            antiFlickerTimeout: 3500,
             subscribeToChanges: true,
             enableDevMode: window?.location.hostname.includes('localhost'),
             trackingCallback: (experiment, result) => {
@@ -37,14 +40,19 @@ export class Growthbook {
                     variationId: result.variationId,
                 })
             },
+            ...settings,
         })
         this.init()
     }
 
     // for make instance by singleton
-    public static getGrowthBookInstance = (clientKey: string, decryptionKey: string) => {
+    public static getGrowthBookInstance = (
+        clientKey: string,
+        decryptionKey: string,
+        growthbookOptions?: Partial<Context>
+    ) => {
         if (!Growthbook._instance) {
-            Growthbook._instance = new Growthbook(clientKey, decryptionKey)
+            Growthbook._instance = new Growthbook(clientKey, decryptionKey, growthbookOptions)
             return Growthbook._instance
         }
         return Growthbook._instance

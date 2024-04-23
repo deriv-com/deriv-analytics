@@ -1,9 +1,11 @@
+import type { Context } from '@growthbook/growthbook'
 import { Growthbook, GrowthbookConfigs } from './growthbook'
 import { RudderStack } from './rudderstack'
 import { TCoreAttributes, TEvents } from './types'
 
 type Options = {
     growthbookKey?: string
+    growthbookOptions?: Partial<Context>
     growthbookDecryptionKey?: string
     rudderstackKey: string
 }
@@ -15,10 +17,10 @@ export function createAnalyticsInstance(options?: Options) {
         tracking_config: { [key: string]: boolean } = {},
         offline_cache: { [key: string]: { event: keyof TEvents; payload: TEvents[keyof TEvents] } } = {}
 
-    const initialise = ({ growthbookKey, growthbookDecryptionKey, rudderstackKey }: Options) => {
+    const initialise = ({ growthbookKey, growthbookDecryptionKey, rudderstackKey, growthbookOptions }: Options) => {
         _rudderstack = RudderStack.getRudderStackInstance(rudderstackKey)
         if (growthbookKey && growthbookDecryptionKey) {
-            _growthbook = Growthbook.getGrowthBookInstance(growthbookKey, growthbookDecryptionKey)
+            _growthbook = Growthbook.getGrowthBookInstance(growthbookKey, growthbookDecryptionKey, growthbookOptions)
 
             let interval = setInterval(() => {
                 if (Object.keys(tracking_config).length > 0) clearInterval(interval)
