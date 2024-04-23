@@ -30,6 +30,8 @@ type VirtualSignupForm = {
         | 'signup_done'
         | 'signup_flow_error'
         | 'go_to_login'
+        | 'signup_modal_open'
+        | 'signup_modal_close'
     signup_provider?: SignupProvider
     form_source?: string
     form_name?: string
