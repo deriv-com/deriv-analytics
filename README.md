@@ -29,6 +29,20 @@ Analytics?.initialise({
     growthbookDecryptionKey: process.env.GROWTHBOOK_DECRYPTION_KEY, // optional key to enable A/B tests
     // mandatory key to enable userevent tracking
     rudderstackKey: RUDDERSTACK_KEY,
+
+    growthbookOptions: {
+        // optional options for overriding growthbook default options
+        // if you want e.g
+        antiFlicker: true,
+        navigateDelay: 0,
+        antiFlickerTimeout: 3500,
+        subscribeToChanges: true,
+        enableDevMode: window?.location.hostname.includes('localhost'),
+        trackingCallback: (experiment, result) => {
+            console.log('Tracking callback', experiment, result)
+        }
+        navigate: (url) => window.location.href = url,
+    }
 })
 ```
 
