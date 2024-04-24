@@ -33,7 +33,7 @@ Analytics?.initialise({
     growthbookOptions: {
         // optional options for overriding growthbook default options
         // if you want e.g
-        antiFlicker: true,
+        antiFlicker: false,
         navigateDelay: 0,
         antiFlickerTimeout: 3500,
         subscribeToChanges: true,

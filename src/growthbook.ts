@@ -20,7 +20,7 @@ export class Growthbook {
             apiHost: 'https://cdn.growthbook.io',
             clientKey,
             decryptionKey,
-            antiFlicker: true,
+            antiFlicker: false,
             navigateDelay: 0,
             antiFlickerTimeout: 3500,
             subscribeToChanges: true,
