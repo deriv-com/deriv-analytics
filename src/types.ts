@@ -8,6 +8,7 @@ export type TGrowthbookAttributes = {
     utm_medium?: 'ppc-native' | 'affiliate' | 'common' | string
     utm_campaign?: string
     is_authorised?: boolean
+    url?: string
 }
 export type TCoreAttributes = {
     account_type?: string

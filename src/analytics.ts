@@ -41,6 +41,7 @@ export function createAnalyticsInstance(options?: Options) {
         utm_medium,
         utm_campaign,
         is_authorised,
+        url,
     }: TCoreAttributes) => {
         if (!_growthbook && !_rudderstack) return
         const user_identity = user_id ?? getId()
@@ -57,6 +58,7 @@ export function createAnalyticsInstance(options?: Options) {
                 utm_medium,
                 utm_campaign,
                 is_authorised,
+                url,
             })
         }
 
@@ -66,6 +68,7 @@ export function createAnalyticsInstance(options?: Options) {
             ...(app_id !== undefined && { app_id }),
             ...(device_type !== undefined && { device_type }),
             ...(user_identity !== undefined && { user_identity }),
+            ...(url !== undefined && { url }),
         }
     }
 
