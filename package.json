@@ -1,6 +1,6 @@
 {
   "name": "@deriv-com/analytics",
-  "version": "1.4.14",
+  "version": "1.5.0",
   "description": "The analytics package contains all the utility functions used for tracking user events and sending them to the respective platform such as Rudderstack.",
   "keywords": [
     "rudderstack",
@@ -36,7 +36,7 @@
     "typescript": "^4.9.5"
   },
   "dependencies": {
-    "@growthbook/growthbook": "^0.29.0",
+    "@growthbook/growthbook": "^0.36.0",
     "rudder-sdk-js": "^2.35.0"
   },
   "engines": {

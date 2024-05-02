@@ -8,6 +8,7 @@ export type TGrowthbookAttributes = {
     utm_medium?: 'ppc-native' | 'affiliate' | 'common' | string
     utm_campaign?: string
     is_authorised?: boolean
+    url?: string
 }
 export type TCoreAttributes = {
     account_type?: string
@@ -30,6 +31,8 @@ type VirtualSignupForm = {
         | 'signup_done'
         | 'signup_flow_error'
         | 'go_to_login'
+        | 'signup_modal_open'
+        | 'signup_modal_close'
     signup_provider?: SignupProvider
     form_source?: string
     form_name?: string
