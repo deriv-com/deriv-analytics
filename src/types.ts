@@ -365,6 +365,36 @@ type TradersHubDashboardFormAction = {
     account_name?: string
 }
 
+type PassKeyEffortlessFormAction = {
+    action?: 'open' | 'close' | 'info_open' | 'info_back' | 'maybe_later' | 'get_started'
+    form_source?: 'ce_passkey_effortless_form' | 'ce_passkey_effortless_form_p2p' | 'ce_passkey_effortless_form_derivgo'
+    operating_system?: 'IOS' | 'Android' | 'other'
+    app_id?: string
+}
+
+type PassKeyAccountSettingsFormAction = {
+    action?:
+        | 'open'
+        | 'close'
+        | 'info_open'
+        | 'info_back'
+        | 'create_passkey_started'
+        | 'create_passkey_reminder_passed'
+        | 'create_passkey_finished'
+        | 'create_passkey_continue_trading'
+        | 'error'
+        | 'add_more_passkeys'
+
+    form_source?:
+        | 'ce_passkey_account_settings_form'
+        | 'ce_passkey_account_settings_form_derivgo'
+        | 'ce_passkey_account_settings_form_p2p'
+    subform_name?: 'passkey_main' | 'passkey_info' | 'passekey_rename' | 'passkey_remove' | 'success'
+    remove_verification_provider?: 'email' | 'device'
+    error_message?: string
+    operating_system?: 'IOS' | 'Android' | 'other'
+}
+
 export type TEvents = {
     ce_virtual_signup_form: VirtualSignupForm
     ce_email_verification_form: EmailVerificationForm
@@ -388,4 +418,6 @@ export type TEvents = {
     ce_tradershub_onboarding_form: TradersHubOnboardingFormAction
     ce_upgrade_mt5_banner: UpgradeMT5BannerAction
     ce_tradershub_dashboard_form: TradersHubDashboardFormAction
+    ce_passkey_effortless_form: PassKeyEffortlessFormAction
+    ce_passkey_account_settings_form: PassKeyAccountSettingsFormAction
 }
