@@ -36,7 +36,7 @@
     "typescript": "^4.9.5"
   },
   "dependencies": {
-    "@growthbook/growthbook": "^0.36.0",
+    "@growthbook/growthbook": "^1.0.0",
     "rudder-sdk-js": "^2.35.0"
   },
   "engines": {

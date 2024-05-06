@@ -17,15 +17,27 @@ export function createAnalyticsInstance(options?: Options) {
         tracking_config: { [key: string]: boolean } = {},
         offline_cache: { [key: string]: { event: keyof TEvents; payload: TEvents[keyof TEvents] } } = {}
 
-    const initialise = ({ growthbookKey, growthbookDecryptionKey, rudderstackKey, growthbookOptions }: Options) => {
+    const initialise = async ({
+        growthbookKey,
+        growthbookDecryptionKey,
+        rudderstackKey,
+        growthbookOptions,
+    }: Options) => {
         _rudderstack = RudderStack.getRudderStackInstance(rudderstackKey)
         if (growthbookKey && growthbookDecryptionKey) {
             _growthbook = Growthbook.getGrowthBookInstance(growthbookKey, growthbookDecryptionKey, growthbookOptions)
 
-            let interval = setInterval(() => {
-                if (Object.keys(tracking_config).length > 0) clearInterval(interval)
-                else tracking_config = getFeatureValue('tracking-buttons-config', {})
-            }, 1000)
+            // Wait for Growthbook initialization to complete
+            await new Promise<void>(resolve => {
+                let interval = setInterval(() => {
+                    if (Object.keys(tracking_config).length > 0) {
+                        clearInterval(interval)
+                        resolve()
+                    } else {
+                        tracking_config = getFeatureValue('tracking-buttons-config', {})
+                    }
+                }, 1000)
+            })
         }
     }
 
@@ -83,7 +95,8 @@ export function createAnalyticsInstance(options?: Options) {
     /**
      * Pushes page view event to Rudderstack
      *
-     * @param curret_page The name or URL of the current page to track the page view event
+     * @param current_page The name or URL of the current page to track the page view event
+     * @param platform
      */
     const pageView = (current_page: string, platform = 'Deriv App') => {
         if (!_rudderstack) return

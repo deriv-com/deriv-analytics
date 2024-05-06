@@ -1,4 +1,4 @@
-import { Context, GrowthBook } from '@growthbook/growthbook'
+import { Context, GrowthBook, LocalStorageStickyBucketService } from '@growthbook/growthbook'
 import * as RudderAnalytics from 'rudder-sdk-js'
 import { TGrowthbookAttributes } from './types'
 
@@ -22,7 +22,8 @@ export class Growthbook {
             decryptionKey,
             antiFlicker: false,
             navigateDelay: 0,
-            antiFlickerTimeout: 3500,
+            antiFlickerTimeout: 1000,
+            stickyBucketService: new LocalStorageStickyBucketService(),
             subscribeToChanges: true,
             enableDevMode: window?.location.hostname.includes('localhost'),
             trackingCallback: (experiment, result) => {
@@ -58,7 +59,7 @@ export class Growthbook {
         return Growthbook._instance
     }
 
-    setAttributes = ({
+    setAttributes = async ({
         id,
         country,
         user_language,
@@ -70,7 +71,7 @@ export class Growthbook {
         is_authorised,
         url,
     }: TGrowthbookAttributes) => {
-        this.GrowthBook.setAttributes({
+        await this.GrowthBook.setAttributes({
             id,
             ...(country !== undefined && { country }),
             ...(user_language !== undefined && { user_language }),
@@ -90,5 +91,6 @@ export class Growthbook {
     setUrl = (href: string) => this.GrowthBook.setURL(href)
     isOn = (key: string) => this.GrowthBook.isOn(key)
 
-    init = () => this.GrowthBook.loadFeatures().catch(err => console.error(err))
+    // new one init is async, old one loadFeatures is synced
+    init = () => this.GrowthBook.init({ timeout: 1000, streaming: true })
 }
