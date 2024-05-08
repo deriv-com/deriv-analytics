@@ -333,6 +333,7 @@ export type TEvents = {
     ce_partner_account_signup_form: PartnerAccountSignupForm
     ce_virtual_signup_email_confirmation: VirtualSignupEmailConfirmation
     ce_bot_form: BotForm
+    ce_contracts_set_up_form: ContractsSetupForm
     ce_indicators_types_form: IndicatorsTypesFormAction
     ce_trade_types_form: TradeTypesForm
     ce_chart_types_form: ChartTypesFormAction
