@@ -142,95 +142,22 @@ type TradeTypesForm = {
     form_name?: string
     subform_name?: string
 }
-type BotDashboardForm = {
-    action?:
-        | 'open'
-        | 'close'
-        | 'search'
-        | 'delete'
-        | 'yes'
-        | 'no'
-        | 'search_string'
-        | 'choose_shortcut'
-        | 'bot_last_modified_time'
-        | 'delete_popup_respond'
-        | 'push_open_button'
-        | 'push_user_guide'
-        | 'save_your_bot'
-        | 'edit_your_bot'
-        | 'choose_your_bot'
-        | 'delete_your_bot'
-    shortcut_name?: string
-    form_source?: string
-    form_name?: string
-    search_string?: string
-    delete_popup_respond?: string
-    bot_last_modified_time?: number
-    bot_name?: string
-    bot_status?: string
-    preview_mode?: string
-}
-type BotQuickStrategyForm = {
-    action?:
-        | 'open'
-        | 'close'
-        | 'choose_strategy_type'
-        | 'switch_strategy_mode'
-        | 'choose_asset'
-        | 'choose_trade_type'
-        | 'choose_trade_type_mode'
-        | 'choose_duration'
-        | 'change_parameter_value'
-        | 'info_popup_open'
-        | 'run_strategy'
-        | 'loss_threshold_warning_popup'
-        | 'learn_more_expansion'
-        | 'learn_more_collapse'
-        | 'edit_strategy'
-    form_source?: 'ce_bot_dashboard_form' | 'ce_bot_builder_form'
-    form_name?: 'ce_bot_quick_strategy_form'
-    strategy_type?:
-        | `d'alembert`
-        | `martingale`
-        | `oscar's-grind`
-        | `reverse martingale`
-        | `reverse d'alembert`
-        | `1-3-2-6`
-    strategy_switcher_mode?: 'learn more' | 'trade parameters'
-    asset_type?: string
-    trade_type?: string
-    trade_type_mode?: string
-    duration_type?: 'ticks' | 'seconds' | 'minutes' | 'hours' | 'days'
-    parameter_type?:
-        | 'initial-stake'
-        | 'duration'
-        | 'profit-threshold'
-        | 'loss-threshold'
-        | 'size-unit'
-        | 'max-stake'
-        | string
-    parameter_field_type?: 'input' | 'dropdown' | 'slider' | 'checkbox' | 'number'
-    parameter_value?: string | number | boolean
-    plus_minus_push?: 'yes' | 'no'
-    manual_parameter_input?: 'yes' | 'no'
-    dont_show_checkbox?: 'yes' | 'no'
-    cta_name?: 'edit_the_amount' | 'yes_continue'
-    learn_more_title?: string
-}
-type BotBuilderForm = {
-    action?: 'open' | 'close' | 'search'
-    form_source?: 'bot_header_form' | 'bot_dashboard_form'
-    search_string?: string
-}
-type BotTutorialForm = {
-    action?: 'open' | 'close' | 'search'
-    form_source?:
-        | 'bot_header_form'
-        | 'bot_dashboard_form-shortcut'
-        | 'bot_dashboard_form-edit'
-        | 'bot_dashboard_form-open'
-    search_string?: string
-}
+type BotForm = {
+    action?: 'open' | 'close' | 'search' | 'run_bot' | 'run_quick_strategy' | 'edit_quick_strategy' | 'select_quick_strategy_guide'| 'switch_quick_strategy_tab' | 'choose_strategy_type';
+    form_name?: 'ce_bot_form';
+    subpage_source?: 'dashboard' | 'bot_builder';
+    subpage_name?: 'tutorials' | 'bot_builder' | 'charts' | 'dashboard';
+    subform_name?: 'quick_strategy';
+    subform_source?: 'dashboard' | 'bot_builder';
+    quick_strategy_tab?: 'learn more' | 'trade parameters';
+    strategy_name?: `d'alembert` | `martingale` | `oscar's-grind` | `reverse martingale` | `reverse d'alembert` | `1-3-2-6`;
+    strategy_type?: 'custom' | 'quick_strategy';
+    search_term?: string;
+    asset?: string;
+    trade_type?: string;
+    purchase_condition?: string;
+    initial_stake?: string;
+};
 type IndicatorsTypesFormAction = {
     action:
         | 'open'
@@ -405,11 +332,7 @@ export type TEvents = {
     ce_questionnaire_form: QuestionnaireForm
     ce_partner_account_signup_form: PartnerAccountSignupForm
     ce_virtual_signup_email_confirmation: VirtualSignupEmailConfirmation
-    ce_bot_dashboard_form: BotDashboardForm
-    ce_bot_quick_strategy_form: BotQuickStrategyForm
-    ce_bot_builder_form: BotBuilderForm
-    ce_bot_tutorial_form: BotTutorialForm
-    ce_contracts_set_up_form: ContractsSetupForm
+    ce_bot_form: BotForm
     ce_indicators_types_form: IndicatorsTypesFormAction
     ce_trade_types_form: TradeTypesForm
     ce_chart_types_form: ChartTypesFormAction
