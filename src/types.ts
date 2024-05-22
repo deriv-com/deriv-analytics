@@ -9,6 +9,7 @@ export type TGrowthbookAttributes = {
     utm_campaign?: string
     is_authorised?: boolean
     url?: string
+    domain?: string
 }
 export type TCoreAttributes = {
     account_type?: string
@@ -143,21 +144,36 @@ type TradeTypesForm = {
     subform_name?: string
 }
 type BotForm = {
-    action?: 'open' | 'close' | 'search' | 'run_bot' | 'run_quick_strategy' | 'edit_quick_strategy' | 'select_quick_strategy_guide'| 'switch_quick_strategy_tab' | 'choose_strategy_type';
-    form_name?: 'ce_bot_form';
-    subpage_source?: 'dashboard' | 'bot_builder';
-    subpage_name?: 'tutorials' | 'bot_builder' | 'charts' | 'dashboard';
-    subform_name?: 'quick_strategy';
-    subform_source?: 'dashboard' | 'bot_builder';
-    quick_strategy_tab?: 'learn more' | 'trade parameters';
-    strategy_name?: `d'alembert` | `martingale` | `oscar's-grind` | `reverse martingale` | `reverse d'alembert` | `1-3-2-6`;
-    strategy_type?: 'custom' | 'quick_strategy';
-    search_term?: string;
-    asset?: string;
-    trade_type?: string;
-    purchase_condition?: string;
-    initial_stake?: string;
-};
+    action?:
+        | 'open'
+        | 'close'
+        | 'search'
+        | 'run_bot'
+        | 'run_quick_strategy'
+        | 'edit_quick_strategy'
+        | 'select_quick_strategy_guide'
+        | 'switch_quick_strategy_tab'
+        | 'choose_strategy_type'
+    form_name?: 'ce_bot_form'
+    subpage_source?: 'dashboard' | 'bot_builder'
+    subpage_name?: 'tutorials' | 'bot_builder' | 'charts' | 'dashboard'
+    subform_name?: 'quick_strategy'
+    subform_source?: 'dashboard' | 'bot_builder'
+    quick_strategy_tab?: 'learn more' | 'trade parameters'
+    strategy_name?:
+        | `d'alembert`
+        | `martingale`
+        | `oscar's-grind`
+        | `reverse martingale`
+        | `reverse d'alembert`
+        | `1-3-2-6`
+    strategy_type?: 'custom' | 'quick_strategy'
+    search_term?: string
+    asset?: string
+    trade_type?: string
+    purchase_condition?: string
+    initial_stake?: string
+}
 type IndicatorsTypesFormAction = {
     action:
         | 'open'
