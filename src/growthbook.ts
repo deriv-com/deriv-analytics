@@ -70,6 +70,7 @@ export class Growthbook {
         is_authorised,
         url,
         domain,
+        utm_content,
     }: TGrowthbookAttributes) => {
         const CURRENT_ATTRIBUTES = this.GrowthBook.getAttributes()
         this.GrowthBook.setAttributes({
@@ -85,6 +86,7 @@ export class Growthbook {
             ...(is_authorised !== undefined && { is_authorised }),
             ...(url !== undefined && { url }),
             ...(domain !== undefined && { domain }),
+            ...(utm_content !== undefined && { utm_content }),
         })
     }
     getFeatureValue = <K extends keyof GrowthbookConfigs, V extends GrowthbookConfigs[K]>(key: K, defaultValue: V) => {

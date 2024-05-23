@@ -10,6 +10,7 @@ export type TGrowthbookAttributes = {
     is_authorised?: boolean
     url?: string
     domain?: string
+    utm_content?: string
 }
 export type TCoreAttributes = {
     account_type?: string
