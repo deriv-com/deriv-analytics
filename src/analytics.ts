@@ -42,6 +42,7 @@ export function createAnalyticsInstance(options?: Options) {
         utm_campaign,
         is_authorised,
         url,
+        domain,
     }: TCoreAttributes) => {
         if (!_growthbook && !_rudderstack) return
         const user_identity = user_id ?? getId()
@@ -59,10 +60,12 @@ export function createAnalyticsInstance(options?: Options) {
                 utm_campaign,
                 is_authorised,
                 url,
+                domain,
             })
         }
 
         core_data = {
+            ...core_data,
             ...(user_language !== undefined && { user_language }),
             ...(account_type !== undefined && { account_type }),
             ...(app_id !== undefined && { app_id }),
