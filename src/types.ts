@@ -304,15 +304,15 @@ type TradersHubDashboardFormAction = {
         | 'reset_balance'
         | 'deposit_balance'
         | 'compare_accounts_push'
-    form_source?: 'deriv_apps_dashboard' | 'tradershub_onboarding_form' | 'deriv_trader' | 'dtrader_account_form'
-    account_mode?: 'demo' | 'real'
+    account_mode?: string
     account_name?: string
+    form_name?: string
 }
 
 type PassKeyEffortlessFormAction = {
     action?: 'open' | 'close' | 'info_open' | 'info_back' | 'maybe_later' | 'get_started'
-    form_source?: 'ce_passkey_effortless_form' | 'ce_passkey_effortless_form_p2p' | 'ce_passkey_effortless_form_derivgo'
-    operating_system?: 'IOS' | 'Android' | 'other'
+    form_source?: string
+    operating_system?: string
     app_id?: string
 }
 
@@ -329,14 +329,26 @@ type PassKeyAccountSettingsFormAction = {
         | 'error'
         | 'add_more_passkeys'
 
-    form_source?:
-        | 'ce_passkey_account_settings_form'
-        | 'ce_passkey_account_settings_form_derivgo'
-        | 'ce_passkey_account_settings_form_p2p'
-    subform_name?: 'passkey_main' | 'passkey_info' | 'passekey_rename' | 'passkey_remove' | 'success'
-    remove_verification_provider?: 'email' | 'device'
+    form_source?: string
+    subform_name?: string
+    remove_verification_provider?: string
     error_message?: string
-    operating_system?: 'IOS' | 'Android' | 'other'
+    operating_system?: string
+}
+
+type TradersHubPopUpAction = {
+    action?: 'open' | 'close' | 'click_download'
+    form_name?: string
+    account_mode?: string
+    popup_name?: string
+    popup_type?: string
+}
+
+type TradersHubBanner = {
+    action?: 'open' | 'close' | 'click download'
+    form_name?: string
+    account_mode?: string
+    banner_name?: string
 }
 
 export type TEvents = {
@@ -361,4 +373,6 @@ export type TEvents = {
     ce_tradershub_dashboard_form: TradersHubDashboardFormAction
     ce_passkey_effortless_form: PassKeyEffortlessFormAction
     ce_passkey_account_settings_form: PassKeyAccountSettingsFormAction
+    ce_tradershub_popup: TradersHubPopUpAction
+    ce_tradershub_banner: TradersHubBanner
 }
