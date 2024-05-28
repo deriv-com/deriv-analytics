@@ -70,7 +70,6 @@ export function createAnalyticsInstance(options?: Options) {
             ...(account_type !== undefined && { account_type }),
             ...(app_id !== undefined && { app_id }),
             ...(device_type !== undefined && { device_type }),
-            ...(user_identity !== undefined && { user_identity }),
             ...(url !== undefined && { url }),
         }
     }
@@ -82,7 +81,7 @@ export function createAnalyticsInstance(options?: Options) {
     ) => _growthbook?.getFeatureValue(id as string, defaultValue)
     const isFeatureOn = (key: string) => _growthbook?.isOn(key)
     const setUrl = (href: string) => _growthbook?.setUrl(href)
-    const getId = () => _rudderstack?.getUserId() || _rudderstack?.getAnonymousId()
+    const getId = () => _rudderstack?.getUserId()
     /**
      * Pushes page view event to Rudderstack
      *
@@ -95,8 +94,9 @@ export function createAnalyticsInstance(options?: Options) {
     }
 
     const identifyEvent = () => {
-        if (core_data?.user_identity && _rudderstack) {
-            _rudderstack?.identifyEvent(core_data?.user_identity, { language: core_data?.user_language || 'en' })
+        const user_identity = getId() || _rudderstack?.getUserId()
+        if (_rudderstack) {
+            _rudderstack?.identifyEvent(user_identity, { language: core_data?.user_language || 'en' })
         }
     }
 
