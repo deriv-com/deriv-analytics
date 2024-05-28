@@ -95,7 +95,7 @@ export function createAnalyticsInstance(options?: Options) {
 
     const identifyEvent = () => {
         const user_identity = getId() || _rudderstack?.getUserId()
-        if (_rudderstack) {
+        if (user_identity && _rudderstack) {
             _rudderstack?.identifyEvent(user_identity, { language: core_data?.user_language || 'en' })
         }
     }
