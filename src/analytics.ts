@@ -81,7 +81,7 @@ export function createAnalyticsInstance(options?: Options) {
     ) => _growthbook?.getFeatureValue(id as string, defaultValue)
     const isFeatureOn = (key: string) => _growthbook?.isOn(key)
     const setUrl = (href: string) => _growthbook?.setUrl(href)
-    const getId = () => _rudderstack?.getUserId()
+    const getId = () => _rudderstack?.getUserId() || ''
     /**
      * Pushes page view event to Rudderstack
      *
