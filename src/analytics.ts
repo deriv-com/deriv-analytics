@@ -1,6 +1,7 @@
 import type { Context } from '@growthbook/growthbook'
 import { Growthbook, GrowthbookConfigs } from './growthbook'
 import { RudderStack } from './rudderstack'
+import * as RudderAnalytics from 'rudder-sdk-js'
 import { TCoreAttributes, TEvents } from './types'
 
 type Options = {
@@ -45,6 +46,8 @@ export function createAnalyticsInstance(options?: Options) {
         domain,
     }: TCoreAttributes) => {
         if (!_growthbook && !_rudderstack) return
+
+        const getUserId = () => RudderAnalytics.getUserId()
         const user_identity = user_id ?? getId()
 
         // Check if we have Growthbook instance
@@ -93,10 +96,11 @@ export function createAnalyticsInstance(options?: Options) {
         _rudderstack?.pageView(current_page, platform, getId())
     }
 
-    const identifyEvent = () => {
-        const user_identity = getId()
-        if (user_identity && _rudderstack) {
-            _rudderstack?.identifyEvent(user_identity, { language: core_data?.user_language || 'en' })
+    const identifyEvent = (user_id?: string) => {
+        const stored_user_id = user_id || getId()
+
+        if (_rudderstack) {
+            _rudderstack?.identifyEvent(stored_user_id as string, { language: core_data?.user_language || 'en' })
         }
     }
 
