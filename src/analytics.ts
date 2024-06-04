@@ -47,7 +47,6 @@ export function createAnalyticsInstance(options?: Options) {
     }: TCoreAttributes) => {
         if (!_growthbook && !_rudderstack) return
 
-        const getUserId = () => RudderAnalytics.getUserId()
         const user_identity = user_id ?? getId()
 
         // Check if we have Growthbook instance
