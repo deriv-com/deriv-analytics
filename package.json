@@ -14,7 +14,8 @@
     "test": "./node_modules/.bin/jest",
     "build": "tsc",
     "prepare": "npm run build && husky install",
-    "prepublishOnly": "npm test"
+    "prepublishOnly": "npm test",
+    "build:webpack": "webpack"
   },
   "files": [
     "lib/**/*"
@@ -33,7 +34,10 @@
     "lint-staged": "^15.0.1",
     "prettier": "^3.0.3",
     "ts-jest": "^29.1.1",
-    "typescript": "^4.9.5"
+    "ts-loader": "^9.5.1",
+    "typescript": "^4.9.5",
+    "webpack": "^5.91.0",
+    "webpack-cli": "^5.1.4"
   },
   "dependencies": {
     "@growthbook/growthbook": "^0.36.0",
