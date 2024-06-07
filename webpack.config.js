@@ -9,6 +9,7 @@ module.exports = {
         libraryTarget: 'umd', // This makes your bundle available as a UMD module
         globalObject: 'this', // Necessary for UMD to work properly
     },
+    mode: 'production',
     resolve: {
         extensions: ['.ts', '.js'],
     },
