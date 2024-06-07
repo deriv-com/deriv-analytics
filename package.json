@@ -1,6 +1,6 @@
 {
   "name": "@deriv-com/analytics",
-  "version": "1.5.9",
+  "version": "1.6.0",
   "description": "The analytics package contains all the utility functions used for tracking user events and sending them to the respective platform such as Rudderstack.",
   "keywords": [
     "rudderstack",
@@ -12,9 +12,10 @@
   "types": "lib/index.d.ts",
   "scripts": {
     "test": "./node_modules/.bin/jest",
-    "build": "tsc",
+    "build": "tsc && npm run build:webpack",
     "prepare": "npm run build && husky install",
-    "prepublishOnly": "npm test"
+    "prepublishOnly": "npm test",
+    "build:webpack": "webpack"
   },
   "files": [
     "lib/**/*"
@@ -33,7 +34,10 @@
     "lint-staged": "^15.0.1",
     "prettier": "^3.0.3",
     "ts-jest": "^29.1.1",
-    "typescript": "^4.9.5"
+    "ts-loader": "^9.5.1",
+    "typescript": "^4.9.5",
+    "webpack": "^5.91.0",
+    "webpack-cli": "^5.1.4"
   },
   "dependencies": {
     "@growthbook/growthbook": "^0.36.0",
