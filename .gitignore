@@ -2,5 +2,5 @@
 /DS_Store
 /lib
 /.idea/**
-/dist
+/dist/analytics.bundle.js
 
