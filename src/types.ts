@@ -337,7 +337,7 @@ type PassKeyAccountSettingsFormAction = {
 }
 
 type TradersHubPopUpAction = {
-    action?: 'open' | 'close' | 'click_download'
+    action?: 'open' | 'close' | 'click_download' | 'click_cta'
     form_name?: string
     account_mode?: string
     popup_name?: string
@@ -345,10 +345,18 @@ type TradersHubPopUpAction = {
 }
 
 type TradersHubBanner = {
-    action?: 'open' | 'close' | 'click download'
+    action?: 'open' | 'close' | 'click download' | 'click_cta'
     form_name?: string
     account_mode?: string
     banner_name?: string
+    banner_type?: string
+}
+
+type WalletsMigrationFormAction = {
+    action?: 'open' | 'close' | 'step_passed' | 'step_back' | 'error'
+    step_num?: number
+    step_codename?: string
+    error_message?: string
 }
 
 export type TEvents = {
@@ -375,4 +383,5 @@ export type TEvents = {
     ce_passkey_account_settings_form: PassKeyAccountSettingsFormAction
     ce_tradershub_popup: TradersHubPopUpAction
     ce_tradershub_banner: TradersHubBanner
+    ce_wallets_migration_form: WalletsMigrationFormAction
 }
