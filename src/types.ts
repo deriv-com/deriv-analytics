@@ -354,6 +354,7 @@ type TradersHubBanner = {
 
 type WalletsMigrationFormAction = {
     action?: 'open' | 'close' | 'step_passed' | 'step_back' | 'error'
+    form_name?: string
     step_num?: number
     step_codename?: string
     error_message?: string
