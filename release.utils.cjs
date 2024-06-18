@@ -149,9 +149,10 @@ const COMMIT_HASH_LENGTH = 7;
  * @return {Object} the transformed commit.
  */
 const customTransform = (commit, context) => {
-    if (commit.notes) {
-        commit.notes.forEach((note) => {
-            note.title = "Breaking changes";
+    const commitObject = {}
+    if (commitObject.notes) {
+        commit.notes.forEach((note, index) => {
+            commitObject.notes[index].note.title = "Breaking changes";
         });
     }
 
@@ -160,7 +161,7 @@ const customTransform = (commit, context) => {
         (types.types[commit.type].changelog ||
             (commit.notes && commit.notes.length > 0))
     ) {
-        commit.type = `${
+        commitObject.type = `${
             types.types[commit.type].emoji ? types.types[commit.type].emoji : ""
         } \t ${types.types[commit.type].title}`;
     } else {
@@ -168,11 +169,11 @@ const customTransform = (commit, context) => {
     }
 
     if (commit.scope === "*") {
-        commit.scope = "";
+        commitObject.scope = "";
     }
 
     if (typeof commit.hash === "string") {
-        commit.shortHash = commit.hash.slice(0, COMMIT_HASH_LENGTH);
+        commitObject.shortHash = commit.hash.slice(0, COMMIT_HASH_LENGTH);
     }
 
     const references = [];
@@ -185,7 +186,7 @@ const customTransform = (commit, context) => {
         if (url) {
             url += "/issues/";
             // Issue URLs.
-            commit.subject = commit.subject.replace(/#(\d+)/g, (_, issue) => {
+            commitObject.subject = commit.subject.replace(/#(\d+)/g, (_, issue) => {
                 references.push(issue);
                 return `[#${issue}](${url}${issue})`;
             });
@@ -193,7 +194,7 @@ const customTransform = (commit, context) => {
 
         if (context.host) {
             // User URLs.
-            commit.subject = commit.subject.replace(
+            commitObject.subject = commit.subject.replace(
                 /\B@([a-z0-9](?:-?[a-z0-9]){0,38})/g,
                 `[@$1](${context.host}/$1)`,
             );
@@ -202,7 +203,7 @@ const customTransform = (commit, context) => {
 
     if (commit.references) {
         // Remove references that already appear in the subject
-        commit.references = commit.references.filter((reference) => {
+        commitObject.references = commit.references.filter((reference) => {
             if (!references.includes(reference.issue)) {
                 return true;
             }
@@ -211,7 +212,7 @@ const customTransform = (commit, context) => {
         });
     }
 
-    return commit;
+    return commitObject;
 };
 
 module.exports = customTransform;
