@@ -1,4 +1,4 @@
-// const transform = require("./release.utils.cjs");
+const transform = require("./release.utils.cjs");
 
 module.exports = {
     branches: [
@@ -57,7 +57,7 @@ module.exports = {
                     mergePattern: /^Merge pull request #(\d+) from (.*)$/,
                     mergeCorrespondence: ["id", "source"],
                 },
-                // writerOpts: { transform: transform },
+                writerOpts: { transform: transform },
             },
         ],
         "@semantic-release/changelog",
