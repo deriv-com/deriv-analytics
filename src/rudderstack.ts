@@ -1,7 +1,8 @@
-import * as RudderAnalytics from 'rudder-sdk-js'
+import { RudderAnalytics } from '@rudderstack/analytics-js'
 import { TCoreAttributes, TEvents } from './types'
 
 export class RudderStack {
+    analytics = new RudderAnalytics()
     has_identified = false
     has_initialized = false
     current_page = ''
@@ -22,12 +23,12 @@ export class RudderStack {
     /**
      * @returns The anonymous ID assigned to the user before the identify event was called
      */
-    getAnonymousId = () => RudderAnalytics.getAnonymousId()
+    getAnonymousId = () => this.analytics.getAnonymousId()
 
     /**
      * @returns The user ID that was assigned to the user after calling identify event
      */
-    getUserId = () => RudderAnalytics.getUserId()
+    getUserId = () => this.analytics.getUserId()
 
     /**
      * Initializes the Rudderstack SDK. Ensure that the appropriate environment variables are set before this is called.
@@ -36,8 +37,8 @@ export class RudderStack {
      */
     init = (RUDDERSTACK_KEY: string) => {
         if (RUDDERSTACK_KEY) {
-            RudderAnalytics.load(RUDDERSTACK_KEY, 'https://deriv-dataplane.rudderstack.com')
-            RudderAnalytics.ready(() => {
+            this.analytics.load(RUDDERSTACK_KEY, 'https://deriv-dataplane.rudderstack.com')
+            this.analytics.ready(() => {
                 this.has_initialized = true
                 this.has_identified = !!(this.getUserId() || !!this.getAnonymousId())
             })
@@ -50,7 +51,7 @@ export class RudderStack {
      * @param payload Additional information passed to identify the user
      */
     identifyEvent = (user_id: string, payload: { language: string }) => {
-        RudderAnalytics.identify(user_id, payload)
+        this.analytics.identify(user_id, payload)
         this.has_identified = true
     }
 
@@ -61,7 +62,7 @@ export class RudderStack {
      */
     pageView = (current_page: string, platform = 'Deriv App', user_id: string) => {
         if (this.has_initialized && this.has_identified && current_page !== this.current_page) {
-            RudderAnalytics.page(platform, current_page, { user_id })
+            this.analytics.page(platform, current_page, { user_id })
             this.current_page = current_page
         }
     }
@@ -71,7 +72,7 @@ export class RudderStack {
      */
     reset = () => {
         if (this.has_initialized) {
-            RudderAnalytics.reset()
+            this.analytics.reset()
             this.has_identified = false
         }
     }
@@ -87,7 +88,7 @@ export class RudderStack {
         const clean_payload = Object.fromEntries(Object.entries(payload).filter(([_, value]) => value !== undefined))
         if (this.has_initialized && this.has_identified) {
             try {
-                RudderAnalytics.track(event, clean_payload)
+                this.analytics.track(event, clean_payload)
             } catch (err) {
                 console.error(err)
             }
