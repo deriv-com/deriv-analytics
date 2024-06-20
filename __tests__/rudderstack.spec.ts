@@ -1,7 +1,7 @@
-import * as RudderAnalytics from 'rudder-sdk-js'
+import * as RudderAnalytics from '@rudderstack/analytics-js'
 import { RudderStack } from '../src/rudderstack'
-jest.mock('rudder-sdk-js', () => {
-    const original_module = jest.requireActual('rudder-sdk-js')
+jest.mock('@rudderstack/analytics-js', () => {
+    const original_module = jest.requireActual('@rudderstack/analytics-js')
     return {
         ...original_module,
         load: jest.fn(),
