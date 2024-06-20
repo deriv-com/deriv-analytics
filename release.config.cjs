@@ -6,7 +6,7 @@ module.exports = {
         "master",
         "next",
         "next-major",
-        { name: "beta", prerelease: true },
+        "beta",
         { name: "alpha", prerelease: true },
     ],
     repositoryUrl: "git@github.com:deriv-com/deriv-analytics.git",
