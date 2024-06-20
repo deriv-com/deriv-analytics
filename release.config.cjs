@@ -1,72 +1,72 @@
-const transform = require("./release.utils.cjs");
+const transform = require('./release.utils.cjs')
 
 module.exports = {
     branches: [
-        "+([0-9])?(.{+([0-9]),x}).x",
-        "master",
-        "next",
-        "next-major",
-        "beta",
-        { name: "alpha", prerelease: true },
+        '+([0-9])?(.{+([0-9]),x}).x',
+        'master',
+        'next',
+        'next-major',
+        { name: 'beta', prerelease: true },
+        { name: 'alpha', prerelease: true },
     ],
-    repositoryUrl: "git@github.com:deriv-com/deriv-analytics.git",
+    repositoryUrl: 'git@github.com:deriv-com/deriv-analytics.git',
     plugins: [
         [
-            "@semantic-release/commit-analyzer",
+            '@semantic-release/commit-analyzer',
             {
                 releaseRules: [
                     {
-                        type: "feat",
-                        release: "minor",
+                        type: 'feat',
+                        release: 'minor',
                     },
                     {
-                        type: "build",
-                        release: "patch",
+                        type: 'build',
+                        release: 'patch',
                     },
                     {
-                        type: "ci",
-                        release: "patch",
+                        type: 'ci',
+                        release: 'patch',
                     },
                     {
-                        type: "chore",
-                        release: "patch",
+                        type: 'chore',
+                        release: 'patch',
                     },
                     {
-                        type: "docs",
-                        release: "patch",
+                        type: 'docs',
+                        release: 'patch',
                     },
                     {
-                        type: "refactor",
-                        release: "patch",
+                        type: 'refactor',
+                        release: 'patch',
                     },
                     {
-                        type: "style",
-                        release: "patch",
+                        type: 'style',
+                        release: 'patch',
                     },
                     {
-                        type: "test",
-                        release: "patch",
+                        type: 'test',
+                        release: 'patch',
                     },
                 ],
             },
         ],
         [
-            "@semantic-release/release-notes-generator",
+            '@semantic-release/release-notes-generator',
             {
                 parserOpts: {
                     mergePattern: /^Merge pull request #(\d+) from (.*)$/,
-                    mergeCorrespondence: ["id", "source"],
+                    mergeCorrespondence: ['id', 'source'],
                 },
                 writerOpts: { transform: transform },
             },
         ],
-        "@semantic-release/changelog",
+        '@semantic-release/changelog',
         [
-            "@semantic-release/npm",
+            '@semantic-release/npm',
             {
                 npmPublish: true,
             },
         ],
-        "@semantic-release/github",
+        '@semantic-release/github',
     ],
-};
+}
