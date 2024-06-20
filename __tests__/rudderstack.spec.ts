@@ -1,4 +1,4 @@
-import * as RudderAnalytics from '@rudderstack/analytics-js'
+import { RudderAnalytics } from '@rudderstack/analytics-js'
 import { RudderStack } from '../src/rudderstack'
 jest.mock('@rudderstack/analytics-js', () => {
     const original_module = jest.requireActual('@rudderstack/analytics-js')
@@ -17,7 +17,7 @@ jest.mock('@rudderstack/analytics-js', () => {
 
 describe('RudderStack', () => {
     let rudderstack: RudderStack
-
+    const analytics = new RudderAnalytics()
     beforeEach(() => {
         rudderstack = new RudderStack('test_key')
     })
@@ -36,17 +36,17 @@ describe('RudderStack', () => {
         rudderstack.track('ce_trade_types_form', { action: 'open' })
 
         expect(rudderstack.current_page).toBe('')
-        expect(RudderAnalytics.page).not.toHaveBeenCalled()
-        expect(RudderAnalytics.track).toHaveBeenCalled()
+        expect(analytics.page).not.toHaveBeenCalled()
+        expect(analytics.track).toHaveBeenCalled()
     })
 
     test('should get anonymous ID from RudderStack', () => {
         const anonymousId = '12345'
-        ;(RudderAnalytics.getAnonymousId as jest.Mock).mockReturnValue(anonymousId)
+        ;(analytics.getAnonymousId as jest.Mock).mockReturnValue(anonymousId)
 
         const result = rudderstack.getAnonymousId()
 
-        expect(RudderAnalytics.getAnonymousId).toHaveBeenCalled()
+        expect(analytics.getAnonymousId).toHaveBeenCalled()
         expect(result).toBe(anonymousId)
     })
 })
