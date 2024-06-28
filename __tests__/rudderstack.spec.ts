@@ -1,24 +1,27 @@
-import * as RudderAnalytics from 'rudder-sdk-js'
+import { RudderAnalytics } from '@rudderstack/analytics-js'
 import { RudderStack } from '../src/rudderstack'
-jest.mock('rudder-sdk-js', () => {
-    const original_module = jest.requireActual('rudder-sdk-js')
+jest.mock('@rudderstack/analytics-js', () => {
     return {
-        ...original_module,
-        load: jest.fn(),
-        ready: (callback: () => any) => callback(),
-        identify: jest.fn(),
-        page: jest.fn(),
-        reset: jest.fn(),
-        track: jest.fn(),
-        getAnonymousId: jest.fn(),
-        getUserId: jest.fn(),
+        RudderAnalytics: jest.fn().mockImplementation(() => {
+            return {
+                load: jest.fn(),
+                ready: (callback: () => any) => callback(),
+                identify: jest.fn(),
+                page: jest.fn(),
+                reset: jest.fn(),
+                track: jest.fn(),
+                getAnonymousId: jest.fn(),
+                getUserId: jest.fn(),
+            }
+        }),
     }
 })
 
 describe('RudderStack', () => {
     let rudderstack: RudderStack
-
+    const analytics = new RudderAnalytics()
     beforeEach(() => {
+        jest.clearAllMocks()
         rudderstack = new RudderStack('test_key')
     })
 
@@ -36,17 +39,17 @@ describe('RudderStack', () => {
         rudderstack.track('ce_trade_types_form', { action: 'open' })
 
         expect(rudderstack.current_page).toBe('')
-        expect(RudderAnalytics.page).not.toHaveBeenCalled()
-        expect(RudderAnalytics.track).toHaveBeenCalled()
+        expect(rudderstack.analytics.page).not.toHaveBeenCalled()
+        expect(rudderstack.analytics.track).toHaveBeenCalledWith('ce_trade_types_form', { action: 'open' })
     })
 
     test('should get anonymous ID from RudderStack', () => {
         const anonymousId = '12345'
-        ;(RudderAnalytics.getAnonymousId as jest.Mock).mockReturnValue(anonymousId)
+        ;(analytics.getAnonymousId as jest.Mock).mockReturnValue(anonymousId)
 
-        const result = rudderstack.getAnonymousId()
+        const result = analytics.getAnonymousId()
 
-        expect(RudderAnalytics.getAnonymousId).toHaveBeenCalled()
+        expect(analytics.getAnonymousId).toHaveBeenCalled()
         expect(result).toBe(anonymousId)
     })
 })

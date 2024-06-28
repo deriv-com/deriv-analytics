@@ -11,7 +11,7 @@
   "publishConfig": {
     "access": "public"
   },
-  "author": "Amir Ali, Addriene, Nikita",
+  "author": "Amir Ali, Addriene, Nikita,Aswathy",
   "main": "lib/index.js",
   "types": "lib/index.d.ts",
   "scripts": {
@@ -49,8 +49,9 @@
     "webpack-cli": "^5.1.4"
   },
   "dependencies": {
-    "@growthbook/growthbook": "^0.36.0",
-    "rudder-sdk-js": "^2.35.0"
+    "@growthbook/growthbook": "^1.0.1",
+    "@rudderstack/analytics-js":"^3.5.1"
+  
   },
   "engines": {
     "node": "18.x",
