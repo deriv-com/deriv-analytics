@@ -360,6 +360,13 @@ type WalletsMigrationFormAction = {
     error_message?: string
 }
 
+type TNotificationsTrayForm = {
+    action?: 'clear_all' | 'click_cta' | 'close' | 'open'
+    form_name?: 'ce_notification_form'
+    notification_num?: number
+    notification_key?: string
+}
+
 export type TEvents = {
     ce_virtual_signup_form: VirtualSignupForm
     ce_email_verification_form: EmailVerificationForm
@@ -385,4 +392,5 @@ export type TEvents = {
     ce_tradershub_popup: TradersHubPopUpAction
     ce_tradershub_banner: TradersHubBanner
     ce_wallets_migration_form: WalletsMigrationFormAction
+    ce_notification_form: TNotificationsTrayForm
 }
