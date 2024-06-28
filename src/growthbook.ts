@@ -1,5 +1,5 @@
 import { Context, GrowthBook } from '@growthbook/growthbook'
-import * as RudderAnalytics from 'rudder-sdk-js'
+import { RudderAnalytics } from '@rudderstack/analytics-js'
 import { TGrowthbookAttributes } from './types'
 
 export type GrowthbookConfigs = {
@@ -11,6 +11,7 @@ export type GrowthbookConfigs = {
 }
 
 export class Growthbook {
+    analytics = new RudderAnalytics()
     GrowthBook
     private static _instance: Growthbook
 
@@ -30,12 +31,12 @@ export class Growthbook {
                     window.dataLayer.push({
                         event: 'experiment_viewed',
                         event_category: 'experiment',
-                        rudder_anonymous_id: RudderAnalytics.getAnonymousId(),
+                        rudder_anonymous_id: this.analytics.getAnonymousId(),
                         experiment_id: experiment.key,
                         variation_id: result.variationId,
                     })
                 }
-                RudderAnalytics.track('experiment_viewed', {
+                this.analytics.track('experiment_viewed', {
                     experimentId: experiment.key,
                     variationId: result.variationId,
                 })

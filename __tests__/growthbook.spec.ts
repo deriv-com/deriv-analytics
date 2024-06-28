@@ -1,6 +1,6 @@
 import { Growthbook } from '../src/growthbook'
 
-jest.mock('rudder-sdk-js')
+jest.mock('@rudderstack/analytics-js')
 
 describe('Growthbook', () => {
     let growthbook: Growthbook
