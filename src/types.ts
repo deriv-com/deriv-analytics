@@ -309,13 +309,6 @@ type TradersHubDashboardFormAction = {
     form_name?: string
 }
 
-type PassKeyEffortlessFormAction = {
-    action?: 'open' | 'close' | 'info_open' | 'info_back' | 'maybe_later' | 'get_started'
-    form_source?: string
-    operating_system?: string
-    app_id?: string
-}
-
 type PassKeyAccountSettingsFormAction = {
     action?:
         | 'open'
@@ -328,6 +321,9 @@ type PassKeyAccountSettingsFormAction = {
         | 'create_passkey_continue_trading'
         | 'error'
         | 'add_more_passkeys'
+        | 'passkey_rename_open'
+        | 'passkey_rename_back'
+        | 'passkey_rename_success'
 
     form_name?: string
     subform_name?: string
@@ -360,6 +356,13 @@ type WalletsMigrationFormAction = {
     error_message?: string
 }
 
+type TNotificationsTrayForm = {
+    action?: 'clear_all' | 'click_cta' | 'close' | 'open'
+    form_name?: 'ce_notification_form'
+    notification_num?: number
+    notification_key?: string
+}
+
 export type TEvents = {
     ce_virtual_signup_form: VirtualSignupForm
     ce_email_verification_form: EmailVerificationForm
@@ -380,9 +383,9 @@ export type TEvents = {
     ce_tradershub_onboarding_form: TradersHubOnboardingFormAction
     ce_upgrade_mt5_banner: UpgradeMT5BannerAction
     ce_tradershub_dashboard_form: TradersHubDashboardFormAction
-    ce_passkey_effortless_form: PassKeyEffortlessFormAction
     ce_passkey_account_settings_form: PassKeyAccountSettingsFormAction
     ce_tradershub_popup: TradersHubPopUpAction
     ce_tradershub_banner: TradersHubBanner
     ce_wallets_migration_form: WalletsMigrationFormAction
+    ce_notification_form: TNotificationsTrayForm
 }
