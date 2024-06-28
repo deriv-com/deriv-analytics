@@ -1,7 +1,7 @@
 name: Publish To NPM
 on:
     push:
-        branches: [master, beta]
+        branches: [master, beta, next-major]
 
 jobs:
     release:
