@@ -348,12 +348,9 @@ type TradersHubBanner = {
     banner_type?: string
 }
 
-type WalletsMigrationFormAction = {
-    action?: 'open' | 'close' | 'step_passed' | 'step_back' | 'error'
+type WalletsHomepageFormAction = {
+    action?: 'open'
     form_name?: string
-    step_num?: number
-    step_codename?: string
-    error_message?: string
 }
 
 type TNotificationsTrayForm = {
@@ -386,6 +383,6 @@ export type TEvents = {
     ce_passkey_account_settings_form: PassKeyAccountSettingsFormAction
     ce_tradershub_popup: TradersHubPopUpAction
     ce_tradershub_banner: TradersHubBanner
-    ce_wallets_migration_form: WalletsMigrationFormAction
+    ce_wallets_homepage_form: WalletsHomepageFormAction
     ce_notification_form: TNotificationsTrayForm
 }
