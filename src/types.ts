@@ -360,6 +360,14 @@ type TNotificationsTrayForm = {
     notification_key?: string
 }
 
+type TCashierDepositOnboardingFormAction = {
+    action?: 'open' | 'open_deposit_subpage' | 'click_deposit_card' | 'click_copy_crypto_address'
+    form_name?: 'ce_cashier_deposit_onboarding_form'
+    currency?: string
+    deposit_category?: string
+    login_id?: string
+}
+
 export type TEvents = {
     ce_virtual_signup_form: VirtualSignupForm
     ce_email_verification_form: EmailVerificationForm
@@ -385,4 +393,5 @@ export type TEvents = {
     ce_tradershub_banner: TradersHubBanner
     ce_wallets_homepage_form: WalletsHomepageFormAction
     ce_notification_form: TNotificationsTrayForm
+    ce_cashier_deposit_onboarding_form: TCashierDepositOnboardingFormAction
 }
