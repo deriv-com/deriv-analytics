@@ -42,6 +42,7 @@ export function createAnalyticsInstance(options?: Options) {
         utm_medium,
         utm_campaign,
         is_authorised,
+        residence_country,
         url,
         domain,
     }: TCoreAttributes) => {
@@ -54,6 +55,7 @@ export function createAnalyticsInstance(options?: Options) {
             _growthbook.setAttributes({
                 id: user_identity || getId(),
                 country,
+                residence_country,
                 user_language,
                 device_language,
                 device_type,
@@ -71,6 +73,7 @@ export function createAnalyticsInstance(options?: Options) {
             ...(user_language !== undefined && { user_language }),
             ...(account_type !== undefined && { account_type }),
             ...(app_id !== undefined && { app_id }),
+            ...(residence_country !== undefined && { residence_country }),
             ...(device_type !== undefined && { device_type }),
             ...(url !== undefined && { url }),
         }
