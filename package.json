@@ -50,7 +50,7 @@
   },
   "dependencies": {
     "@growthbook/growthbook": "^1.0.1",
-    "@rudderstack/analytics-js":"^3.3.0"
+    "@rudderstack/analytics-js":"^3.5.1"
   
   },
   "engines": {

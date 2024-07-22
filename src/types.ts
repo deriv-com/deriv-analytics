@@ -309,13 +309,6 @@ type TradersHubDashboardFormAction = {
     form_name?: string
 }
 
-type PassKeyEffortlessFormAction = {
-    action?: 'open' | 'close' | 'info_open' | 'info_back' | 'maybe_later' | 'get_started'
-    form_source?: string
-    operating_system?: string
-    app_id?: string
-}
-
 type PassKeyAccountSettingsFormAction = {
     action?:
         | 'open'
@@ -328,6 +321,9 @@ type PassKeyAccountSettingsFormAction = {
         | 'create_passkey_continue_trading'
         | 'error'
         | 'add_more_passkeys'
+        | 'passkey_rename_open'
+        | 'passkey_rename_back'
+        | 'passkey_rename_success'
 
     form_name?: string
     subform_name?: string
@@ -352,12 +348,24 @@ type TradersHubBanner = {
     banner_type?: string
 }
 
-type WalletsMigrationFormAction = {
-    action?: 'open' | 'close' | 'step_passed' | 'step_back' | 'error'
+type WalletsHomepageFormAction = {
+    action?: 'open'
     form_name?: string
-    step_num?: number
-    step_codename?: string
-    error_message?: string
+}
+
+type TNotificationsTrayForm = {
+    action?: 'clear_all' | 'click_cta' | 'close' | 'open'
+    form_name?: 'ce_notification_form'
+    notification_num?: number
+    notification_key?: string
+}
+
+type TCashierDepositOnboardingFormAction = {
+    action?: 'open' | 'open_deposit_subpage' | 'click_deposit_card' | 'click_copy_crypto_address'
+    form_name?: 'ce_cashier_deposit_onboarding_form'
+    currency?: string
+    deposit_category?: string
+    login_id?: string
 }
 
 export type TEvents = {
@@ -380,9 +388,10 @@ export type TEvents = {
     ce_tradershub_onboarding_form: TradersHubOnboardingFormAction
     ce_upgrade_mt5_banner: UpgradeMT5BannerAction
     ce_tradershub_dashboard_form: TradersHubDashboardFormAction
-    ce_passkey_effortless_form: PassKeyEffortlessFormAction
     ce_passkey_account_settings_form: PassKeyAccountSettingsFormAction
     ce_tradershub_popup: TradersHubPopUpAction
     ce_tradershub_banner: TradersHubBanner
-    ce_wallets_migration_form: WalletsMigrationFormAction
+    ce_wallets_homepage_form: WalletsHomepageFormAction
+    ce_notification_form: TNotificationsTrayForm
+    ce_cashier_deposit_onboarding_form: TCashierDepositOnboardingFormAction
 }
