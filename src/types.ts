@@ -11,12 +11,14 @@ export type TGrowthbookAttributes = {
     url?: string
     domain?: string
     utm_content?: string
+    residence_country?: string
 }
 export type TCoreAttributes = {
     account_type?: string
     user_id?: string
     app_id?: string
     user_identity?: string
+    residence_country?: string
 } & Partial<TGrowthbookAttributes>
 
 type SignupProvider = 'email' | 'phone' | 'google' | 'facebook' | 'apple'

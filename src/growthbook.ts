@@ -72,12 +72,14 @@ export class Growthbook {
         url,
         domain,
         utm_content,
+        residence_country,
     }: TGrowthbookAttributes) => {
         const CURRENT_ATTRIBUTES = this.GrowthBook.getAttributes()
         this.GrowthBook.setAttributes({
             ...CURRENT_ATTRIBUTES,
             id,
             ...(country !== undefined && { country }),
+            ...(residence_country !== undefined && { residence_country }),
             ...(user_language !== undefined && { user_language }),
             ...(device_language !== undefined && { device_language }),
             ...(device_type !== undefined && { device_type }),
