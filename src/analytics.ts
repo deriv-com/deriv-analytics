@@ -19,14 +19,22 @@ export function createAnalyticsInstance(options?: Options) {
         offline_cache: { [key: string]: { event: keyof TEvents; payload: TEvents[keyof TEvents] } } = {}
 
     const initialise = ({ growthbookKey, growthbookDecryptionKey, rudderstackKey, growthbookOptions }: Options) => {
-        _rudderstack = RudderStack.getRudderStackInstance(rudderstackKey)
-        if (growthbookKey && growthbookDecryptionKey) {
-            _growthbook = Growthbook.getGrowthBookInstance(growthbookKey, growthbookDecryptionKey, growthbookOptions)
+        try {
+            _rudderstack = RudderStack.getRudderStackInstance(rudderstackKey)
+            if (growthbookKey && growthbookDecryptionKey) {
+                _growthbook = Growthbook.getGrowthBookInstance(
+                    growthbookKey,
+                    growthbookDecryptionKey,
+                    growthbookOptions
+                )
 
-            let interval = setInterval(() => {
-                if (Object.keys(tracking_config).length > 0) clearInterval(interval)
-                else tracking_config = getFeatureValue('tracking-buttons-config', {})
-            }, 1000)
+                let interval = setInterval(() => {
+                    if (Object.keys(tracking_config).length > 0) clearInterval(interval)
+                    else tracking_config = getFeatureValue('tracking-buttons-config', {})
+                }, 1000)
+            }
+        } catch (error) {
+            console.log('Error in initializing analytics', error)
         }
     }
 
