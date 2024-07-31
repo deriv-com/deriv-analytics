@@ -16,7 +16,8 @@ export function createAnalyticsInstance(options?: Options) {
         _rudderstack: RudderStack,
         core_data: Partial<TCoreAttributes> = {},
         tracking_config: { [key: string]: boolean } = {},
-        offline_cache: { [key: string]: { event: keyof TEvents; payload: TEvents[keyof TEvents] } } = {}
+        event_cache: { [key: string]: { event: keyof TEvents; payload: TEvents[keyof TEvents] } } = {},
+        page_view_cache: { [key: string]: { current_page: string; platform: string; user_id: string } } = {}
 
     const initialise = ({ growthbookKey, growthbookDecryptionKey, rudderstackKey, growthbookOptions }: Options) => {
         try {
@@ -103,8 +104,19 @@ export function createAnalyticsInstance(options?: Options) {
      * @param curret_page The name or URL of the current page to track the page view event
      */
     const pageView = (current_page: string, platform = 'Deriv App') => {
-        if (!_rudderstack) return
-
+        if (!_rudderstack) {
+            return (page_view_cache[current_page] = { current_page, platform, user_id: getId() })
+        }
+        if (Object.keys(page_view_cache).length > 0) {
+            Object.keys(page_view_cache).forEach(cache => {
+                _rudderstack?.pageView(
+                    page_view_cache[cache].current_page,
+                    page_view_cache[cache].platform,
+                    page_view_cache[cache].user_id
+                )
+                delete page_view_cache[cache]
+            })
+        }
         _rudderstack?.pageView(current_page, platform, getId())
     }
 
@@ -123,20 +135,18 @@ export function createAnalyticsInstance(options?: Options) {
     }
 
     const trackEvent = <T extends keyof TEvents>(event: T, analytics_data: TEvents[T]) => {
-        if (!_rudderstack) return
-
-        if (navigator.onLine) {
-            if (Object.keys(offline_cache).length > 0) {
-                Object.keys(offline_cache).forEach(cache => {
-                    _rudderstack.track(offline_cache[cache].event, offline_cache[cache].payload)
-                    delete offline_cache[cache]
+        if (navigator.onLine && _rudderstack) {
+            if (Object.keys(event_cache).length > 0) {
+                Object.keys(event_cache).forEach(cache => {
+                    _rudderstack.track(event_cache[cache].event, event_cache[cache].payload)
+                    delete event_cache[cache]
                 })
             }
             if (event in tracking_config) {
                 tracking_config[event] && _rudderstack?.track(event, { ...core_data, ...analytics_data })
             } else _rudderstack?.track(event, { ...core_data, ...analytics_data })
         } else {
-            offline_cache[event + analytics_data.action] = { event, payload: { ...core_data, ...analytics_data } }
+            event_cache[event + analytics_data.action] = { event, payload: { ...core_data, ...analytics_data } }
         }
     }
 
