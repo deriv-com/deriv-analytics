@@ -53,6 +53,7 @@ export function createAnalyticsInstance(options?: Options) {
         residence_country,
         url,
         domain,
+        geo_location,
     }: TCoreAttributes) => {
         if (!_growthbook && !_rudderstack) return
 
@@ -78,6 +79,7 @@ export function createAnalyticsInstance(options?: Options) {
 
         core_data = {
             ...core_data,
+            ...(geo_location !== undefined && { country }),
             ...(user_language !== undefined && { user_language }),
             ...(account_type !== undefined && { account_type }),
             ...(app_id !== undefined && { app_id }),
