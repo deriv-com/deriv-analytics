@@ -49,9 +49,8 @@
     "webpack-cli": "^5.1.4"
   },
   "dependencies": {
-    "@growthbook/growthbook": "^1.0.1",
-    "@rudderstack/analytics-js":"^3.5.1"
-  
+    "@growthbook/growthbook": "^1.1.0",
+    "@rudderstack/analytics-js": "^3.5.1"
   },
   "engines": {
     "node": "18.x",
