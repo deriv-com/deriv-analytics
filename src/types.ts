@@ -324,9 +324,11 @@ type PassKeyAccountSettingsFormAction = {
         | 'create_passkey_continue_trading'
         | 'error'
         | 'add_more_passkeys'
-        | 'passkey_rename_open'
+        | 'passkey_rename_started'
         | 'passkey_rename_back'
         | 'passkey_rename_success'
+        | 'passkey_remove_started'
+        | 'passkey_remove_success'
 
     form_name?: string
     subform_name?: string
