@@ -23,12 +23,12 @@ export function createAnalyticsInstance(options?: Options) {
         growthbookKey,
         growthbookDecryptionKey,
         rudderstackKey,
-        GBAttributes,
+        GBAttributes = {},
         growthbookOptions,
     }: Options) => {
         try {
             _rudderstack = RudderStack.getRudderStackInstance(rudderstackKey)
-            if (GBAttributes)
+            if (Object.keys(GBAttributes).length > 0)
                 core_data = {
                     ...core_data,
                     ...(GBAttributes.geo_location !== undefined && { country: GBAttributes.country }),
