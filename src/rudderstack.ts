@@ -7,7 +7,6 @@ export class RudderStack {
     has_identified = false
     has_initialized = false
     current_page = ''
-    user_id = ''
     rudderstack_annonymous_cookie_key = 'rudder_anonymous_id'
     private static _instance: RudderStack
 
