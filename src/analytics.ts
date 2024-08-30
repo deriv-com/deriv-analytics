@@ -1,9 +1,7 @@
 import type { Context } from '@growthbook/growthbook'
 import { Growthbook, GrowthbookConfigs } from './growthbook'
 import { RudderStack } from './rudderstack'
-import { RudderAnalytics } from '@rudderstack/analytics-js'
 import { TCoreAttributes, TEvents } from './types'
-import { v6 as uuidv6 } from 'uuid'
 
 type Options = {
     growthbookKey?: string
