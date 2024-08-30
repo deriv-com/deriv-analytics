@@ -1,11 +1,14 @@
 import { RudderAnalytics } from '@rudderstack/analytics-js'
 import { TCoreAttributes, TEvents } from './types'
+import { v6 as uuidv6 } from 'uuid'
 
 export class RudderStack {
     analytics = new RudderAnalytics()
     has_identified = false
     has_initialized = false
     current_page = ''
+    user_id = ''
+    rudderstack_annonymous_cookie_key = 'rudder_anonymous_id'
     private static _instance: RudderStack
 
     constructor(RUDDERSTACK_KEY: string) {
@@ -20,10 +23,20 @@ export class RudderStack {
         return RudderStack._instance
     }
 
-    /**
-     * @returns The anonymous ID assigned to the user before the identify event was called
-     */
-    getAnonymousId = () => this.analytics.getAnonymousId()
+    getAnonymousId = () => {
+        return document.cookie.match('(^|;)\\s*' + this.rudderstack_annonymous_cookie_key + '\\s*=\\s*([^;]+)')?.pop()
+    }
+
+    setCookieIfNotExists = () => {
+        // Check if the cookie already exists
+        const anonymous_id = this.getAnonymousId()
+
+        if (!anonymous_id) {
+            const domain_name = window.location.hostname.split('.').slice(-2).join('.')
+            // Add the new cookie with domain accessible to all subdomains
+            document.cookie = `${this.rudderstack_annonymous_cookie_key}=${uuidv6()}; path=/; Domain=${domain_name}`
+        }
+    }
 
     /**
      * @returns The user ID that was assigned to the user after calling identify event
@@ -37,10 +50,13 @@ export class RudderStack {
      */
     init = (RUDDERSTACK_KEY: string) => {
         if (RUDDERSTACK_KEY) {
-            this.analytics.load(RUDDERSTACK_KEY, 'https://deriv-dataplane.rudderstack.com')
+            this.setCookieIfNotExists()
+            this.analytics.load(RUDDERSTACK_KEY, 'https://deriv-dataplane.rudderstack.com', {
+                externalAnonymousIdCookieName: this.rudderstack_annonymous_cookie_key,
+            })
             this.analytics.ready(() => {
                 this.has_initialized = true
-                this.has_identified = !!(this.getUserId() || !!this.getAnonymousId())
+                this.has_identified = !!(this.getUserId() || this.getAnonymousId())
             })
         }
     }
