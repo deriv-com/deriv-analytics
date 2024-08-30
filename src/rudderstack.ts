@@ -7,7 +7,7 @@ export class RudderStack {
     has_identified = false
     has_initialized = false
     current_page = ''
-    rudderstack_annonymous_cookie_key = 'rudder_anonymous_id'
+    rudderstack_anonymous_cookie_key = 'rudder_anonymous_id'
     private static _instance: RudderStack
 
     constructor(RUDDERSTACK_KEY: string) {
@@ -23,7 +23,7 @@ export class RudderStack {
     }
 
     getAnonymousId = () => {
-        return document.cookie.match('(^|;)\\s*' + this.rudderstack_annonymous_cookie_key + '\\s*=\\s*([^;]+)')?.pop()
+        return document.cookie.match('(^|;)\\s*' + this.rudderstack_anonymous_cookie_key + '\\s*=\\s*([^;]+)')?.pop()
     }
 
     setCookieIfNotExists = () => {
@@ -33,7 +33,7 @@ export class RudderStack {
         if (!anonymous_id) {
             const domain_name = window.location.hostname.split('.').slice(-2).join('.')
             // Add the new cookie with domain accessible to all subdomains
-            document.cookie = `${this.rudderstack_annonymous_cookie_key}=${uuidv6()}; path=/; Domain=${domain_name}`
+            document.cookie = `${this.rudderstack_anonymous_cookie_key}=${uuidv6()}; path=/; Domain=${domain_name}`
         }
     }
 
@@ -51,7 +51,7 @@ export class RudderStack {
         if (RUDDERSTACK_KEY) {
             this.setCookieIfNotExists()
             this.analytics.load(RUDDERSTACK_KEY, 'https://deriv-dataplane.rudderstack.com', {
-                externalAnonymousIdCookieName: this.rudderstack_annonymous_cookie_key,
+                externalAnonymousIdCookieName: this.rudderstack_anonymous_cookie_key,
             })
             this.analytics.ready(() => {
                 this.has_initialized = true
