@@ -60,12 +60,7 @@ export class Growthbook {
         growthbookOptions?: Partial<Context>
     ) => {
         if (!Growthbook._instance) {
-            Growthbook._instance = new Growthbook(
-                clientKey,
-                (decryptionKey = decryptionKey ?? ''),
-                growthbookOptions,
-                GBAttributes
-            )
+            Growthbook._instance = new Growthbook(clientKey, decryptionKey ?? '', growthbookOptions, GBAttributes)
             return Growthbook._instance
         }
         return Growthbook._instance
