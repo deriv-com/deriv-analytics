@@ -20,7 +20,7 @@ export class Growthbook {
         clientKey: string,
         decryptionKey: string,
         settings: Partial<Context> = {},
-        GBAttributes: TCoreAttributes
+        GBAttributes?: TCoreAttributes
     ) {
         this.GrowthBook = new GrowthBook<GrowthbookConfigs>({
             apiHost: 'https://cdn.growthbook.io',

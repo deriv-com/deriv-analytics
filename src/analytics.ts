@@ -8,7 +8,7 @@ type Options = {
     growthbookOptions?: Partial<Context>
     growthbookDecryptionKey?: string
     rudderstackKey: string
-    GBAttributes: TCoreAttributes
+    GBAttributes?: TCoreAttributes
 }
 
 export function createAnalyticsInstance(options?: Options) {
