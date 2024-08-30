@@ -3,12 +3,14 @@ import { Growthbook, GrowthbookConfigs } from './growthbook'
 import { RudderStack } from './rudderstack'
 import { RudderAnalytics } from '@rudderstack/analytics-js'
 import { TCoreAttributes, TEvents } from './types'
+import { v6 as uuidv6 } from 'uuid'
 
 type Options = {
     growthbookKey?: string
     growthbookOptions?: Partial<Context>
     growthbookDecryptionKey?: string
     rudderstackKey: string
+    GBAttributes: TCoreAttributes
 }
 
 export function createAnalyticsInstance(options?: Options) {
@@ -19,12 +21,33 @@ export function createAnalyticsInstance(options?: Options) {
         event_cache: Array<{ event: keyof TEvents; payload: TEvents[keyof TEvents] }> = [],
         page_view_cache: Array<{ current_page: string; platform: string; user_id: string }> = []
 
-    const initialise = ({ growthbookKey, growthbookDecryptionKey, rudderstackKey, growthbookOptions }: Options) => {
+    const initialise = ({
+        growthbookKey,
+        growthbookDecryptionKey,
+        rudderstackKey,
+        GBAttributes,
+        growthbookOptions,
+    }: Options) => {
         try {
             _rudderstack = RudderStack.getRudderStackInstance(rudderstackKey)
-            if (growthbookKey && growthbookDecryptionKey) {
+            if (GBAttributes)
+                core_data = {
+                    ...core_data,
+                    ...(GBAttributes.geo_location !== undefined && { country: GBAttributes.country }),
+                    ...(GBAttributes.user_language !== undefined && { user_language: GBAttributes.user_language }),
+                    ...(GBAttributes.account_type !== undefined && { account_type: GBAttributes.account_type }),
+                    ...(GBAttributes.app_id !== undefined && { app_id: GBAttributes.app_id }),
+                    ...(GBAttributes.residence_country !== undefined && {
+                        residence_country: GBAttributes.residence_country,
+                    }),
+                    ...(GBAttributes.device_type !== undefined && { device_type: GBAttributes.device_type }),
+                    ...(GBAttributes.url !== undefined && { url: GBAttributes.url }),
+                }
+            if (!GBAttributes.id) GBAttributes.id = _rudderstack.getAnonymousId()
+            if (growthbookKey) {
                 _growthbook = Growthbook.getGrowthBookInstance(
                     growthbookKey,
+                    GBAttributes,
                     growthbookDecryptionKey,
                     growthbookOptions
                 )
@@ -97,7 +120,7 @@ export function createAnalyticsInstance(options?: Options) {
     ) => _growthbook?.getFeatureValue(id as string, defaultValue)
     const isFeatureOn = (key: string) => _growthbook?.isOn(key)
     const setUrl = (href: string) => _growthbook?.setUrl(href)
-    const getId = () => _rudderstack?.getUserId() || ''
+    const getId = () => _rudderstack?.getRudderUserId() || ''
     /**
      * Pushes page view event to Rudderstack
      *

@@ -1,6 +1,6 @@
 import { Context, GrowthBook } from '@growthbook/growthbook'
 import { RudderAnalytics } from '@rudderstack/analytics-js'
-import { TGrowthbookAttributes } from './types'
+import { TCoreAttributes, TGrowthbookAttributes } from './types'
 
 export type GrowthbookConfigs = {
     // feature flags for framework needs
@@ -16,12 +16,18 @@ export class Growthbook {
     private static _instance: Growthbook
 
     // we have to pass settings due the specific framework implementation
-    constructor(clientKey: string, decryptionKey: string, settings: Partial<Context> = {}) {
+    constructor(
+        clientKey: string,
+        decryptionKey: string,
+        settings: Partial<Context> = {},
+        GBAttributes: TCoreAttributes
+    ) {
         this.GrowthBook = new GrowthBook<GrowthbookConfigs>({
             apiHost: 'https://cdn.growthbook.io',
             clientKey,
             decryptionKey,
             antiFlicker: false,
+            attributes: GBAttributes,
             navigateDelay: 0,
             antiFlickerTimeout: 3500,
             subscribeToChanges: true,
@@ -49,11 +55,17 @@ export class Growthbook {
     // for make instance by singleton
     public static getGrowthBookInstance = (
         clientKey: string,
-        decryptionKey: string,
+        GBAttributes: TCoreAttributes,
+        decryptionKey?: string,
         growthbookOptions?: Partial<Context>
     ) => {
         if (!Growthbook._instance) {
-            Growthbook._instance = new Growthbook(clientKey, decryptionKey, growthbookOptions)
+            Growthbook._instance = new Growthbook(
+                clientKey,
+                (decryptionKey = decryptionKey ?? ''),
+                growthbookOptions,
+                GBAttributes
+            )
             return Growthbook._instance
         }
         return Growthbook._instance
@@ -99,5 +111,5 @@ export class Growthbook {
     setUrl = (href: string) => this.GrowthBook.setURL(href)
     isOn = (key: string) => this.GrowthBook.isOn(key)
 
-    init = () => this.GrowthBook.loadFeatures().catch(err => console.error(err))
+    init = async () => await this.GrowthBook.init({ timeout: 2000 }).catch(err => console.error(err))
 }
