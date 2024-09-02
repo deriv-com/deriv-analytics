@@ -1,14 +1,12 @@
-import type { Context } from '@growthbook/growthbook'
 import { Growthbook, GrowthbookConfigs } from './growthbook'
 import { RudderStack } from './rudderstack'
-import { RudderAnalytics } from '@rudderstack/analytics-js'
-import { TCoreAttributes, TEvents } from './types'
+import { TCoreAttributes, TEvents, TGrowthbookOptions } from './types'
 
 type Options = {
     growthbookKey?: string
-    growthbookOptions?: Partial<Context>
     growthbookDecryptionKey?: string
     rudderstackKey: string
+    growthbookOptions?: TGrowthbookOptions
 }
 
 export function createAnalyticsInstance(options?: Options) {
@@ -16,12 +14,36 @@ export function createAnalyticsInstance(options?: Options) {
         _rudderstack: RudderStack,
         core_data: Partial<TCoreAttributes> = {},
         tracking_config: { [key: string]: boolean } = {},
-        offline_cache: { [key: string]: { event: keyof TEvents; payload: TEvents[keyof TEvents] } } = {}
+        event_cache: Array<{ event: keyof TEvents; payload: TEvents[keyof TEvents] }> = [],
+        page_view_cache: Array<{ current_page: string; platform: string; user_id: string }> = []
 
     const initialise = ({ growthbookKey, growthbookDecryptionKey, rudderstackKey, growthbookOptions }: Options) => {
         try {
             _rudderstack = RudderStack.getRudderStackInstance(rudderstackKey)
-            if (growthbookKey && growthbookDecryptionKey) {
+            if (growthbookOptions?.attributes && Object.keys(growthbookOptions.attributes).length > 0)
+                core_data = {
+                    ...core_data,
+                    ...(growthbookOptions?.attributes?.country && { country: growthbookOptions?.attributes.country }),
+                    ...(growthbookOptions?.attributes?.user_language && {
+                        user_language: growthbookOptions?.attributes.user_language,
+                    }),
+                    ...(growthbookOptions?.attributes?.account_type && {
+                        account_type: growthbookOptions?.attributes.account_type,
+                    }),
+                    ...(growthbookOptions?.attributes?.app_id && { app_id: growthbookOptions?.attributes.app_id }),
+                    ...(growthbookOptions?.attributes?.residence_country && {
+                        residence_country: growthbookOptions?.attributes?.residence_country,
+                    }),
+                    ...(growthbookOptions?.attributes?.device_type && {
+                        device_type: growthbookOptions?.attributes.device_type,
+                    }),
+                    ...(growthbookOptions?.attributes?.url && { url: growthbookOptions?.attributes.url }),
+                }
+            growthbookOptions ??= {}
+            growthbookOptions.attributes ??= {}
+            growthbookOptions.attributes.id ??= _rudderstack.getAnonymousId()
+
+            if (growthbookKey) {
                 _growthbook = Growthbook.getGrowthBookInstance(
                     growthbookKey,
                     growthbookDecryptionKey,
@@ -79,13 +101,14 @@ export function createAnalyticsInstance(options?: Options) {
 
         core_data = {
             ...core_data,
-            ...(geo_location !== undefined && { country }),
-            ...(user_language !== undefined && { user_language }),
-            ...(account_type !== undefined && { account_type }),
-            ...(app_id !== undefined && { app_id }),
-            ...(residence_country !== undefined && { residence_country }),
-            ...(device_type !== undefined && { device_type }),
-            ...(url !== undefined && { url }),
+            ...(country && { country }),
+            ...(geo_location && { geo_location }),
+            ...(user_language && { user_language }),
+            ...(account_type && { account_type }),
+            ...(app_id && { app_id }),
+            ...(residence_country && { residence_country }),
+            ...(device_type && { device_type }),
+            ...(url && { url }),
         }
     }
 
@@ -103,8 +126,15 @@ export function createAnalyticsInstance(options?: Options) {
      * @param curret_page The name or URL of the current page to track the page view event
      */
     const pageView = (current_page: string, platform = 'Deriv App') => {
-        if (!_rudderstack) return
-
+        if (!navigator.onLine || !_rudderstack) {
+            return page_view_cache.push({ current_page, platform, user_id: getId() })
+        }
+        if (page_view_cache.length > 0) {
+            page_view_cache.forEach((cache, index) => {
+                _rudderstack?.pageView(cache.current_page, cache.platform, cache.user_id)
+                delete page_view_cache[index]
+            })
+        }
         _rudderstack?.pageView(current_page, platform, getId())
     }
 
@@ -123,20 +153,18 @@ export function createAnalyticsInstance(options?: Options) {
     }
 
     const trackEvent = <T extends keyof TEvents>(event: T, analytics_data: TEvents[T]) => {
-        if (!_rudderstack) return
-
-        if (navigator.onLine) {
-            if (Object.keys(offline_cache).length > 0) {
-                Object.keys(offline_cache).forEach(cache => {
-                    _rudderstack.track(offline_cache[cache].event, offline_cache[cache].payload)
-                    delete offline_cache[cache]
+        if (navigator.onLine && _rudderstack) {
+            if (event_cache.length > 0) {
+                event_cache.forEach((cache, index) => {
+                    _rudderstack.track(cache.event, cache.payload)
+                    delete event_cache[index]
                 })
             }
             if (event in tracking_config) {
                 tracking_config[event] && _rudderstack?.track(event, { ...core_data, ...analytics_data })
             } else _rudderstack?.track(event, { ...core_data, ...analytics_data })
         } else {
-            offline_cache[event + analytics_data.action] = { event, payload: { ...core_data, ...analytics_data } }
+            event_cache.push({ event, payload: { ...core_data, ...analytics_data } })
         }
     }
 

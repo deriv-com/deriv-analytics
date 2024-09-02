@@ -1,3 +1,5 @@
+import type { Context } from '@growthbook/growthbook'
+
 export type TGrowthbookAttributes = {
     id: string
     country?: string
@@ -13,6 +15,8 @@ export type TGrowthbookAttributes = {
     utm_content?: string
     residence_country?: string
 }
+
+export type TGrowthbookOptions = Partial<Omit<Context, 'attributes'> & { attributes: TCoreAttributes }>
 export type TCoreAttributes = {
     account_type?: string
     user_id?: string
@@ -324,9 +328,11 @@ type PassKeyAccountSettingsFormAction = {
         | 'create_passkey_continue_trading'
         | 'error'
         | 'add_more_passkeys'
-        | 'passkey_rename_open'
+        | 'passkey_rename_started'
         | 'passkey_rename_back'
         | 'passkey_rename_success'
+        | 'passkey_remove_started'
+        | 'passkey_remove_success'
 
     form_name?: string
     subform_name?: string
