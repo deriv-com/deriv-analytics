@@ -1,6 +1,6 @@
 import { Context, GrowthBook } from '@growthbook/growthbook'
 import { RudderAnalytics } from '@rudderstack/analytics-js'
-import { TCoreAttributes, TGrowthbookAttributes } from './types'
+import { TCoreAttributes, TGrowthbookAttributes, TGrowthbookOptions } from './types'
 
 export type GrowthbookConfigs = {
     // feature flags for framework needs
@@ -16,18 +16,12 @@ export class Growthbook {
     private static _instance: Growthbook
 
     // we have to pass settings due the specific framework implementation
-    constructor(
-        clientKey: string,
-        decryptionKey: string,
-        settings: Partial<Context> = {},
-        GBAttributes: TCoreAttributes = {}
-    ) {
+    constructor(clientKey: string, decryptionKey: string, growthbookOptions: TGrowthbookOptions = {}) {
         this.GrowthBook = new GrowthBook<GrowthbookConfigs>({
             apiHost: 'https://cdn.growthbook.io',
             clientKey,
             decryptionKey,
             antiFlicker: false,
-            attributes: GBAttributes,
             navigateDelay: 0,
             antiFlickerTimeout: 3500,
             subscribeToChanges: true,
@@ -47,7 +41,7 @@ export class Growthbook {
                     variationId: result.variationId,
                 })
             },
-            ...settings,
+            ...growthbookOptions,
         })
         this.init()
     }
@@ -55,12 +49,11 @@ export class Growthbook {
     // for make instance by singleton
     public static getGrowthBookInstance = (
         clientKey: string,
-        GBAttributes: TCoreAttributes,
         decryptionKey?: string,
-        growthbookOptions?: Partial<Context>
+        growthbookOptions?: TGrowthbookOptions
     ) => {
         if (!Growthbook._instance) {
-            Growthbook._instance = new Growthbook(clientKey, decryptionKey ?? '', growthbookOptions, GBAttributes)
+            Growthbook._instance = new Growthbook(clientKey, decryptionKey ?? '', growthbookOptions)
             return Growthbook._instance
         }
         return Growthbook._instance
@@ -85,18 +78,18 @@ export class Growthbook {
         this.GrowthBook.setAttributes({
             ...CURRENT_ATTRIBUTES,
             id,
-            ...(country !== undefined && { country }),
-            ...(residence_country !== undefined && { residence_country }),
-            ...(user_language !== undefined && { user_language }),
-            ...(device_language !== undefined && { device_language }),
-            ...(device_type !== undefined && { device_type }),
-            ...(utm_source !== undefined && { utm_source }),
-            ...(utm_medium !== undefined && { utm_medium }),
-            ...(utm_campaign !== undefined && { utm_campaign }),
-            ...(is_authorised !== undefined && { is_authorised }),
-            ...(url !== undefined && { url }),
-            ...(domain !== undefined && { domain }),
-            ...(utm_content !== undefined && { utm_content }),
+            ...(country && { country }),
+            ...(residence_country && { residence_country }),
+            ...(user_language && { user_language }),
+            ...(device_language && { device_language }),
+            ...(device_type && { device_type }),
+            ...(utm_source && { utm_source }),
+            ...(utm_medium && { utm_medium }),
+            ...(utm_campaign && { utm_campaign }),
+            ...(is_authorised && { is_authorised }),
+            ...(url && { url }),
+            ...(domain && { domain }),
+            ...(utm_content && { utm_content }),
         })
     }
     getFeatureValue = <K extends keyof GrowthbookConfigs, V extends GrowthbookConfigs[K]>(key: K, defaultValue: V) => {

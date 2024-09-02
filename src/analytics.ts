@@ -1,14 +1,12 @@
-import type { Context } from '@growthbook/growthbook'
 import { Growthbook, GrowthbookConfigs } from './growthbook'
 import { RudderStack } from './rudderstack'
-import { TCoreAttributes, TEvents } from './types'
+import { TCoreAttributes, TEvents, TGrowthbookOptions } from './types'
 
 type Options = {
     growthbookKey?: string
-    growthbookOptions?: Partial<Context>
     growthbookDecryptionKey?: string
     rudderstackKey: string
-    GBAttributes?: TCoreAttributes
+    growthbookOptions?: TGrowthbookOptions
 }
 
 export function createAnalyticsInstance(options?: Options) {
@@ -19,33 +17,35 @@ export function createAnalyticsInstance(options?: Options) {
         event_cache: Array<{ event: keyof TEvents; payload: TEvents[keyof TEvents] }> = [],
         page_view_cache: Array<{ current_page: string; platform: string; user_id: string }> = []
 
-    const initialise = ({
-        growthbookKey,
-        growthbookDecryptionKey,
-        rudderstackKey,
-        GBAttributes = {},
-        growthbookOptions,
-    }: Options) => {
+    const initialise = ({ growthbookKey, growthbookDecryptionKey, rudderstackKey, growthbookOptions }: Options) => {
         try {
             _rudderstack = RudderStack.getRudderStackInstance(rudderstackKey)
-            if (Object.keys(GBAttributes).length > 0)
+            if (growthbookOptions?.attributes && Object.keys(growthbookOptions.attributes).length > 0)
                 core_data = {
                     ...core_data,
-                    ...(GBAttributes.geo_location !== undefined && { country: GBAttributes.country }),
-                    ...(GBAttributes.user_language !== undefined && { user_language: GBAttributes.user_language }),
-                    ...(GBAttributes.account_type !== undefined && { account_type: GBAttributes.account_type }),
-                    ...(GBAttributes.app_id !== undefined && { app_id: GBAttributes.app_id }),
-                    ...(GBAttributes.residence_country !== undefined && {
-                        residence_country: GBAttributes.residence_country,
+                    ...(growthbookOptions?.attributes?.country && { country: growthbookOptions?.attributes.country }),
+                    ...(growthbookOptions?.attributes?.user_language && {
+                        user_language: growthbookOptions?.attributes.user_language,
                     }),
-                    ...(GBAttributes.device_type !== undefined && { device_type: GBAttributes.device_type }),
-                    ...(GBAttributes.url !== undefined && { url: GBAttributes.url }),
+                    ...(growthbookOptions?.attributes?.account_type && {
+                        account_type: growthbookOptions?.attributes.account_type,
+                    }),
+                    ...(growthbookOptions?.attributes?.app_id && { app_id: growthbookOptions?.attributes.app_id }),
+                    ...(growthbookOptions?.attributes?.residence_country && {
+                        residence_country: growthbookOptions?.attributes?.residence_country,
+                    }),
+                    ...(growthbookOptions?.attributes?.device_type && {
+                        device_type: growthbookOptions?.attributes.device_type,
+                    }),
+                    ...(growthbookOptions?.attributes?.url && { url: growthbookOptions?.attributes.url }),
                 }
-            if (!GBAttributes.id) GBAttributes.id = _rudderstack.getAnonymousId()
+            growthbookOptions ??= {}
+            growthbookOptions.attributes ??= {}
+            growthbookOptions.attributes.id ??= _rudderstack.getAnonymousId()
+
             if (growthbookKey) {
                 _growthbook = Growthbook.getGrowthBookInstance(
                     growthbookKey,
-                    GBAttributes,
                     growthbookDecryptionKey,
                     growthbookOptions
                 )
@@ -101,13 +101,14 @@ export function createAnalyticsInstance(options?: Options) {
 
         core_data = {
             ...core_data,
-            ...(geo_location !== undefined && { country }),
-            ...(user_language !== undefined && { user_language }),
-            ...(account_type !== undefined && { account_type }),
-            ...(app_id !== undefined && { app_id }),
-            ...(residence_country !== undefined && { residence_country }),
-            ...(device_type !== undefined && { device_type }),
-            ...(url !== undefined && { url }),
+            ...(country && { country }),
+            ...(geo_location && { geo_location }),
+            ...(user_language && { user_language }),
+            ...(account_type && { account_type }),
+            ...(app_id && { app_id }),
+            ...(residence_country && { residence_country }),
+            ...(device_type && { device_type }),
+            ...(url && { url }),
         }
     }
 

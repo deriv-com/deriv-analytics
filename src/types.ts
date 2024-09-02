@@ -1,3 +1,5 @@
+import type { Context } from '@growthbook/growthbook'
+
 export type TGrowthbookAttributes = {
     id: string
     country?: string
@@ -13,6 +15,8 @@ export type TGrowthbookAttributes = {
     utm_content?: string
     residence_country?: string
 }
+
+export type TGrowthbookOptions = Partial<Omit<Context, 'attributes'> & { attributes: TCoreAttributes }>
 export type TCoreAttributes = {
     account_type?: string
     user_id?: string
