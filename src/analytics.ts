@@ -27,8 +27,9 @@ export function createAnalyticsInstance(options?: Options) {
         const response = await fetch('https://www.cloudflare.com/cdn-cgi/trace')
         const text = await response?.text()
         const CloudflareCountry = Object.fromEntries(text.split('\n').map(v => v.split('=', 2))).loc.toLowerCase()
-        console.log('CloudflareCountry', CloudflareCountry)
+
         try {
+            console.log('gdvc')
             _rudderstack = RudderStack.getRudderStackInstance(rudderstackKey)
             if (growthbookOptions?.attributes && Object.keys(growthbookOptions.attributes).length > 0)
                 core_data = {
