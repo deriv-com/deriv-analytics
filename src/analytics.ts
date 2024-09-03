@@ -1,6 +1,7 @@
 import { Growthbook, GrowthbookConfigs } from './growthbook'
 import { RudderStack } from './rudderstack'
-import { TCoreAttributes, TEvents, TGrowthbookOptions } from './types'
+import Cookies from 'js-cookie'
+import { TCoreAttributes, TEvents, TGrowthbookAttributes, TGrowthbookOptions } from './types'
 
 type Options = {
     growthbookKey?: string
@@ -17,7 +18,16 @@ export function createAnalyticsInstance(options?: Options) {
         event_cache: Array<{ event: keyof TEvents; payload: TEvents[keyof TEvents] }> = [],
         page_view_cache: Array<{ current_page: string; platform: string; user_id: string }> = []
 
-    const initialise = ({ growthbookKey, growthbookDecryptionKey, rudderstackKey, growthbookOptions }: Options) => {
+    const initialise = async ({
+        growthbookKey,
+        growthbookDecryptionKey,
+        rudderstackKey,
+        growthbookOptions,
+    }: Options) => {
+        const response = await fetch('https://www.cloudflare.com/cdn-cgi/trace')
+        const text = await response?.text()
+        const CloudflareCountry = Object.fromEntries(text.split('\n').map(v => v.split('=', 2))).loc.toLowerCase()
+
         try {
             _rudderstack = RudderStack.getRudderStackInstance(rudderstackKey)
             if (growthbookOptions?.attributes && Object.keys(growthbookOptions.attributes).length > 0)
@@ -42,6 +52,10 @@ export function createAnalyticsInstance(options?: Options) {
             growthbookOptions ??= {}
             growthbookOptions.attributes ??= {}
             growthbookOptions.attributes.id ??= _rudderstack.getAnonymousId()
+            growthbookOptions.attributes.country ??=
+                Cookies.get('clients_country') ||
+                (Cookies as any).getJSON('website_status')?.clients_country ||
+                CloudflareCountry
 
             if (growthbookKey) {
                 _growthbook = Growthbook.getGrowthBookInstance(
@@ -83,8 +97,7 @@ export function createAnalyticsInstance(options?: Options) {
 
         // Check if we have Growthbook instance
         if (_growthbook) {
-            _growthbook.setAttributes({
-                id: user_identity || getId(),
+            const config: TGrowthbookAttributes = {
                 country,
                 residence_country,
                 user_language,
@@ -96,7 +109,9 @@ export function createAnalyticsInstance(options?: Options) {
                 is_authorised,
                 url,
                 domain,
-            })
+            }
+            if (user_identity) config.id = user_identity
+            _growthbook.setAttributes(config)
         }
 
         core_data = {
