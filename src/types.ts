@@ -1,7 +1,7 @@
 import type { Context } from '@growthbook/growthbook'
 
 export type TGrowthbookAttributes = {
-    id: string
+    id?: string
     country?: string
     user_language?: string
     device_language?: string
