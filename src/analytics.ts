@@ -1,6 +1,6 @@
 import { Growthbook, GrowthbookConfigs } from './growthbook'
 import { RudderStack } from './rudderstack'
-import { TCoreAttributes, TEvents, TGrowthbookOptions } from './types'
+import { TCoreAttributes, TEvents, TGrowthbookAttributes, TGrowthbookOptions } from './types'
 
 type Options = {
     growthbookKey?: string
@@ -83,8 +83,7 @@ export function createAnalyticsInstance(options?: Options) {
 
         // Check if we have Growthbook instance
         if (_growthbook) {
-            _growthbook.setAttributes({
-                id: user_identity || getId(),
+            const config: TGrowthbookAttributes = {
                 country,
                 residence_country,
                 user_language,
@@ -96,7 +95,9 @@ export function createAnalyticsInstance(options?: Options) {
                 is_authorised,
                 url,
                 domain,
-            })
+            }
+            if (user_identity) config.id = user_identity
+            _growthbook.setAttributes(config)
         }
 
         core_data = {
