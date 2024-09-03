@@ -2,6 +2,12 @@ import { RudderAnalytics } from '@rudderstack/analytics-js'
 import { TCoreAttributes, TEvents } from './types'
 import { v6 as uuidv6 } from 'uuid'
 
+interface AnalyticsEvent {
+    name: string
+    properties: {
+        [key: string]: string
+    }
+}
 export class RudderStack {
     analytics = new RudderAnalytics()
     has_identified = false
@@ -56,6 +62,24 @@ export class RudderStack {
             this.analytics.ready(() => {
                 this.has_initialized = true
                 this.has_identified = !!(this.getUserId() || this.getAnonymousId())
+                let eventQueue: AnalyticsEvent[] = []
+                const storedEvents = localStorage.getItem('cached_analytics_events')
+                try {
+                    if (storedEvents) {
+                        eventQueue = JSON.parse(storedEvents) as AnalyticsEvent[]
+                        if (eventQueue.length > 0) {
+                            eventQueue.forEach(event => {
+                                this.analytics.track(event.name, event.properties)
+                            })
+
+                            eventQueue = []
+                            localStorage.removeItem('cached_analytics_events')
+                        }
+                    }
+                } catch (error) {
+                    // eslint-disable-next-line no-console
+                    console.log(error)
+                }
             })
         }
     }
