@@ -48,11 +48,34 @@ export class RudderStack {
      */
     getUserId = () => this.analytics.getUserId()
 
+    /** For caching mechanism, Rudderstack  SDK, first page load  */
+    handleCachedEvents = () => {
+        const storedEvents = localStorage.getItem('cached_analytics_events')
+        try {
+            if (storedEvents) {
+                let eventQueue: AnalyticsEvent[] = JSON.parse(storedEvents) as AnalyticsEvent[]
+
+                if (eventQueue.length > 0) {
+                    eventQueue.forEach(event => {
+                        this.analytics.track(event.name, event.properties)
+                    })
+
+                    eventQueue = []
+                    localStorage.removeItem('cached_analytics_events')
+                }
+            }
+        } catch (error) {
+            // eslint-disable-next-line no-console
+            console.log(error)
+        }
+    }
+
     /**
      * Initializes the Rudderstack SDK. Ensure that the appropriate environment variables are set before this is called.
      * For local/staging environment, ensure that `RUDDERSTACK_STAGING_KEY` and `RUDDERSTACK_URL` is set.
      * For production environment, ensure that `RUDDERSTACK_PRODUCTION_KEY` and `RUDDERSTACK_URL` is set.
      */
+
     init = (RUDDERSTACK_KEY: string) => {
         if (RUDDERSTACK_KEY) {
             this.setCookieIfNotExists()
@@ -62,24 +85,7 @@ export class RudderStack {
             this.analytics.ready(() => {
                 this.has_initialized = true
                 this.has_identified = !!(this.getUserId() || this.getAnonymousId())
-                let eventQueue: AnalyticsEvent[] = []
-                const storedEvents = localStorage.getItem('cached_analytics_events')
-                try {
-                    if (storedEvents) {
-                        eventQueue = JSON.parse(storedEvents) as AnalyticsEvent[]
-                        if (eventQueue.length > 0) {
-                            eventQueue.forEach(event => {
-                                this.analytics.track(event.name, event.properties)
-                            })
-
-                            eventQueue = []
-                            localStorage.removeItem('cached_analytics_events')
-                        }
-                    }
-                } catch (error) {
-                    // eslint-disable-next-line no-console
-                    console.log(error)
-                }
+                this.handleCachedEvents()
             })
         }
     }
