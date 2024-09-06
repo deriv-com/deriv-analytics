@@ -27,6 +27,15 @@ export function createAnalyticsInstance(options?: Options) {
         const response = await fetch('https://www.cloudflare.com/cdn-cgi/trace')
         const text = await response?.text()
         const CloudflareCountry = Object.fromEntries(text.split('\n').map(v => v.split('=', 2))).loc.toLowerCase()
+        const websiteStatus = Cookies.get('website_status')
+        let parsedStatus
+        if (websiteStatus) {
+            try {
+                parsedStatus = JSON.parse(websiteStatus) // Parse only if it's a valid JSON string
+            } catch (e) {
+                console.error('Failed to parse cookie: ', e)
+            }
+        }
 
         try {
             _rudderstack = RudderStack.getRudderStackInstance(rudderstackKey)
@@ -53,9 +62,7 @@ export function createAnalyticsInstance(options?: Options) {
             growthbookOptions.attributes ??= {}
             growthbookOptions.attributes.id ??= _rudderstack.getAnonymousId()
             growthbookOptions.attributes.country ??=
-                Cookies.get('clients_country') ||
-                (Cookies as any).getJSON('website_status')?.clients_country ||
-                CloudflareCountry
+                Cookies.get('clients_country') || parsedStatus?.clients_country || CloudflareCountry
 
             if (growthbookKey) {
                 _growthbook = Growthbook.getGrowthBookInstance(
