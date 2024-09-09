@@ -14,6 +14,7 @@ export type TGrowthbookAttributes = {
     domain?: string
     utm_content?: string
     residence_country?: string
+    user_ip?: string
 }
 
 export type TGrowthbookOptions = Partial<Omit<Context, 'attributes'> & { attributes: TCoreAttributes }>

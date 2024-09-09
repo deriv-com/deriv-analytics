@@ -57,6 +57,7 @@ export function createAnalyticsInstance(options?: Options) {
                         device_type: growthbookOptions?.attributes.device_type,
                     }),
                     ...(growthbookOptions?.attributes?.url && { url: growthbookOptions?.attributes.url }),
+                    ...(growthbookOptions?.attributes?.user_ip && { url: growthbookOptions?.attributes.user_ip }),
                 }
             growthbookOptions ??= {}
             growthbookOptions.attributes ??= {}
@@ -97,6 +98,7 @@ export function createAnalyticsInstance(options?: Options) {
         url,
         domain,
         geo_location,
+        user_ip,
     }: TCoreAttributes) => {
         if (!_growthbook && !_rudderstack) return
 
@@ -116,6 +118,7 @@ export function createAnalyticsInstance(options?: Options) {
                 is_authorised,
                 url,
                 domain,
+                user_ip,
             }
             if (user_identity) config.id = user_identity
             _growthbook.setAttributes(config)
