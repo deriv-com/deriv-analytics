@@ -42,7 +42,7 @@ export function createAnalyticsInstance(options?: Options) {
             if (growthbookOptions?.attributes && Object.keys(growthbookOptions.attributes).length > 0)
                 core_data = {
                     ...core_data,
-                    ...(growthbookOptions?.attributes?.country && { country: growthbookOptions?.attributes.country }),
+
                     ...(growthbookOptions?.attributes?.user_language && {
                         user_language: growthbookOptions?.attributes.user_language,
                     }),
