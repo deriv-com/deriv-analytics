@@ -38,11 +38,12 @@ export function createAnalyticsInstance(options?: Options) {
         }
 
         try {
+            const country = Cookies.get('clients_country') || parsedStatus?.clients_country || CloudflareCountry
             _rudderstack = RudderStack.getRudderStackInstance(rudderstackKey)
             if (growthbookOptions?.attributes && Object.keys(growthbookOptions.attributes).length > 0)
                 core_data = {
                     ...core_data,
-                    ...(growthbookOptions?.attributes?.country && { country: growthbookOptions?.attributes.country }),
+                    ...(growthbookOptions?.attributes?.country && { country: country }),
                     ...(growthbookOptions?.attributes?.user_language && {
                         user_language: growthbookOptions?.attributes.user_language,
                     }),
@@ -61,8 +62,7 @@ export function createAnalyticsInstance(options?: Options) {
             growthbookOptions ??= {}
             growthbookOptions.attributes ??= {}
             growthbookOptions.attributes.id ??= _rudderstack.getAnonymousId()
-            growthbookOptions.attributes.country ??=
-                Cookies.get('clients_country') || parsedStatus?.clients_country || CloudflareCountry
+            growthbookOptions.attributes.country ??= country
 
             if (growthbookKey) {
                 _growthbook = Growthbook.getGrowthBookInstance(
