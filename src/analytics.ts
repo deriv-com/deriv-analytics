@@ -58,6 +58,9 @@ export function createAnalyticsInstance(options?: Options) {
                         device_type: growthbookOptions?.attributes.device_type,
                     }),
                     ...(growthbookOptions?.attributes?.url && { url: growthbookOptions?.attributes.url }),
+                    ...(growthbookOptions?.attributes?.loggedIn && {
+                        loggedIn: growthbookOptions?.attributes.loggedIn,
+                    }),
                 }
             growthbookOptions ??= {}
             growthbookOptions.attributes ??= {}
@@ -97,6 +100,7 @@ export function createAnalyticsInstance(options?: Options) {
         url,
         domain,
         geo_location,
+        loggedIn,
     }: TCoreAttributes) => {
         if (!_growthbook && !_rudderstack) return
 
@@ -116,6 +120,7 @@ export function createAnalyticsInstance(options?: Options) {
                 is_authorised,
                 url,
                 domain,
+                loggedIn,
             }
             if (user_identity) config.id = user_identity
             _growthbook.setAttributes(config)
@@ -131,6 +136,7 @@ export function createAnalyticsInstance(options?: Options) {
             ...(residence_country && { residence_country }),
             ...(device_type && { device_type }),
             ...(url && { url }),
+            ...(loggedIn && { loggedIn }),
         }
     }
 
