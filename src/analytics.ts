@@ -58,8 +58,8 @@ export function createAnalyticsInstance(options?: Options) {
                         device_type: growthbookOptions?.attributes.device_type,
                     }),
                     ...(growthbookOptions?.attributes?.url && { url: growthbookOptions?.attributes.url }),
-                    ...(growthbookOptions?.attributes?.loggedIn && {
-                        loggedIn: growthbookOptions?.attributes.loggedIn,
+                    ...(growthbookOptions?.attributes && {
+                        loggedIn: growthbookOptions?.attributes?.loggedIn,
                     }),
                 }
             growthbookOptions ??= {}
