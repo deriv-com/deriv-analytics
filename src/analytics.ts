@@ -59,7 +59,7 @@ export function createAnalyticsInstance(options?: Options) {
                     }),
                     ...(growthbookOptions?.attributes?.url && { url: growthbookOptions?.attributes.url }),
                     ...(growthbookOptions?.attributes && {
-                        loggedIn: !!growthbookOptions?.attributes?.loggedIn,
+                        loggedIn: growthbookOptions?.attributes?.loggedIn,
                     }),
                 }
             growthbookOptions ??= {}
