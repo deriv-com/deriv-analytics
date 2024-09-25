@@ -2,13 +2,6 @@ import { RudderAnalytics } from '@rudderstack/analytics-js'
 import { TCoreAttributes, TEvents } from './types'
 import { v6 as uuidv6 } from 'uuid'
 import Cookies from 'js-cookie'
-
-interface AnalyticsEvent {
-    name: string
-    properties: {
-        [key: string]: string
-    }
-}
 export class RudderStack {
     analytics = new RudderAnalytics()
     has_identified = false
@@ -51,18 +44,17 @@ export class RudderStack {
 
     /** For caching mechanism, Rudderstack  SDK, first page load  */
     handleCachedEvents = () => {
-        const storedEvents = Cookies.get('cached_analytics_events')
+        const storedEvents: any = Cookies.get('cached_analytics_events')
+
         try {
             if (storedEvents) {
-                let eventQueue: AnalyticsEvent[] = JSON.parse(storedEvents) as AnalyticsEvent[]
-
-                if (eventQueue.length > 0) {
-                    eventQueue.forEach(event => {
+                if (storedEvents.length > 0) {
+                    storedEvents.forEach((event: any) => {
                         this.analytics.track(event.name, event.properties)
                     })
 
-                    eventQueue = []
-                    Cookies.remove('cached_analytics_events')
+                    storedEvents.length = 0
+                    Cookies.remove('cached_analytics_events', { domain: '.deriv.com' })
                 }
             }
         } catch (error) {
