@@ -45,7 +45,7 @@ export class RudderStack {
     /** For caching mechanism, Rudderstack  SDK, first page load  */
     handleCachedEvents = () => {
         const storedEventsString: string | undefined = Cookies.get('cached_analytics_events')
-        const storedPagesString: string | undefined = Cookies.get('cached_analytics_page_view')
+        const storedPagesString: string | undefined = Cookies.get('cached_analytics_page_views')
 
         try {
             // Handle cached analytics events
@@ -72,7 +72,7 @@ export class RudderStack {
                     })
 
                     // Clear the stored page views cookie
-                    Cookies.remove('cached_analytics_page_view', { domain: '.deriv.com' })
+                    Cookies.remove('cached_analytics_page_views', { domain: '.deriv.com' })
                 }
             }
         } catch (error) {
