@@ -1,11 +1,13 @@
 import { RudderAnalytics } from '@rudderstack/analytics-js'
 import { TCoreAttributes, TEvents } from './types'
-
+import { v6 as uuidv6 } from 'uuid'
+import Cookies from 'js-cookie'
 export class RudderStack {
     analytics = new RudderAnalytics()
     has_identified = false
     has_initialized = false
     current_page = ''
+    rudderstack_anonymous_cookie_key = 'rudder_anonymous_id'
     private static _instance: RudderStack
 
     constructor(RUDDERSTACK_KEY: string) {
@@ -20,27 +22,68 @@ export class RudderStack {
         return RudderStack._instance
     }
 
-    /**
-     * @returns The anonymous ID assigned to the user before the identify event was called
-     */
-    getAnonymousId = () => this.analytics.getAnonymousId()
+    getAnonymousId = () => {
+        return document.cookie.match('(^|;)\\s*' + this.rudderstack_anonymous_cookie_key + '\\s*=\\s*([^;]+)')?.pop()
+    }
+
+    setCookieIfNotExists = () => {
+        // Check if the cookie already exists
+        const anonymous_id = this.getAnonymousId()
+
+        if (!anonymous_id) {
+            const domain_name = window.location.hostname.split('.').slice(-2).join('.')
+            // Add the new cookie with domain accessible to all subdomains
+            document.cookie = `${this.rudderstack_anonymous_cookie_key}=${uuidv6()}; path=/; Domain=${domain_name}`
+        }
+    }
 
     /**
      * @returns The user ID that was assigned to the user after calling identify event
      */
     getUserId = () => this.analytics.getUserId()
 
+    /** For caching mechanism, Rudderstack  SDK, first page load  */
+    handleCachedEvents = () => {
+        const storedEventsString: string | undefined = Cookies.get('cached_analytics_events')
+
+        try {
+            if (storedEventsString) {
+                // Parse the stored JSON string into an array
+                const storedEvents = JSON.parse(storedEventsString)
+
+                if (Array.isArray(storedEvents) && storedEvents.length > 0) {
+                    storedEvents.forEach((event: any) => {
+                        this.analytics.track(event.name, event.properties)
+                    })
+
+                    // Clear the stored events
+                    Cookies.remove('cached_analytics_events', { domain: '.deriv.com' })
+                }
+            }
+        } catch (error) {
+            // eslint-disable-next-line no-console
+            console.log(error)
+        }
+    }
+
     /**
      * Initializes the Rudderstack SDK. Ensure that the appropriate environment variables are set before this is called.
      * For local/staging environment, ensure that `RUDDERSTACK_STAGING_KEY` and `RUDDERSTACK_URL` is set.
      * For production environment, ensure that `RUDDERSTACK_PRODUCTION_KEY` and `RUDDERSTACK_URL` is set.
      */
+
     init = (RUDDERSTACK_KEY: string) => {
         if (RUDDERSTACK_KEY) {
-            this.analytics.load(RUDDERSTACK_KEY, 'https://deriv-dataplane.rudderstack.com')
+            const _define = ((window as any).define(window as any).define = undefined)
+            this.setCookieIfNotExists()
+            this.analytics.load(RUDDERSTACK_KEY, 'https://deriv-dataplane.rudderstack.com', {
+                externalAnonymousIdCookieName: this.rudderstack_anonymous_cookie_key,
+            })
             this.analytics.ready(() => {
+                ;(window as any).define = _define
                 this.has_initialized = true
-                this.has_identified = !!(this.getUserId() || !!this.getAnonymousId())
+                this.has_identified = !!(this.getUserId() || this.getAnonymousId())
+                this.handleCachedEvents()
             })
         }
     }
