@@ -45,10 +45,11 @@ export class RudderStack {
     /** For caching mechanism, Rudderstack  SDK, first page load  */
     handleCachedEvents = () => {
         const storedEventsString: string | undefined = Cookies.get('cached_analytics_events')
+        const storedPagesString: string | undefined = Cookies.get('cached_analytics_page_view')
 
         try {
+            // Handle cached analytics events
             if (storedEventsString) {
-                // Parse the stored JSON string into an array
                 const storedEvents = JSON.parse(storedEventsString)
 
                 if (Array.isArray(storedEvents) && storedEvents.length > 0) {
@@ -56,8 +57,22 @@ export class RudderStack {
                         this.analytics.track(event.name, event.properties)
                     })
 
-                    // Clear the stored events
+                    // Clear the stored events cookie
                     Cookies.remove('cached_analytics_events', { domain: '.deriv.com' })
+                }
+            }
+
+            // Handle cached page views
+            if (storedPagesString) {
+                const storedPages = JSON.parse(storedPagesString)
+
+                if (Array.isArray(storedPages) && storedPages.length > 0) {
+                    storedPages.forEach((page: any) => {
+                        this.analytics.page(page.name, page.properties)
+                    })
+
+                    // Clear the stored page views cookie
+                    Cookies.remove('cached_analytics_page_view', { domain: '.deriv.com' })
                 }
             }
         } catch (error) {
