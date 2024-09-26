@@ -74,13 +74,17 @@ export class RudderStack {
 
     init = (RUDDERSTACK_KEY: string) => {
         if (RUDDERSTACK_KEY) {
-            const _define = ((window as any).define(window as any).define = undefined)
+            // @ts-ignore
+            const _define = window.define
+            // @ts-ignore
+            window.define = undefined
             this.setCookieIfNotExists()
             this.analytics.load(RUDDERSTACK_KEY, 'https://deriv-dataplane.rudderstack.com', {
                 externalAnonymousIdCookieName: this.rudderstack_anonymous_cookie_key,
             })
             this.analytics.ready(() => {
-                ;(window as any).define = _define
+                // @ts-ignore
+                window.define = _define
                 this.has_initialized = true
                 this.has_identified = !!(this.getUserId() || this.getAnonymousId())
                 this.handleCachedEvents()
