@@ -72,16 +72,22 @@ export class RudderStack {
      * For production environment, ensure that `RUDDERSTACK_PRODUCTION_KEY` and `RUDDERSTACK_URL` is set.
      */
 
-    init = (RUDDERSTACK_KEY: string) => {
+    init = (RUDDERSTACK_KEY: string, disableAMD: boolean = false) => {
         if (RUDDERSTACK_KEY) {
-            const _define = window.define
-            window.define = undefined
+            let _define: any
+            if (disableAMD) {
+                _define = window.define
+                window.define = undefined
+            }
+
             this.setCookieIfNotExists()
             this.analytics.load(RUDDERSTACK_KEY, 'https://deriv-dataplane.rudderstack.com', {
                 externalAnonymousIdCookieName: this.rudderstack_anonymous_cookie_key,
             })
             this.analytics.ready(() => {
-                window.define = _define
+                if (disableAMD) {
+                    window.define = _define
+                }
                 this.has_initialized = true
                 this.has_identified = !!(this.getUserId() || this.getAnonymousId())
                 this.handleCachedEvents()
