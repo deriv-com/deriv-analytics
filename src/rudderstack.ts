@@ -44,16 +44,19 @@ export class RudderStack {
 
     /** For caching mechanism, Rudderstack  SDK, first page load  */
     handleCachedEvents = () => {
-        const storedEvents: any = Cookies.get('cached_analytics_events')
+        const storedEventsString: string | undefined = Cookies.get('cached_analytics_events')
 
         try {
-            if (storedEvents) {
-                if (storedEvents.length > 0) {
+            if (storedEventsString) {
+                // Parse the stored JSON string into an array
+                const storedEvents = JSON.parse(storedEventsString)
+
+                if (Array.isArray(storedEvents) && storedEvents.length > 0) {
                     storedEvents.forEach((event: any) => {
                         this.analytics.track(event.name, event.properties)
                     })
 
-                    storedEvents.length = 0
+                    // Clear the stored events
                     Cookies.remove('cached_analytics_events', { domain: '.deriv.com' })
                 }
             }
