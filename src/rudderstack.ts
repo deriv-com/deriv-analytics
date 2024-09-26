@@ -62,7 +62,7 @@ export class RudderStack {
             }
         } catch (error) {
             // eslint-disable-next-line no-console
-            console.log('Error processing cached events:', error)
+            console.log(error)
         }
     }
 
