@@ -68,7 +68,7 @@ export class RudderStack {
 
                 if (Array.isArray(storedPages) && storedPages.length > 0) {
                     storedPages.forEach((page: any) => {
-                        this.analytics.page(page.name, page.properties)
+                        this.analytics.page(page?.name, page?.properties)
                     })
 
                     // Clear the stored page views cookie
