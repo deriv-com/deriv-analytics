@@ -37,8 +37,10 @@ export class RudderStack {
      */
     init = (RUDDERSTACK_KEY: string) => {
         if (RUDDERSTACK_KEY) {
+            const _define = ((window as any).define(window as any).define = undefined)
             this.analytics.load(RUDDERSTACK_KEY, 'https://deriv-dataplane.rudderstack.com')
             this.analytics.ready(() => {
+                ;(window as any).define = _define
                 this.has_initialized = true
                 this.has_identified = !!(this.getUserId() || !!this.getAnonymousId())
             })

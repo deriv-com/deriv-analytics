@@ -1,7 +1,6 @@
 import type { Context } from '@growthbook/growthbook'
 import { Growthbook, GrowthbookConfigs } from './growthbook'
 import { RudderStack } from './rudderstack'
-import { RudderAnalytics } from '@rudderstack/analytics-js'
 import { TCoreAttributes, TEvents } from './types'
 
 type Options = {
