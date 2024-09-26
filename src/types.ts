@@ -1,5 +1,7 @@
+import type { Context } from '@growthbook/growthbook'
+
 export type TGrowthbookAttributes = {
-    id: string
+    id?: string
     country?: string
     user_language?: string
     device_language?: string
@@ -12,13 +14,17 @@ export type TGrowthbookAttributes = {
     domain?: string
     utm_content?: string
     residence_country?: string
+    loggedIn?: boolean
 }
+
+export type TGrowthbookOptions = Partial<Omit<Context, 'attributes'> & { attributes: TCoreAttributes }>
 export type TCoreAttributes = {
     account_type?: string
     user_id?: string
     app_id?: string
     user_identity?: string
     residence_country?: string
+    geo_location?: string
 } & Partial<TGrowthbookAttributes>
 
 type SignupProvider = 'email' | 'phone' | 'google' | 'facebook' | 'apple'
@@ -323,9 +329,11 @@ type PassKeyAccountSettingsFormAction = {
         | 'create_passkey_continue_trading'
         | 'error'
         | 'add_more_passkeys'
-        | 'passkey_rename_open'
+        | 'passkey_rename_started'
         | 'passkey_rename_back'
         | 'passkey_rename_success'
+        | 'passkey_remove_started'
+        | 'passkey_remove_success'
 
     form_name?: string
     subform_name?: string
