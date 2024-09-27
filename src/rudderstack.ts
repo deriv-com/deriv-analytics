@@ -10,13 +10,13 @@ export class RudderStack {
     rudderstack_anonymous_cookie_key = 'rudder_anonymous_id'
     private static _instance: RudderStack
 
-    constructor(RUDDERSTACK_KEY: string) {
-        this.init(RUDDERSTACK_KEY)
+    constructor(RUDDERSTACK_KEY: string, disableAMD: boolean = false) {
+        this.init(RUDDERSTACK_KEY, disableAMD)
     }
 
-    public static getRudderStackInstance = (RUDDERSTACK_KEY: string) => {
+    public static getRudderStackInstance = (RUDDERSTACK_KEY: string, disableAMD: boolean = false) => {
         if (!RudderStack._instance) {
-            RudderStack._instance = new RudderStack(RUDDERSTACK_KEY)
+            RudderStack._instance = new RudderStack(RUDDERSTACK_KEY, disableAMD)
             return RudderStack._instance
         }
         return RudderStack._instance

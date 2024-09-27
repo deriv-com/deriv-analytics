@@ -8,6 +8,7 @@ type Options = {
     growthbookDecryptionKey?: string
     rudderstackKey: string
     growthbookOptions?: TGrowthbookOptions
+    disableRudderstackAMD?: boolean
 }
 
 export function createAnalyticsInstance(options?: Options) {
@@ -23,6 +24,7 @@ export function createAnalyticsInstance(options?: Options) {
         growthbookDecryptionKey,
         rudderstackKey,
         growthbookOptions,
+        disableRudderstackAMD = false,
     }: Options) => {
         const response = await fetch('https://www.cloudflare.com/cdn-cgi/trace')
         const text = await response?.text()
@@ -39,7 +41,7 @@ export function createAnalyticsInstance(options?: Options) {
 
         try {
             const country = Cookies.get('clients_country') || parsedStatus?.clients_country || CloudflareCountry
-            _rudderstack = RudderStack.getRudderStackInstance(rudderstackKey)
+            _rudderstack = RudderStack.getRudderStackInstance(rudderstackKey, disableRudderstackAMD)
             if (growthbookOptions?.attributes && Object.keys(growthbookOptions.attributes).length > 0)
                 core_data = {
                     ...core_data,
