@@ -1,5 +1,11 @@
 import type { Context } from '@growthbook/growthbook'
 
+declare global {
+    interface Window {
+        define: any
+    }
+}
+
 export type TGrowthbookAttributes = {
     id?: string
     country?: string
