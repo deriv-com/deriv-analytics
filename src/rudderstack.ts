@@ -10,13 +10,13 @@ export class RudderStack {
     rudderstack_anonymous_cookie_key = 'rudder_anonymous_id'
     private static _instance: RudderStack
 
-    constructor(RUDDERSTACK_KEY: string) {
-        this.init(RUDDERSTACK_KEY)
+    constructor(RUDDERSTACK_KEY: string, disableAMD: boolean = false) {
+        this.init(RUDDERSTACK_KEY, disableAMD)
     }
 
-    public static getRudderStackInstance = (RUDDERSTACK_KEY: string) => {
+    public static getRudderStackInstance = (RUDDERSTACK_KEY: string, disableAMD: boolean = false) => {
         if (!RudderStack._instance) {
-            RudderStack._instance = new RudderStack(RUDDERSTACK_KEY)
+            RudderStack._instance = new RudderStack(RUDDERSTACK_KEY, disableAMD)
             return RudderStack._instance
         }
         return RudderStack._instance
@@ -45,10 +45,11 @@ export class RudderStack {
     /** For caching mechanism, Rudderstack  SDK, first page load  */
     handleCachedEvents = () => {
         const storedEventsString: string | undefined = Cookies.get('cached_analytics_events')
+        const storedPagesString: string | undefined = Cookies.get('cached_analytics_page_views')
 
         try {
+            // Handle cached analytics events
             if (storedEventsString) {
-                // Parse the stored JSON string into an array
                 const storedEvents = JSON.parse(storedEventsString)
 
                 if (Array.isArray(storedEvents) && storedEvents.length > 0) {
@@ -56,8 +57,22 @@ export class RudderStack {
                         this.analytics.track(event.name, event.properties)
                     })
 
-                    // Clear the stored events
+                    // Clear the stored events cookie
                     Cookies.remove('cached_analytics_events', { domain: '.deriv.com' })
+                }
+            }
+
+            // Handle cached page views
+            if (storedPagesString) {
+                const storedPages = JSON.parse(storedPagesString)
+
+                if (Array.isArray(storedPages) && storedPages.length > 0) {
+                    storedPages.forEach((page: any) => {
+                        this.analytics.page(page?.name, page?.properties)
+                    })
+
+                    // Clear the stored page views cookie
+                    Cookies.remove('cached_analytics_page_views', { domain: '.deriv.com' })
                 }
             }
         } catch (error) {
@@ -72,13 +87,22 @@ export class RudderStack {
      * For production environment, ensure that `RUDDERSTACK_PRODUCTION_KEY` and `RUDDERSTACK_URL` is set.
      */
 
-    init = (RUDDERSTACK_KEY: string) => {
+    init = (RUDDERSTACK_KEY: string, disableAMD: boolean = false) => {
         if (RUDDERSTACK_KEY) {
+            let _define: any
+            if (disableAMD) {
+                _define = window.define
+                window.define = undefined
+            }
+
             this.setCookieIfNotExists()
             this.analytics.load(RUDDERSTACK_KEY, 'https://deriv-dataplane.rudderstack.com', {
                 externalAnonymousIdCookieName: this.rudderstack_anonymous_cookie_key,
             })
             this.analytics.ready(() => {
+                if (disableAMD) {
+                    window.define = _define
+                }
                 this.has_initialized = true
                 this.has_identified = !!(this.getUserId() || this.getAnonymousId())
                 this.handleCachedEvents()
