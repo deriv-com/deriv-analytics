@@ -63,6 +63,7 @@ export function createAnalyticsInstance(options?: Options) {
                     ...(growthbookOptions?.attributes && {
                         loggedIn: !!growthbookOptions?.attributes?.loggedIn,
                     }),
+                    ...(growthbookOptions?.attributes?.email && { email: growthbookOptions?.attributes.email }),
                 }
             growthbookOptions ??= {}
             growthbookOptions.attributes ??= {}
