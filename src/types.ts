@@ -31,6 +31,7 @@ export type TCoreAttributes = {
     user_identity?: string
     residence_country?: string
     geo_location?: string
+    email_hash?: string
 } & Partial<TGrowthbookAttributes>
 
 type SignupProvider = 'email' | 'phone' | 'google' | 'facebook' | 'apple'
