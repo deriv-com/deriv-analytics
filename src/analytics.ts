@@ -29,11 +29,16 @@ export function createAnalyticsInstance(options?: Options) {
         let CloudflareCountry = ''
         try {
             const response = await fetch('https://www.cloudflare.com/cdn-cgi/trace')
+
             if (response.ok) {
                 const text = await response?.text()
-                CloudflareCountry = Object.fromEntries(text.split('\n').map(v => v.split('=', 2))).loc.toLowerCase()
-            } else {
-                console.warn(`HTTP warning! status: ${response.status}`)
+                const entries = Object.fromEntries(text.split('\n').map(v => v.split('=', 2)))
+
+                if (entries.loc) {
+                    CloudflareCountry = entries.loc.toLowerCase()
+                } else {
+                    console.warn('Location not found in the response.')
+                }
             }
         } catch (error) {
             console.warn('Cannot get the Cloudflare location:', error)
