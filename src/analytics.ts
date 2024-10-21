@@ -8,6 +8,7 @@ type Options = {
     growthbookDecryptionKey?: string
     rudderstackKey: string
     growthbookOptions?: TGrowthbookOptions
+    disableRudderstackAMD?: boolean
 }
 
 export function createAnalyticsInstance(options?: Options) {
@@ -23,10 +24,26 @@ export function createAnalyticsInstance(options?: Options) {
         growthbookDecryptionKey,
         rudderstackKey,
         growthbookOptions,
+        disableRudderstackAMD = false,
     }: Options) => {
-        const response = await fetch('https://www.cloudflare.com/cdn-cgi/trace')
-        const text = await response?.text()
-        const CloudflareCountry = Object.fromEntries(text.split('\n').map(v => v.split('=', 2))).loc.toLowerCase()
+        let CloudflareCountry = ''
+        try {
+            const response = await fetch('https://www.cloudflare.com/cdn-cgi/trace')
+
+            if (response.ok) {
+                const text = await response?.text()
+                const entries = Object.fromEntries(text.split('\n').map(v => v.split('=', 2)))
+
+                if (entries.loc) {
+                    CloudflareCountry = entries.loc.toLowerCase()
+                } else {
+                    console.warn('Location not found in the response.')
+                }
+            }
+        } catch (error) {
+            console.warn('Cannot get the Cloudflare location:', error)
+        }
+
         const websiteStatus = Cookies.get('website_status')
         let parsedStatus
         if (websiteStatus) {
@@ -39,7 +56,7 @@ export function createAnalyticsInstance(options?: Options) {
 
         try {
             const country = Cookies.get('clients_country') || parsedStatus?.clients_country || CloudflareCountry
-            _rudderstack = RudderStack.getRudderStackInstance(rudderstackKey)
+            _rudderstack = RudderStack.getRudderStackInstance(rudderstackKey, disableRudderstackAMD)
             if (growthbookOptions?.attributes && Object.keys(growthbookOptions.attributes).length > 0)
                 core_data = {
                     ...core_data,
@@ -60,6 +77,9 @@ export function createAnalyticsInstance(options?: Options) {
                     ...(growthbookOptions?.attributes?.url && { url: growthbookOptions?.attributes.url }),
                     ...(growthbookOptions?.attributes && {
                         loggedIn: !!growthbookOptions?.attributes?.loggedIn,
+                    }),
+                    ...(growthbookOptions?.attributes?.email_hash && {
+                        email_hash: growthbookOptions?.attributes.email_hash,
                     }),
                 }
             growthbookOptions ??= {}

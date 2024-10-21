@@ -101,5 +101,5 @@ export class Growthbook {
     setUrl = (href: string) => this.GrowthBook.setURL(href)
     isOn = (key: string) => this.GrowthBook.isOn(key)
 
-    init = async () => await this.GrowthBook.init({ timeout: 2000 }).catch(err => console.error(err))
+    init = async () => await this.GrowthBook.init({ timeout: 2000, streaming: true }).catch(err => console.error(err))
 }
