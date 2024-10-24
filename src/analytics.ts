@@ -29,13 +29,19 @@ export function createAnalyticsInstance(options?: Options) {
         let CloudflareCountry = ''
         try {
             const response = await fetch('https://www.cloudflare.com/cdn-cgi/trace')
-            if (!response.ok) {
-                throw new Error(`HTTP error! status: ${response.status}`)
+
+            if (response.ok) {
+                const text = await response?.text()
+                const entries = Object.fromEntries(text.split('\n').map(v => v.split('=', 2)))
+
+                if (entries.loc) {
+                    CloudflareCountry = entries.loc.toLowerCase()
+                } else {
+                    console.warn('Location not found in the response.')
+                }
             }
-            const text = await response?.text()
-            CloudflareCountry = Object.fromEntries(text.split('\n').map(v => v.split('=', 2))).loc.toLowerCase()
         } catch (error) {
-            console.error('Failed to fetch Cloudflare location:', error)
+            console.warn('Cannot get the Cloudflare location:', error)
         }
 
         const websiteStatus = Cookies.get('website_status')
@@ -159,6 +165,7 @@ export function createAnalyticsInstance(options?: Options) {
         id: K,
         defaultValue: V
     ) => _growthbook?.getFeatureValue(id as string, defaultValue)
+    const getGrowthbookStatus = async () => await _growthbook?.getStatus()
     const isFeatureOn = (key: string) => _growthbook?.isOn(key)
     const setUrl = (href: string) => _growthbook?.setUrl(href)
     const getId = () => _rudderstack?.getUserId() || ''
@@ -218,6 +225,7 @@ export function createAnalyticsInstance(options?: Options) {
         identifyEvent,
         getFeatureState,
         getFeatureValue,
+        getGrowthbookStatus,
         isFeatureOn,
         setUrl,
         getId,
