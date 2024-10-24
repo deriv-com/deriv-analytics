@@ -165,6 +165,7 @@ export function createAnalyticsInstance(options?: Options) {
         id: K,
         defaultValue: V
     ) => _growthbook?.getFeatureValue(id as string, defaultValue)
+    const getGrowthbookStatus = async () => await _growthbook?.getStatus()
     const isFeatureOn = (key: string) => _growthbook?.isOn(key)
     const setUrl = (href: string) => _growthbook?.setUrl(href)
     const getId = () => _rudderstack?.getUserId() || ''
@@ -224,6 +225,7 @@ export function createAnalyticsInstance(options?: Options) {
         identifyEvent,
         getFeatureState,
         getFeatureValue,
+        getGrowthbookStatus,
         isFeatureOn,
         setUrl,
         getId,
