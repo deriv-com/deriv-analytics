@@ -124,11 +124,14 @@ export class Growthbook {
     isOn = (key: string) => this.GrowthBook.isOn(key)
 
     init = async () => {
-        await this.GrowthBook.init({ timeout: 2000, streaming: true }).catch(err => {
-            this.error = err
-            console.error(err)
-        })
-
-        this.isLoaded = true
+        const _this = this
+        await this.GrowthBook.init({ timeout: 2000, streaming: true })
+            .then(() => {
+                _this.isLoaded = true
+            })
+            .catch(err => {
+                this.error = err
+                console.error(err)
+            })
     }
 }
