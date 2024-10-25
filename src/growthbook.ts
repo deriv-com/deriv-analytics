@@ -1,4 +1,4 @@
-import { Context, GrowthBook } from '@growthbook/growthbook'
+import { Context, GrowthBook, InitResponse } from '@growthbook/growthbook'
 import { RudderAnalytics } from '@rudderstack/analytics-js'
 import { TCoreAttributes, TGrowthbookAttributes, TGrowthbookOptions } from './types'
 
@@ -14,8 +14,8 @@ export class Growthbook {
     analytics = new RudderAnalytics()
     GrowthBook
     private static _instance: Growthbook
-    error = null
     isLoaded = false
+    status: void | InitResponse = undefined
 
     // we have to pass settings due the specific framework implementation
     constructor(clientKey: string, decryptionKey: string, growthbookOptions: TGrowthbookOptions = {}) {
@@ -111,12 +111,12 @@ export class Growthbook {
     getFeatureValue = <K extends keyof GrowthbookConfigs, V extends GrowthbookConfigs[K]>(key: K, defaultValue: V) => {
         return this.GrowthBook.getFeatureValue(key as string, defaultValue)
     }
-    getStatus = async (): Promise<{ isLoaded: boolean; error: null }> => {
+    getStatus = async (): Promise<{ isLoaded: boolean; status: void | InitResponse }> => {
         await this.waitForIsLoaded()
 
         return {
             isLoaded: this.isLoaded,
-            error: this.error,
+            status: this.status,
         }
     }
     getFeatureState = (id: string) => this.GrowthBook.evalFeature(id)
@@ -124,14 +124,11 @@ export class Growthbook {
     isOn = (key: string) => this.GrowthBook.isOn(key)
 
     init = async () => {
-        const _this = this
-        await this.GrowthBook.init({ timeout: 2000, streaming: true })
-            .then(() => {
-                _this.isLoaded = true
-            })
-            .catch(err => {
-                this.error = err
-                console.error(err)
-            })
+        const status = await this.GrowthBook.init({ timeout: 2000, streaming: true }).catch(err => {
+            console.error(err)
+        })
+
+        this.status = status
+        this.isLoaded = true
     }
 }
