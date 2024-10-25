@@ -173,7 +173,7 @@ export function createAnalyticsInstance(options?: Options) {
      *
      * @param curret_page The name or URL of the current page to track the page view event
      */
-    const pageView = (current_page: string, platform = 'Deriv App', properties: {}) => {
+    const pageView = (current_page: string, platform = 'Deriv App', properties?: {}) => {
         if (!_rudderstack) return
         _rudderstack?.pageView(current_page, platform, getId(), properties)
     }
