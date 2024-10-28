@@ -385,6 +385,15 @@ type TCashierDepositOnboardingFormAction = {
     login_id?: string
 }
 
+type TNewDtraderTradeForm = {
+    action?: 'open' | 'select_trade_type' | 'select_market_type' | 'open_guide' | 'run_contract' | 'close_contract'
+    trade_name?: string
+    market_name?: string
+    subform_name?: string
+    trade_type_count?: number
+    contract_id?: number
+}
+
 export type TEvents = {
     ce_virtual_signup_form: VirtualSignupForm
     ce_email_verification_form: EmailVerificationForm
@@ -411,4 +420,5 @@ export type TEvents = {
     ce_wallets_homepage_form: WalletsHomepageFormAction
     ce_notification_form: TNotificationsTrayForm
     ce_cashier_deposit_onboarding_form: TCashierDepositOnboardingFormAction
+    ce_new_dtrader_trade_form: TNewDtraderTradeForm
 }
