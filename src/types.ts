@@ -296,6 +296,9 @@ type ContractsSetupForm = {
           action: 'run_contract'
           switcher_duration_mode_name?: string
           switcher_stakepayout_mode_name?: string
+          market_name?: string
+          trade_name?: string
+          contract_id?: number
       }
 )
 type TradersHubOnboardingFormAction = {
@@ -385,7 +388,7 @@ type TCashierDepositOnboardingFormAction = {
     login_id?: string
 }
 
-type TNewDtraderTradeForm = {
+type TDtraderTradeForm = {
     action?: 'open' | 'select_trade_type' | 'select_market_type' | 'open_guide' | 'run_contract' | 'close_contract'
     trade_name?: string
     market_name?: string
@@ -420,5 +423,5 @@ export type TEvents = {
     ce_wallets_homepage_form: WalletsHomepageFormAction
     ce_notification_form: TNotificationsTrayForm
     ce_cashier_deposit_onboarding_form: TCashierDepositOnboardingFormAction
-    ce_new_dtrader_trade_form: TNewDtraderTradeForm
+    ce_dtrader_trade_form: TDtraderTradeForm
 }
