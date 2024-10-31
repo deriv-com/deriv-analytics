@@ -281,8 +281,8 @@ type ChartTypesFormAction = {
     time_interval_name?: string
 }
 type ContractsSetupForm = {
-    form_name: string
-    trade_type_name: string
+    form_name?: string
+    trade_type_name?: string
 } & (
     | {
           action: 'change_parameter_value'
