@@ -1,4 +1,4 @@
-import { Context, GrowthBook } from '@growthbook/growthbook'
+import { Context, GrowthBook, InitResponse } from '@growthbook/growthbook'
 import { RudderAnalytics } from '@rudderstack/analytics-js'
 import { TCoreAttributes, TGrowthbookAttributes, TGrowthbookOptions } from './types'
 
@@ -14,6 +14,8 @@ export class Growthbook {
     analytics = new RudderAnalytics()
     GrowthBook
     private static _instance: Growthbook
+    isLoaded = false
+    status: void | InitResponse = undefined
 
     // we have to pass settings due the specific framework implementation
     constructor(clientKey: string, decryptionKey: string, growthbookOptions: TGrowthbookOptions = {}) {
@@ -59,6 +61,18 @@ export class Growthbook {
         return Growthbook._instance
     }
 
+    // Utility function to wait for isLoaded to become true
+    private waitForIsLoaded(): Promise<void> {
+        return new Promise(resolve => {
+            const checkInterval = setInterval(() => {
+                if (this.isLoaded) {
+                    clearInterval(checkInterval)
+                    resolve()
+                }
+            }, 100)
+        })
+    }
+
     setAttributes = ({
         id,
         country,
@@ -97,9 +111,24 @@ export class Growthbook {
     getFeatureValue = <K extends keyof GrowthbookConfigs, V extends GrowthbookConfigs[K]>(key: K, defaultValue: V) => {
         return this.GrowthBook.getFeatureValue(key as string, defaultValue)
     }
+    getStatus = async (): Promise<{ isLoaded: boolean; status: void | InitResponse }> => {
+        await this.waitForIsLoaded()
+
+        return {
+            isLoaded: this.isLoaded,
+            status: this.status,
+        }
+    }
     getFeatureState = (id: string) => this.GrowthBook.evalFeature(id)
     setUrl = (href: string) => this.GrowthBook.setURL(href)
     isOn = (key: string) => this.GrowthBook.isOn(key)
 
-    init = async () => await this.GrowthBook.init({ timeout: 2000, streaming: true }).catch(err => console.error(err))
+    init = async () => {
+        const status = await this.GrowthBook.init({ timeout: 2000, streaming: true }).catch(err => {
+            console.error(err)
+        })
+
+        this.status = status
+        this.isLoaded = true
+    }
 }
