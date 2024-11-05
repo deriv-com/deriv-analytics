@@ -250,21 +250,7 @@ export function createAnalyticsInstance(options?: Options) {
         window.AnalyticsInstance = AnalyticsInstance
     }
 
-    return {
-        initialise,
-        setAttributes,
-        identifyEvent,
-        getFeatureState,
-        getFeatureValue,
-        getGrowthbookStatus,
-        isFeatureOn,
-        setUrl,
-        getId,
-        trackEvent,
-        getInstances,
-        pageView,
-        reset,
-    }
+    return AnalyticsInstance
 }
 
 export const Analytics = createAnalyticsInstance()
