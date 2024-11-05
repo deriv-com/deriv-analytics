@@ -3,6 +3,11 @@ import { RudderStack } from './rudderstack'
 import Cookies from 'js-cookie'
 import { TCoreAttributes, TEvents, TGrowthbookAttributes, TGrowthbookOptions } from './types'
 
+declare global {
+    interface Window {
+        AnalyticsInstance: ReturnType<typeof createAnalyticsInstance>
+    }
+}
 type Options = {
     growthbookKey?: string
     growthbookDecryptionKey?: string
@@ -80,6 +85,15 @@ export function createAnalyticsInstance(options?: Options) {
                     ...(growthbookOptions?.attributes?.email_hash && {
                         email_hash: growthbookOptions?.attributes.email_hash,
                     }),
+                    ...(growthbookOptions?.attributes?.network_type && {
+                        network_type: growthbookOptions?.attributes.network_type,
+                    }),
+                    ...(growthbookOptions?.attributes?.network_rtt && {
+                        network_rtt: growthbookOptions?.attributes.network_rtt,
+                    }),
+                    ...(growthbookOptions?.attributes?.network_downlink && {
+                        network_downlink: growthbookOptions?.attributes.network_downlink,
+                    }),
                 }
             growthbookOptions ??= {}
             growthbookOptions.attributes ??= {}
@@ -120,6 +134,9 @@ export function createAnalyticsInstance(options?: Options) {
         domain,
         geo_location,
         loggedIn,
+        network_downlink,
+        network_rtt,
+        network_type,
     }: TCoreAttributes) => {
         if (!_growthbook && !_rudderstack) return
 
@@ -156,6 +173,9 @@ export function createAnalyticsInstance(options?: Options) {
             ...(device_type && { device_type }),
             ...(url && { url }),
             ...(loggedIn && { loggedIn }),
+            ...(network_downlink && { network_downlink }),
+            ...(network_rtt && { network_rtt }),
+            ...(network_type && { network_type }),
         }
     }
 
@@ -210,7 +230,7 @@ export function createAnalyticsInstance(options?: Options) {
 
     const getInstances = () => ({ ab: _growthbook, tracking: _rudderstack })
 
-    return {
+    const AnalyticsInstance = {
         initialise,
         setAttributes,
         identifyEvent,
@@ -225,6 +245,12 @@ export function createAnalyticsInstance(options?: Options) {
         pageView,
         reset,
     }
+
+    if (typeof window !== 'undefined') {
+        window.AnalyticsInstance = AnalyticsInstance
+    }
+
+    return AnalyticsInstance
 }
 
 export const Analytics = createAnalyticsInstance()
