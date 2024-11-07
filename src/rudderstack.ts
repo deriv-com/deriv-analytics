@@ -131,6 +131,7 @@ export class RudderStack {
                 this.has_initialized = true
                 this.has_identified = !!(this.getUserId() || this.getAnonymousId())
                 this.handleCachedEvents()
+                this.trackConsoleErrors()
             })
         }
     }
