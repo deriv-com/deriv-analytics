@@ -6,7 +6,6 @@ export class RudderStack {
     analytics = new RudderAnalytics()
     has_identified = false
     has_initialized = false
-    track_error = ''
     current_page = ''
     rudderstack_anonymous_cookie_key = 'rudder_anonymous_id'
     private static _instance: RudderStack
