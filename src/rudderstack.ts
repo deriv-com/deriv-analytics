@@ -6,6 +6,7 @@ export class RudderStack {
     analytics = new RudderAnalytics()
     has_identified = false
     has_initialized = false
+    track_error = ''
     current_page = ''
     rudderstack_anonymous_cookie_key = 'rudder_anonymous_id'
     private static _instance: RudderStack
@@ -83,7 +84,8 @@ export class RudderStack {
 
     //tracking the track js error
 
-    trackConsoleErrors = (): void => {
+    trackConsoleErrors = (): any => {
+        let latestErrorMessage: string | null = null
         // Preserve the original console.error function
         const originalConsoleError = console.error
 
@@ -102,8 +104,10 @@ export class RudderStack {
                         : String(arg)
                 )
                 .join(' ')
+            latestErrorMessage = errorMessage
             return errorMessage
         }
+        return latestErrorMessage
     }
 
     /**
