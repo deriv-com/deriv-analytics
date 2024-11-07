@@ -3,6 +3,11 @@ import { RudderStack } from './rudderstack'
 import Cookies from 'js-cookie'
 import { TCoreAttributes, TEvents, TGrowthbookAttributes, TGrowthbookOptions } from './types'
 
+declare global {
+    interface Window {
+        AnalyticsInstance: ReturnType<typeof createAnalyticsInstance>
+    }
+}
 type Options = {
     growthbookKey?: string
     growthbookDecryptionKey?: string
@@ -16,8 +21,7 @@ export function createAnalyticsInstance(options?: Options) {
         _rudderstack: RudderStack,
         core_data: Partial<TCoreAttributes> = {},
         tracking_config: { [key: string]: boolean } = {},
-        event_cache: Array<{ event: keyof TEvents; payload: TEvents[keyof TEvents] }> = [],
-        page_view_cache: Array<{ current_page: string; platform: string; user_id: string }> = []
+        event_cache: Array<{ event: keyof TEvents; payload: TEvents[keyof TEvents] }> = []
 
     const initialise = async ({
         growthbookKey,
@@ -81,6 +85,15 @@ export function createAnalyticsInstance(options?: Options) {
                     ...(growthbookOptions?.attributes?.email_hash && {
                         email_hash: growthbookOptions?.attributes.email_hash,
                     }),
+                    ...(growthbookOptions?.attributes?.network_type && {
+                        network_type: growthbookOptions?.attributes.network_type,
+                    }),
+                    ...(growthbookOptions?.attributes?.network_rtt && {
+                        network_rtt: growthbookOptions?.attributes.network_rtt,
+                    }),
+                    ...(growthbookOptions?.attributes?.network_downlink && {
+                        network_downlink: growthbookOptions?.attributes.network_downlink,
+                    }),
                 }
             growthbookOptions ??= {}
             growthbookOptions.attributes ??= {}
@@ -121,6 +134,9 @@ export function createAnalyticsInstance(options?: Options) {
         domain,
         geo_location,
         loggedIn,
+        network_downlink,
+        network_rtt,
+        network_type,
     }: TCoreAttributes) => {
         if (!_growthbook && !_rudderstack) return
 
@@ -157,6 +173,9 @@ export function createAnalyticsInstance(options?: Options) {
             ...(device_type && { device_type }),
             ...(url && { url }),
             ...(loggedIn && { loggedIn }),
+            ...(network_downlink && { network_downlink }),
+            ...(network_rtt && { network_rtt }),
+            ...(network_type && { network_type }),
         }
     }
 
@@ -174,17 +193,9 @@ export function createAnalyticsInstance(options?: Options) {
      *
      * @param curret_page The name or URL of the current page to track the page view event
      */
-    const pageView = (current_page: string, platform = 'Deriv App') => {
-        if (!navigator.onLine || !_rudderstack) {
-            return page_view_cache.push({ current_page, platform, user_id: getId() })
-        }
-        if (page_view_cache.length > 0) {
-            page_view_cache.forEach((cache, index) => {
-                _rudderstack?.pageView(cache.current_page, cache.platform, cache.user_id)
-                delete page_view_cache[index]
-            })
-        }
-        _rudderstack?.pageView(current_page, platform, getId())
+    const pageView = (current_page: string, platform = 'Deriv App', properties?: {}) => {
+        if (!_rudderstack) return
+        _rudderstack?.pageView(current_page, platform, getId(), properties)
     }
 
     const identifyEvent = (user_id?: string) => {
@@ -219,7 +230,7 @@ export function createAnalyticsInstance(options?: Options) {
 
     const getInstances = () => ({ ab: _growthbook, tracking: _rudderstack })
 
-    return {
+    const AnalyticsInstance = {
         initialise,
         setAttributes,
         identifyEvent,
@@ -234,6 +245,12 @@ export function createAnalyticsInstance(options?: Options) {
         pageView,
         reset,
     }
+
+    if (typeof window !== 'undefined') {
+        window.AnalyticsInstance = AnalyticsInstance
+    }
+
+    return AnalyticsInstance
 }
 
 export const Analytics = createAnalyticsInstance()
