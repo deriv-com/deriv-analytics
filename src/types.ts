@@ -45,7 +45,6 @@ type VirtualSignupForm = {
         | 'started'
         | 'email_confirmation_sent'
         | 'email_confirmed'
-        | 'signup_continued'
         | 'country_selection_screen_opened'
         | 'password_screen_opened'
         | 'signup_done'
