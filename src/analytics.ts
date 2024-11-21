@@ -24,6 +24,24 @@ export function createAnalyticsInstance(options?: Options) {
         tracking_config: { [key: string]: boolean } = {},
         event_cache: Array<{ event: keyof TEvents; payload: TEvents[keyof TEvents] }> = []
 
+    const getClientCountry = async () => {
+        const countryFromCloudflare = await CountryUtils.getCountry()
+        const countryFromCookie = Cookies.get('clients_country')
+
+        const websiteStatus = Cookies.get('website_status')
+        let countryFromWebsiteStatus = ''
+
+        if (websiteStatus) {
+            try {
+                countryFromWebsiteStatus = JSON.parse(websiteStatus)?.clients_country || ''
+            } catch (e) {
+                console.error('Failed to parse cookie: ', e)
+            }
+        }
+
+        return countryFromCookie || countryFromWebsiteStatus || countryFromCloudflare
+    }
+
     const initialise = async ({
         growthbookKey,
         growthbookDecryptionKey,
@@ -31,26 +49,13 @@ export function createAnalyticsInstance(options?: Options) {
         growthbookOptions,
         disableRudderstackAMD = false,
     }: Options) => {
-        const countryFromCloudflare = await CountryUtils.getCountry()
-        const countryFromCookie = Cookies.get('clients_country')
-
-        const websiteStatus = Cookies.get('website_status')
-        let countryFromWebsiteStatus
-        if (websiteStatus) {
-            try {
-                countryFromWebsiteStatus = JSON.parse(websiteStatus)?.clients_country || '' // Parse only if it's a valid JSON string
-            } catch (e) {
-                console.error('Failed to parse cookie: ', e)
-            }
-        }
-
         try {
-            const country = countryFromCookie || countryFromWebsiteStatus || countryFromCloudflare
+            const country = growthbookOptions?.attributes?.country || (await getClientCountry())
             _rudderstack = RudderStack.getRudderStackInstance(rudderstackKey, disableRudderstackAMD)
             if (growthbookOptions?.attributes && Object.keys(growthbookOptions.attributes).length > 0)
                 core_data = {
                     ...core_data,
-                    country: growthbookOptions?.attributes?.country || country,
+                    country,
                     ...(growthbookOptions?.attributes?.user_language && {
                         user_language: growthbookOptions?.attributes.user_language,
                     }),
