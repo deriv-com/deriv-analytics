@@ -2,6 +2,7 @@ import { Growthbook, GrowthbookConfigs } from './growthbook'
 import { RudderStack } from './rudderstack'
 import Cookies from 'js-cookie'
 import { TCoreAttributes, TEvents, TGrowthbookAttributes, TGrowthbookOptions } from './types'
+import { CountryUtils } from '@deriv-com/utils'
 
 declare global {
     interface Window {
@@ -30,41 +31,26 @@ export function createAnalyticsInstance(options?: Options) {
         growthbookOptions,
         disableRudderstackAMD = false,
     }: Options) => {
-        let CloudflareCountry = ''
-        try {
-            const response = await fetch('https://www.cloudflare.com/cdn-cgi/trace')
-
-            if (response.ok) {
-                const text = await response?.text()
-                const entries = Object.fromEntries(text.split('\n').map(v => v.split('=', 2)))
-
-                if (entries.loc) {
-                    CloudflareCountry = entries.loc.toLowerCase()
-                } else {
-                    console.warn('Location not found in the response.')
-                }
-            }
-        } catch (error) {
-            console.warn('Cannot get the Cloudflare location:', error)
-        }
+        const countryFromCloudflare = await CountryUtils.getCountry()
+        const countryFromCookie = Cookies.get('clients_country')
 
         const websiteStatus = Cookies.get('website_status')
-        let parsedStatus
+        let countryFromWebsiteStatus
         if (websiteStatus) {
             try {
-                parsedStatus = JSON.parse(websiteStatus) // Parse only if it's a valid JSON string
+                countryFromWebsiteStatus = JSON.parse(websiteStatus)?.clients_country || '' // Parse only if it's a valid JSON string
             } catch (e) {
                 console.error('Failed to parse cookie: ', e)
             }
         }
 
         try {
-            const country = Cookies.get('clients_country') || parsedStatus?.clients_country || CloudflareCountry
+            const country = countryFromCookie || countryFromWebsiteStatus || countryFromCloudflare
             _rudderstack = RudderStack.getRudderStackInstance(rudderstackKey, disableRudderstackAMD)
             if (growthbookOptions?.attributes && Object.keys(growthbookOptions.attributes).length > 0)
                 core_data = {
                     ...core_data,
-                    ...(growthbookOptions?.attributes?.country && { country: country }),
+                    country: growthbookOptions?.attributes?.country || country,
                     ...(growthbookOptions?.attributes?.user_language && {
                         user_language: growthbookOptions?.attributes.user_language,
                     }),
