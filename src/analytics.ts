@@ -2,6 +2,7 @@ import { Growthbook, GrowthbookConfigs } from './growthbook'
 import { RudderStack } from './rudderstack'
 import Cookies from 'js-cookie'
 import { TCoreAttributes, TEvents, TGrowthbookAttributes, TGrowthbookOptions } from './types'
+import { CountryUtils } from '@deriv-com/utils'
 
 declare global {
     interface Window {
@@ -23,6 +24,24 @@ export function createAnalyticsInstance(options?: Options) {
         tracking_config: { [key: string]: boolean } = {},
         event_cache: Array<{ event: keyof TEvents; payload: TEvents[keyof TEvents] }> = []
 
+    const getClientCountry = async () => {
+        const countryFromCloudflare = await CountryUtils.getCountry()
+        const countryFromCookie = Cookies.get('clients_country')
+
+        const websiteStatus = Cookies.get('website_status')
+        let countryFromWebsiteStatus = ''
+
+        if (websiteStatus) {
+            try {
+                countryFromWebsiteStatus = JSON.parse(websiteStatus)?.clients_country || ''
+            } catch (e) {
+                console.error('Failed to parse cookie: ', e)
+            }
+        }
+
+        return countryFromCookie || countryFromWebsiteStatus || countryFromCloudflare
+    }
+
     const initialise = async ({
         growthbookKey,
         growthbookDecryptionKey,
@@ -30,41 +49,13 @@ export function createAnalyticsInstance(options?: Options) {
         growthbookOptions,
         disableRudderstackAMD = false,
     }: Options) => {
-        let CloudflareCountry = ''
         try {
-            const response = await fetch('https://www.cloudflare.com/cdn-cgi/trace')
-
-            if (response.ok) {
-                const text = await response?.text()
-                const entries = Object.fromEntries(text.split('\n').map(v => v.split('=', 2)))
-
-                if (entries.loc) {
-                    CloudflareCountry = entries.loc.toLowerCase()
-                } else {
-                    console.warn('Location not found in the response.')
-                }
-            }
-        } catch (error) {
-            console.warn('Cannot get the Cloudflare location:', error)
-        }
-
-        const websiteStatus = Cookies.get('website_status')
-        let parsedStatus
-        if (websiteStatus) {
-            try {
-                parsedStatus = JSON.parse(websiteStatus) // Parse only if it's a valid JSON string
-            } catch (e) {
-                console.error('Failed to parse cookie: ', e)
-            }
-        }
-
-        try {
-            const country = Cookies.get('clients_country') || parsedStatus?.clients_country || CloudflareCountry
+            const country = growthbookOptions?.attributes?.country || (await getClientCountry())
             _rudderstack = RudderStack.getRudderStackInstance(rudderstackKey, disableRudderstackAMD)
             if (growthbookOptions?.attributes && Object.keys(growthbookOptions.attributes).length > 0)
                 core_data = {
                     ...core_data,
-                    ...(growthbookOptions?.attributes?.country && { country: country }),
+                    country,
                     ...(growthbookOptions?.attributes?.user_language && {
                         user_language: growthbookOptions?.attributes.user_language,
                     }),
