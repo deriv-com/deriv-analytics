@@ -44,6 +44,7 @@ export class RudderStack {
 
     /** For caching mechanism, Rudderstack  SDK, first page load  */
     handleCachedEvents = () => {
+        const domain = window.location.hostname.includes('deriv.team') ? '.deriv.team' : '.deriv.com'
         const storedEventsString: string | undefined = Cookies.get('cached_analytics_events')
         const storedPagesString: string | undefined = Cookies.get('cached_analytics_page_views')
 
@@ -58,7 +59,7 @@ export class RudderStack {
                     })
 
                     // Clear the stored events cookie
-                    Cookies.remove('cached_analytics_events', { domain: '.deriv.com' })
+                    Cookies.remove('cached_analytics_events', { domain })
                 }
             }
 
@@ -72,7 +73,7 @@ export class RudderStack {
                     })
 
                     // Clear the stored page views cookie
-                    Cookies.remove('cached_analytics_page_views', { domain: '.deriv.com' })
+                    Cookies.remove('cached_analytics_page_views', { domain })
                 }
             }
         } catch (error) {
