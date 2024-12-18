@@ -44,7 +44,10 @@ export class RudderStack {
 
     /** For caching mechanism, Rudderstack  SDK, first page load  */
     handleCachedEvents = () => {
-        const domain = window.location.hostname.includes('deriv.team') ? '.deriv.team' : '.deriv.com'
+        const allowedDomains = ['deriv.com', 'deriv.team']
+        const domain = allowedDomains.some(d => window.location.hostname.includes(d))
+            ? `.${allowedDomains.find(d => window.location.hostname.includes(d))}`
+            : `.${allowedDomains[0]}`
         const storedEventsString: string | undefined = Cookies.get('cached_analytics_events')
         const storedPagesString: string | undefined = Cookies.get('cached_analytics_page_views')
 
