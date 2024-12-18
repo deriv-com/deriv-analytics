@@ -88,6 +88,8 @@ export class Growthbook {
         utm_content,
         residence_country,
         loggedIn,
+        network_type,
+        network_downlink,
     }: TGrowthbookAttributes) => {
         const CURRENT_ATTRIBUTES = this.GrowthBook.getAttributes()
         this.GrowthBook.setAttributes({
@@ -106,6 +108,8 @@ export class Growthbook {
             ...(domain && { domain }),
             ...(utm_content && { utm_content }),
             ...(loggedIn && { loggedIn }),
+            ...(network_type && { network_type }),
+            ...(network_downlink && { network_downlink }),
         })
     }
     getFeatureValue = <K extends keyof GrowthbookConfigs, V extends GrowthbookConfigs[K]>(key: K, defaultValue: V) => {
