@@ -74,7 +74,6 @@ export class Growthbook {
     }
 
     setAttributes = ({
-        id,
         country,
         user_language,
         device_language,
@@ -94,7 +93,6 @@ export class Growthbook {
         const CURRENT_ATTRIBUTES = this.GrowthBook.getAttributes()
         this.GrowthBook.setAttributes({
             ...CURRENT_ATTRIBUTES,
-            id,
             ...(country && { country }),
             ...(residence_country && { residence_country }),
             ...(user_language && { user_language }),

@@ -88,7 +88,6 @@ export function createAnalyticsInstance(options?: Options) {
                 }
             growthbookOptions ??= {}
             growthbookOptions.attributes ??= {}
-            growthbookOptions.attributes.id ??= _rudderstack.getAnonymousId()
             growthbookOptions.attributes.country ??= country
 
             if (growthbookKey) {
@@ -149,7 +148,6 @@ export function createAnalyticsInstance(options?: Options) {
                 domain,
                 loggedIn,
             }
-            if (user_identity) config.id = user_identity
             _growthbook.setAttributes(config)
         }
 

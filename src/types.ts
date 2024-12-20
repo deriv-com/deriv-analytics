@@ -7,7 +7,6 @@ declare global {
 }
 
 export type TGrowthbookAttributes = {
-    id?: string
     country?: string
     user_language?: string
     device_language?: string
