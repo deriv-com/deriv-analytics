@@ -19,7 +19,6 @@ describe('Growthbook', () => {
 
     test('should set attributes correctly in Growthbook', () => {
         growthbook.setAttributes({
-            id: '123',
             country: 'US',
             user_language: 'en',
             device_type: 'mobile',
