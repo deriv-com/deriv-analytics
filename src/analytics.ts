@@ -85,13 +85,16 @@ export function createAnalyticsInstance(options?: Options) {
                     ...(growthbookOptions?.attributes?.network_downlink && {
                         network_downlink: growthbookOptions?.attributes.network_downlink,
                     }),
+                    ...(growthbookOptions?.attributes?.user_id && {
+                        user_id: growthbookOptions?.attributes?.user_id,
+                    }),
+                    ...(growthbookOptions?.attributes?.anonymous_id && {
+                        anonymous_id: growthbookOptions?.attributes?.anonymous_id || _rudderstack.getAnonymousId(),
+                    }),
                 }
             growthbookOptions ??= {}
             growthbookOptions.attributes ??= {}
             growthbookOptions.attributes.id ??= _rudderstack.getAnonymousId()
-            growthbookOptions.attributes.anonymous_id ??=
-                growthbookOptions?.attributes?.anonymous_id || _rudderstack.getAnonymousId()
-            growthbookOptions.attributes.user_id ??= growthbookOptions?.attributes?.user_id
             growthbookOptions.attributes.country ??= country
 
             if (growthbookKey) {
