@@ -89,6 +89,9 @@ export function createAnalyticsInstance(options?: Options) {
             growthbookOptions ??= {}
             growthbookOptions.attributes ??= {}
             growthbookOptions.attributes.id ??= _rudderstack.getAnonymousId()
+            growthbookOptions.attributes.anonymous_id ??=
+                growthbookOptions?.attributes?.anonymous_id || _rudderstack.getAnonymousId()
+            growthbookOptions.attributes.user_id ??= growthbookOptions?.attributes?.user_id
             growthbookOptions.attributes.country ??= country
 
             if (growthbookKey) {
@@ -115,6 +118,7 @@ export function createAnalyticsInstance(options?: Options) {
         device_type,
         account_type,
         user_id,
+        anonymous_id,
         app_id,
         utm_source,
         utm_medium,
@@ -148,8 +152,13 @@ export function createAnalyticsInstance(options?: Options) {
                 url,
                 domain,
                 loggedIn,
+                user_id,
+                anonymous_id,
             }
-            if (user_identity) config.id = user_identity
+            if (user_identity) {
+                config.id = user_identity
+                config.user_id = user_identity
+            }
             _growthbook.setAttributes(config)
         }
 
@@ -167,6 +176,8 @@ export function createAnalyticsInstance(options?: Options) {
             ...(network_downlink && { network_downlink }),
             ...(network_rtt && { network_rtt }),
             ...(network_type && { network_type }),
+            ...(user_id && { user_id }),
+            ...(anonymous_id && { anonymous_id }),
         }
     }
 

@@ -23,6 +23,8 @@ export type TGrowthbookAttributes = {
     loggedIn?: boolean
     network_type?: string
     network_downlink?: number
+    user_id?: string
+    anonymous_id?: string
 }
 
 export type TGrowthbookOptions = Partial<Omit<Context, 'attributes'> & { attributes: TCoreAttributes }>

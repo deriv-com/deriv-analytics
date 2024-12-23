@@ -90,11 +90,15 @@ export class Growthbook {
         loggedIn,
         network_type,
         network_downlink,
+        user_id,
+        anonymous_id,
     }: TGrowthbookAttributes) => {
         const CURRENT_ATTRIBUTES = this.GrowthBook.getAttributes()
         this.GrowthBook.setAttributes({
             ...CURRENT_ATTRIBUTES,
             id,
+            ...(user_id && { user_id }),
+            ...(anonymous_id && { anonymous_id }),
             ...(country && { country }),
             ...(residence_country && { residence_country }),
             ...(user_language && { user_language }),
