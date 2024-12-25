@@ -88,8 +88,8 @@ export function createAnalyticsInstance(options?: Options) {
                     ...(growthbookOptions?.attributes?.user_id && {
                         user_id: growthbookOptions?.attributes?.user_id,
                     }),
-                    ...(growthbookOptions?.attributes?.anonymous_id && {
-                        anonymous_id: growthbookOptions?.attributes?.anonymous_id || _rudderstack.getAnonymousId(),
+                    ...(growthbookOptions?.attributes && {
+                        anonymous_id: _rudderstack.getAnonymousId(),
                     }),
                 }
             growthbookOptions ??= {}
