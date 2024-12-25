@@ -52,6 +52,7 @@ export function createAnalyticsInstance(options?: Options) {
         try {
             const country = growthbookOptions?.attributes?.country || (await getClientCountry())
             _rudderstack = RudderStack.getRudderStackInstance(rudderstackKey, disableRudderstackAMD)
+
             if (growthbookOptions?.attributes && Object.keys(growthbookOptions.attributes).length > 0)
                 core_data = {
                     ...core_data,
@@ -88,13 +89,14 @@ export function createAnalyticsInstance(options?: Options) {
                     ...(growthbookOptions?.attributes?.user_id && {
                         user_id: growthbookOptions?.attributes?.user_id,
                     }),
-                    ...(growthbookOptions?.attributes?.anonymous_id && {
-                        anonymous_id: growthbookOptions?.attributes?.anonymous_id || _rudderstack.getAnonymousId(),
+                    ...(growthbookOptions?.attributes && {
+                        anonymous_id: _rudderstack.getAnonymousId(),
                     }),
                 }
             growthbookOptions ??= {}
             growthbookOptions.attributes ??= {}
             growthbookOptions.attributes.id ??= _rudderstack.getAnonymousId()
+            growthbookOptions.attributes.anonymous_id ??= _rudderstack.getAnonymousId()
             growthbookOptions.attributes.country ??= country
 
             if (growthbookKey) {
