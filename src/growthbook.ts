@@ -61,6 +61,11 @@ export class Growthbook {
         return Growthbook._instance
     }
 
+    reapplyExperiment() {
+        this.GrowthBook.setURL(window.location.href)
+        console.log('Route changed, new URL:', window.location.href)
+    }
+
     // Utility function to wait for isLoaded to become true
     private waitForIsLoaded(): Promise<void> {
         return new Promise(resolve => {
