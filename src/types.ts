@@ -40,6 +40,7 @@ export type TCoreAttributes = {
     network_type?: string
     network_rtt?: number
     network_downlink?: number
+    account_currency?: string
 } & Partial<TGrowthbookAttributes>
 
 type SignupProvider = 'email' | 'phone' | 'google' | 'facebook' | 'apple'
