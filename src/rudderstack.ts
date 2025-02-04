@@ -27,13 +27,14 @@ export class RudderStack {
     }
 
     setCookieIfNotExists = () => {
-        // Check if the cookie already exists
         const anonymous_id = this.getAnonymousId()
 
         if (!anonymous_id) {
             const domain_name = window.location.hostname.split('.').slice(-2).join('.')
-            // Add the new cookie with domain accessible to all subdomains
-            document.cookie = `${this.rudderstack_anonymous_cookie_key}=${uuidv6()}; path=/; Domain=${domain_name}`
+            // Set cookie to expire in 2 years
+            document.cookie = `${
+                this.rudderstack_anonymous_cookie_key
+            }=${uuidv6()}; path=/; Domain=${domain_name}; max-age=${2 * 365 * 24 * 60 * 60}`
         }
     }
 
