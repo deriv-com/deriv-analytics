@@ -98,6 +98,7 @@ export class Growthbook {
         network_downlink,
         user_id,
         anonymous_id,
+        account_mode,
     }: TGrowthbookAttributes) => {
         const CURRENT_ATTRIBUTES = this.GrowthBook.getAttributes()
         this.GrowthBook.setAttributes({
@@ -120,6 +121,7 @@ export class Growthbook {
             ...(loggedIn !== undefined && { loggedIn }),
             ...(network_type !== undefined && { network_type }),
             ...(network_downlink !== undefined && { network_downlink }),
+            ...(account_mode !== undefined && { account_mode }),
         })
     }
     getFeatureValue = <K extends keyof GrowthbookConfigs, V extends GrowthbookConfigs[K]>(key: K, defaultValue: V) => {

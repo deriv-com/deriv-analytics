@@ -94,6 +94,9 @@ export function createAnalyticsInstance(options?: Options) {
                     ...(growthbookOptions?.attributes?.account_currency && {
                         account_currency: growthbookOptions?.attributes.account_currency,
                     }),
+                    ...(growthbookOptions?.attributes?.account_mode && {
+                        account_mode: growthbookOptions?.attributes.account_mode,
+                    }),
                 }
             growthbookOptions ??= {}
             growthbookOptions.attributes ??= {}
@@ -139,6 +142,7 @@ export function createAnalyticsInstance(options?: Options) {
         network_rtt,
         network_type,
         account_currency,
+        account_mode,
     }: TCoreAttributes) => {
         if (!_growthbook && !_rudderstack) return
 
@@ -186,6 +190,7 @@ export function createAnalyticsInstance(options?: Options) {
             ...(user_id !== undefined && { user_id }),
             ...(anonymous_id !== undefined && { anonymous_id }),
             ...(account_currency !== undefined && { account_currency }),
+            ...(account_mode !== undefined && { account_mode }),
         }
     }
 
