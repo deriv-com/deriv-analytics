@@ -25,7 +25,7 @@ export type TGrowthbookAttributes = {
     network_downlink?: number
     user_id?: string
     anonymous_id?: string
-    account_mode?: 'demo' | 'real'
+    account_mode?: string
 }
 
 export type TGrowthbookOptions = Partial<Omit<Context, 'attributes'> & { attributes: TCoreAttributes }>
