@@ -45,7 +45,7 @@ export class RudderStack {
 
     /** For caching mechanism, Rudderstack  SDK, first page load  */
     handleCachedEvents = () => {
-        const allowedDomains = ['deriv.com', 'deriv.team']
+        const allowedDomains = ['deriv.com', 'deriv.team', 'deriv.ae']
         const domain = allowedDomains.some(d => window.location.hostname.includes(d))
             ? `.${allowedDomains.find(d => window.location.hostname.includes(d))}`
             : `.${allowedDomains[0]}`
