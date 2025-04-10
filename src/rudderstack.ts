@@ -30,7 +30,17 @@ export class RudderStack {
         const anonymous_id = this.getAnonymousId()
 
         if (!anonymous_id) {
-            const domain_name = window.location.hostname.split('.').slice(-2).join('.')
+            const hostname = window.location.hostname
+
+            // List of external domains where we should use the full hostname
+            const external_domains = ['webflow.io']
+
+            // Check if the hostname ends with any of the external domains
+            const is_external_domain = external_domains.some(domain => hostname.endsWith(domain))
+
+            // If it's an external domain, use the full hostname, otherwise use the last two parts
+            const domain_name = is_external_domain ? hostname : hostname.split('.').slice(-2).join('.')
+
             // Set cookie to expire in 2 years
             document.cookie = `${
                 this.rudderstack_anonymous_cookie_key
