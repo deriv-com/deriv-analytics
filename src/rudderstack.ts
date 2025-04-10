@@ -30,7 +30,11 @@ export class RudderStack {
         const anonymous_id = this.getAnonymousId()
 
         if (!anonymous_id) {
-            const domain_name = window.location.hostname.split('.').slice(-2).join('.')
+            const hostname = window.location.hostname
+
+            // we need this check because we can't set cookie to a external domain like webflow.io
+            const domain_name = hostname.endsWith('webflow.io') ? hostname : hostname.split('.').slice(-2).join('.')
+
             // Set cookie to expire in 2 years
             document.cookie = `${
                 this.rudderstack_anonymous_cookie_key
