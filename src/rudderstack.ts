@@ -32,8 +32,14 @@ export class RudderStack {
         if (!anonymous_id) {
             const hostname = window.location.hostname
 
-            // we need this check because we can't set cookie to a external domain like webflow.io
-            const domain_name = hostname.endsWith('webflow.io') ? hostname : hostname.split('.').slice(-2).join('.')
+            // List of external domains where we should use the full hostname
+            const external_domains = ['webflow.io']
+
+            // Check if the hostname ends with any of the external domains
+            const is_external_domain = external_domains.some(domain => hostname.endsWith(domain))
+
+            // If it's an external domain, use the full hostname, otherwise use the last two parts
+            const domain_name = is_external_domain ? hostname : hostname.split('.').slice(-2).join('.')
 
             // Set cookie to expire in 2 years
             document.cookie = `${
