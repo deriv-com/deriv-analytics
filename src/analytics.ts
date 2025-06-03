@@ -85,9 +85,10 @@ export function createAnalyticsInstance(options?: Options) {
                     ...(growthbookOptions?.attributes?.network_downlink && {
                         network_downlink: growthbookOptions?.attributes.network_downlink,
                     }),
-                    ...(growthbookOptions?.attributes?.user_id && {
-                        user_id: growthbookOptions?.attributes?.user_id,
-                    }),
+                    ...(growthbookOptions?.attributes?.user_id &&
+                        !isUUID(growthbookOptions?.attributes?.user_id) && {
+                            user_id: growthbookOptions?.attributes?.user_id,
+                        }),
                     ...(growthbookOptions?.attributes && {
                         anonymous_id: _rudderstack.getAnonymousId(),
                     }),
@@ -163,7 +164,7 @@ export function createAnalyticsInstance(options?: Options) {
                 url,
                 domain,
                 loggedIn,
-                user_id,
+                ...(user_id && !isUUID(user_id) && { user_id }),
                 anonymous_id,
             }
             if (user_identity) {
@@ -187,7 +188,7 @@ export function createAnalyticsInstance(options?: Options) {
             ...(network_downlink !== undefined && { network_downlink }),
             ...(network_rtt !== undefined && { network_rtt }),
             ...(network_type !== undefined && { network_type }),
-            ...(user_id !== undefined && { user_id }),
+            ...(user_id !== undefined && !isUUID(user_id) && { user_id }),
             ...(anonymous_id !== undefined && { anonymous_id }),
             ...(account_currency !== undefined && { account_currency }),
             ...(account_mode !== undefined && { account_mode }),
@@ -202,7 +203,11 @@ export function createAnalyticsInstance(options?: Options) {
     const getGrowthbookStatus = async () => await _growthbook?.getStatus()
     const isFeatureOn = (key: string) => _growthbook?.isOn(key)
     const setUrl = (href: string) => _growthbook?.setUrl(href)
-    const getId = () => _rudderstack?.getUserId() || ''
+    const getId = () => {
+        const userId = _rudderstack?.getUserId() || ''
+        // Don't return anonymous IDs as user IDs
+        return userId && !isUUID(userId) ? userId : ''
+    }
     /**
      * Pushes page view event to Rudderstack
      *
@@ -210,13 +215,17 @@ export function createAnalyticsInstance(options?: Options) {
      */
     const pageView = (current_page: string, platform = 'Deriv App', properties?: {}) => {
         if (!_rudderstack) return
-        _rudderstack?.pageView(current_page, platform, getId(), properties)
+
+        const userId = getId()
+        // Only pass user_id if it's a real user ID, otherwise pass empty string
+        _rudderstack?.pageView(current_page, platform, userId, properties)
     }
 
     const identifyEvent = (user_id?: string) => {
         const stored_user_id = user_id || getId()
 
-        if (_rudderstack) {
+        // Only identify if we have a real user ID (not anonymous ID)
+        if (_rudderstack && stored_user_id && !isUUID(stored_user_id)) {
             _rudderstack?.identifyEvent(stored_user_id as string, { language: core_data?.user_language || 'en' })
         }
     }
@@ -235,11 +244,28 @@ export function createAnalyticsInstance(options?: Options) {
                     delete event_cache[index]
                 })
             }
+
+            const userId = getId()
+            const payload = {
+                ...core_data,
+                ...analytics_data,
+                // Only include user_id if it's a real user ID
+                ...(userId && { user_id: userId }),
+            }
+
             if (event in tracking_config) {
-                tracking_config[event] && _rudderstack?.track(event, { ...core_data, ...analytics_data })
-            } else _rudderstack?.track(event, { ...core_data, ...analytics_data })
+                tracking_config[event] && _rudderstack?.track(event, payload)
+            } else {
+                _rudderstack?.track(event, payload)
+            }
         } else {
-            event_cache.push({ event, payload: { ...core_data, ...analytics_data } })
+            const userId = getId()
+            const payload = {
+                ...core_data,
+                ...analytics_data,
+                ...(userId && { user_id: userId }),
+            }
+            event_cache.push({ event, payload })
         }
     }
 
@@ -269,3 +295,9 @@ export function createAnalyticsInstance(options?: Options) {
 }
 
 export const Analytics = createAnalyticsInstance()
+
+// UUID validation function
+const isUUID = (str: string): boolean => {
+    const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
+    return uuidRegex.test(str)
+}
