@@ -142,7 +142,6 @@ export class RudderStack {
      */
     pageView = (current_page: string, platform = 'Deriv App', user_id: string, properties?: {}) => {
         if (this.has_initialized && this.has_identified && current_page !== this.current_page) {
-            // Only include user_id in properties if it's not empty
             const pageProperties = user_id ? { user_id, ...properties } : properties
             this.analytics.page(platform, current_page, pageProperties)
             this.current_page = current_page

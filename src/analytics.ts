@@ -205,7 +205,6 @@ export function createAnalyticsInstance(options?: Options) {
     const setUrl = (href: string) => _growthbook?.setUrl(href)
     const getId = () => {
         const userId = _rudderstack?.getUserId() || ''
-        // Don't return anonymous IDs as user IDs
         return userId && !isUUID(userId) ? userId : ''
     }
     /**
@@ -217,14 +216,12 @@ export function createAnalyticsInstance(options?: Options) {
         if (!_rudderstack) return
 
         const userId = getId()
-        // Only pass user_id if it's a real user ID, otherwise pass empty string
         _rudderstack?.pageView(current_page, platform, userId, properties)
     }
 
     const identifyEvent = (user_id?: string) => {
         const stored_user_id = user_id || getId()
 
-        // Only identify if we have a real user ID (not anonymous ID)
         if (_rudderstack && stored_user_id && !isUUID(stored_user_id)) {
             _rudderstack?.identifyEvent(stored_user_id as string, { language: core_data?.user_language || 'en' })
         }
@@ -249,7 +246,6 @@ export function createAnalyticsInstance(options?: Options) {
             const payload = {
                 ...core_data,
                 ...analytics_data,
-                // Only include user_id if it's a real user ID
                 ...(userId && { user_id: userId }),
             }
 
@@ -296,7 +292,6 @@ export function createAnalyticsInstance(options?: Options) {
 
 export const Analytics = createAnalyticsInstance()
 
-// UUID validation function
 const isUUID = (str: string): boolean => {
     const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
     return uuidRegex.test(str)
