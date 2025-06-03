@@ -96,6 +96,34 @@ export class RudderStack {
         }
     }
 
+    //tracking the track js error
+
+    trackConsoleErrors = (): any => {
+        let latestErrorMessage: string | null = null
+        // Preserve the original console.error function
+        const originalConsoleError = console.error
+
+        // Override console.error to capture and handle errors
+        console.error = function (...args: unknown[]): any {
+            // Log the error to the console as usual
+            originalConsoleError.apply(console, args)
+
+            // Create a clean error message without __trackjs_state__
+            const errorMessage = args
+                .map(arg =>
+                    arg && typeof arg === 'object' && 'message' in arg
+                        ? (arg as Error).message
+                        : typeof arg === 'object'
+                        ? JSON.stringify(arg, (key, value) => (key.startsWith('__trackjs') ? undefined : value))
+                        : String(arg)
+                )
+                .join(' ')
+            latestErrorMessage = errorMessage
+            return errorMessage
+        }
+        return latestErrorMessage
+    }
+
     /**
      * Initializes the Rudderstack SDK. Ensure that the appropriate environment variables are set before this is called.
      * For local/staging environment, ensure that `RUDDERSTACK_STAGING_KEY` and `RUDDERSTACK_URL` is set.
@@ -121,6 +149,7 @@ export class RudderStack {
                 this.has_initialized = true
                 this.has_identified = !!(this.getUserId() || this.getAnonymousId())
                 this.handleCachedEvents()
+                this.trackConsoleErrors()
             })
         }
     }
