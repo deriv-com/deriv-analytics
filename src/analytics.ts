@@ -219,11 +219,37 @@ export function createAnalyticsInstance(options?: Options) {
         _rudderstack?.pageView(current_page, platform, userId, properties)
     }
 
-    const identifyEvent = (user_id?: string) => {
+    const identifyEvent = async (user_id?: string) => {
         const stored_user_id = user_id || getId()
 
-        if (_rudderstack && stored_user_id && !isUUID(stored_user_id)) {
-            _rudderstack?.identifyEvent(stored_user_id as string, { language: core_data?.user_language || 'en' })
+        // Wait for _rudderstack to be defined and initialized, checking up to maxAttempts times
+        const waitForRudderStack = (maxAttempts = 10, interval = 50) =>
+            new Promise((resolve, reject) => {
+                let attempts = 0
+                const check = () => {
+                    if (_rudderstack) {
+                        resolve(true)
+                    } else if (attempts >= maxAttempts) {
+                        reject(new Error('_rudderstack not defined within max attempts'))
+                    } else {
+                        attempts++
+                        setTimeout(check, interval)
+                    }
+                }
+                check()
+            })
+
+        try {
+            await waitForRudderStack()
+            if (_rudderstack && stored_user_id && !isUUID(stored_user_id)) {
+                _rudderstack?.identifyEvent(stored_user_id as string, { language: core_data?.user_language || 'en' })
+            }
+        } catch (error: unknown) {
+            if (error instanceof Error) {
+                console.warn(error.message)
+            } else {
+                console.warn('Unknown error in identifyEvent wait:', error)
+            }
         }
     }
 
