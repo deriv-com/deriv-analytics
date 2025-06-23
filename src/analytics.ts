@@ -223,7 +223,7 @@ export function createAnalyticsInstance(options?: Options) {
         const stored_user_id = user_id || getId()
 
         // Wait for _rudderstack to be defined and initialized, checking up to maxAttempts times
-        const waitForRudderStack = (maxAttempts = 10, interval = 50) =>
+        const waitForRudderStack = (maxAttempts = 10, interval = 1000) =>
             new Promise((resolve, reject) => {
                 let attempts = 0
                 const check = () => {
