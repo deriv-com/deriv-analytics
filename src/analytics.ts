@@ -234,10 +234,6 @@ export function createAnalyticsInstance(options?: Options) {
     const identifyEvent = (user_id?: string) => {
         const stored_user_id = user_id || getId()
 
-        if (stored_user_id && !isUUID(stored_user_id)) {
-            core_data = { ...core_data, user_id: stored_user_id }
-        }
-
         if (_rudderstack?.has_initialized && stored_user_id && !isUUID(stored_user_id)) {
             _rudderstack?.identifyEvent(stored_user_id, {
                 language: core_data?.user_language || 'en',
