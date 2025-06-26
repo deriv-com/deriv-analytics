@@ -22,7 +22,8 @@ export function createAnalyticsInstance(options?: Options) {
         _rudderstack: RudderStack,
         core_data: Partial<TCoreAttributes> = {},
         tracking_config: { [key: string]: boolean } = {},
-        event_cache: Array<{ event: keyof TEvents; payload: TEvents[keyof TEvents] }> = []
+        event_cache: Array<{ event: keyof TEvents; payload: TEvents[keyof TEvents] }> = [],
+        _pending_identify_calls: Array<string> = []
 
     const getClientCountry = async () => {
         const countryFromCloudflare = await CountryUtils.getCountry()
@@ -51,7 +52,18 @@ export function createAnalyticsInstance(options?: Options) {
     }: Options) => {
         try {
             const country = growthbookOptions?.attributes?.country || (await getClientCountry())
-            _rudderstack = RudderStack.getRudderStackInstance(rudderstackKey, disableRudderstackAMD)
+
+            _rudderstack = RudderStack.getRudderStackInstance(rudderstackKey, disableRudderstackAMD, () => {
+                _pending_identify_calls.forEach(userId => {
+                    if (userId && !isUUID(userId)) {
+                        _rudderstack?.identifyEvent(userId, {
+                            language: core_data?.user_language || 'en',
+                        })
+                    }
+                })
+                _pending_identify_calls = []
+            })
+
             if (growthbookOptions?.attributes && Object.keys(growthbookOptions.attributes).length > 0)
                 core_data = {
                     ...core_data,
@@ -222,8 +234,15 @@ export function createAnalyticsInstance(options?: Options) {
     const identifyEvent = (user_id?: string) => {
         const stored_user_id = user_id || getId()
 
-        if (_rudderstack && stored_user_id && !isUUID(stored_user_id)) {
-            _rudderstack?.identifyEvent(stored_user_id as string, { language: core_data?.user_language || 'en' })
+        if (_rudderstack?.has_initialized && stored_user_id && !isUUID(stored_user_id)) {
+            _rudderstack?.identifyEvent(stored_user_id, {
+                language: core_data?.user_language || 'en',
+            })
+            return
+        }
+
+        if (stored_user_id && !isUUID(stored_user_id)) {
+            _pending_identify_calls.push(stored_user_id)
         }
     }
 

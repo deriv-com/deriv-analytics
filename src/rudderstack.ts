@@ -9,14 +9,20 @@ export class RudderStack {
     current_page = ''
     rudderstack_anonymous_cookie_key = 'rudder_anonymous_id'
     private static _instance: RudderStack
+    private onLoadedCallback?: () => void
 
-    constructor(RUDDERSTACK_KEY: string, disableAMD: boolean = false) {
+    constructor(RUDDERSTACK_KEY: string, disableAMD: boolean = false, onLoaded?: () => void) {
+        this.onLoadedCallback = onLoaded
         this.init(RUDDERSTACK_KEY, disableAMD)
     }
 
-    public static getRudderStackInstance = (RUDDERSTACK_KEY: string, disableAMD: boolean = false) => {
+    public static getRudderStackInstance = (
+        RUDDERSTACK_KEY: string,
+        disableAMD: boolean = false,
+        onLoaded?: () => void
+    ) => {
         if (!RudderStack._instance) {
-            RudderStack._instance = new RudderStack(RUDDERSTACK_KEY, disableAMD)
+            RudderStack._instance = new RudderStack(RUDDERSTACK_KEY, disableAMD, onLoaded)
             return RudderStack._instance
         }
         return RudderStack._instance
@@ -113,14 +119,16 @@ export class RudderStack {
             this.setCookieIfNotExists()
             this.analytics.load(RUDDERSTACK_KEY, 'https://deriv-dataplane.rudderstack.com', {
                 externalAnonymousIdCookieName: this.rudderstack_anonymous_cookie_key,
-            })
-            this.analytics.ready(() => {
-                if (disableAMD) {
-                    window.define = _define
-                }
-                this.has_initialized = true
-                this.has_identified = !!(this.getUserId() || this.getAnonymousId())
-                this.handleCachedEvents()
+                onLoaded: () => {
+                    if (disableAMD) {
+                        window.define = _define
+                    }
+                    this.has_initialized = true
+                    this.has_identified = !!(this.getUserId() || this.getAnonymousId())
+                    this.handleCachedEvents()
+
+                    this.onLoadedCallback?.()
+                },
             })
         }
     }
