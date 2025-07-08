@@ -157,11 +157,11 @@ export function createAnalyticsInstance(options?: Options) {
         account_currency,
         account_mode,
     }: TCoreAttributes) => {
-        if (!_growthbook && !_rudderstack) return
+        if (!_rudderstack) return
 
         const user_identity = user_id ?? getId()
 
-        // Check if we have Growthbook instance
+        // Check if we have Growthbook instance and update its attributes
         if (_growthbook) {
             const config: TGrowthbookAttributes = {
                 country,
