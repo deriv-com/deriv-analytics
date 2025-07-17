@@ -54,7 +54,6 @@ export function createAnalyticsInstance(options?: Options) {
             const country = growthbookOptions?.attributes?.country || (await getClientCountry())
 
             _rudderstack = RudderStack.getRudderStackInstance(rudderstackKey, disableRudderstackAMD, () => {
-                // Process pending identify calls when RudderStack is loaded
                 _pending_identify_calls.forEach(userId => {
                     if (userId && !isUUID(userId)) {
                         _rudderstack?.identifyEvent(userId, {
@@ -65,7 +64,7 @@ export function createAnalyticsInstance(options?: Options) {
                 _pending_identify_calls = []
             })
 
-            if (growthbookOptions?.attributes && Object.keys(growthbookOptions.attributes).length > 0) {
+            if (growthbookOptions?.attributes && Object.keys(growthbookOptions.attributes).length > 0)
                 core_data = {
                     ...core_data,
                     country,
@@ -112,7 +111,7 @@ export function createAnalyticsInstance(options?: Options) {
                         account_mode: growthbookOptions?.attributes.account_mode,
                     }),
                 }
-            }
+            // }
             growthbookOptions ??= {}
             growthbookOptions.attributes ??= {}
             growthbookOptions.attributes.id ??= _rudderstack.getAnonymousId()
@@ -126,11 +125,8 @@ export function createAnalyticsInstance(options?: Options) {
                 )
 
                 let interval = setInterval(() => {
-                    if (Object.keys(tracking_config).length > 0) {
-                        clearInterval(interval)
-                    } else {
-                        tracking_config = getFeatureValue('tracking-buttons-config', {})
-                    }
+                    if (Object.keys(tracking_config).length > 0) clearInterval(interval)
+                    else tracking_config = getFeatureValue('tracking-buttons-config', {})
                 }, 1000)
             }
         } catch (error) {
