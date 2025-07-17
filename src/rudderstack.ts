@@ -124,7 +124,7 @@ export class RudderStack {
                         window.define = _define
                     }
                     this.has_initialized = true
-                    this.has_identified = !!(this.getUserId() || this.getAnonymousId())
+                    this.has_identified = !!this.getUserId()
                     this.handleCachedEvents()
 
                     this.onLoadedCallback?.()
@@ -149,7 +149,7 @@ export class RudderStack {
      * @param curret_page The name or URL of the current page to track the page view event
      */
     pageView = (current_page: string, platform = 'Deriv App', user_id: string, properties?: {}) => {
-        if (this.has_initialized && this.has_identified && current_page !== this.current_page) {
+        if (this.has_initialized && current_page !== this.current_page) {
             const pageProperties = user_id ? { user_id, ...properties } : properties
             this.analytics.page(platform, current_page, pageProperties)
             this.current_page = current_page
@@ -175,7 +175,7 @@ export class RudderStack {
      */
     track = <T extends keyof TEvents>(event: T, payload: TEvents[T] & Partial<TCoreAttributes>) => {
         const clean_payload = Object.fromEntries(Object.entries(payload).filter(([_, value]) => value !== undefined))
-        if (this.has_initialized && this.has_identified) {
+        if (this.has_initialized) {
             try {
                 this.analytics.track(event, clean_payload)
             } catch (err) {

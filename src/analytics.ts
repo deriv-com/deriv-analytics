@@ -63,14 +63,6 @@ export function createAnalyticsInstance(options?: Options) {
                     }
                 })
                 _pending_identify_calls = []
-
-                //    Auto-identify with user_id from core_data if available
-                const existingUserId = core_data?.user_id
-                if (existingUserId && !isUUID(existingUserId)) {
-                    _rudderstack?.identifyEvent(existingUserId, {
-                        language: core_data?.user_language || 'en',
-                    })
-                }
             })
 
             if (growthbookOptions?.attributes && Object.keys(growthbookOptions.attributes).length > 0) {
@@ -217,13 +209,6 @@ export function createAnalyticsInstance(options?: Options) {
             ...(anonymous_id !== undefined && { anonymous_id }),
             ...(account_currency !== undefined && { account_currency }),
             ...(account_mode !== undefined && { account_mode }),
-        }
-
-        // Auto-identify user when user_id is set and RudderStack is ready
-        if (user_id && !isUUID(user_id) && _rudderstack?.has_initialized) {
-            _rudderstack.identifyEvent(user_id, {
-                language: core_data?.user_language || 'en',
-            })
         }
     }
 
