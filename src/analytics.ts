@@ -111,7 +111,6 @@ export function createAnalyticsInstance(options?: Options) {
                         account_mode: growthbookOptions?.attributes.account_mode,
                     }),
                 }
-
             growthbookOptions ??= {}
             growthbookOptions.attributes ??= {}
             growthbookOptions.attributes.id ??= _rudderstack.getAnonymousId()
