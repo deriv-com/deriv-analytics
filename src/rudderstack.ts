@@ -139,7 +139,10 @@ export class RudderStack {
      * @param payload Additional information passed to identify the user
      */
     identifyEvent = (user_id: string, payload: { language: string }) => {
-        this.analytics.identify(user_id, payload)
+        const currentUserId = this.getUserId()
+        if (!currentUserId) {
+            this.analytics.identify(user_id, payload)
+        }
         this.has_identified = true
     }
 
