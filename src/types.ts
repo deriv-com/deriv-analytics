@@ -441,13 +441,13 @@ export type TEvents = {
 
 export type TCtaInformation = {
     cta_name: string
-    section_name: string
-    container_name: string
+    section_name?: string
+    container_name?: string
 }
 
 export type TErrorInformation = {
     error_message: string
-    error_code: string
+    error_code?: string
 }
 
 // V2 Metadata: 'any' is used for marketing_data to prevent 'unknown' index signature errors in RudderStack
@@ -461,7 +461,7 @@ export type TV2EventPayload = {
     form_name?: string
     cta_information?: TCtaInformation | null
     error?: TErrorInformation | null
-    event_metadata?: TV2EventMetadata
+    event_metadata: TV2EventMetadata
 }
 
 export type TEventsV2 = {
