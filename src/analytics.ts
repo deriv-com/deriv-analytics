@@ -1,7 +1,7 @@
 import { Growthbook, GrowthbookConfigs } from './growthbook'
 import { RudderStack } from './rudderstack'
 import Cookies from 'js-cookie'
-import { TCoreAttributes, TEvents, TGrowthbookAttributes, TGrowthbookOptions } from './types'
+import { TCoreAttributes, TGrowthbookAttributes, TGrowthbookOptions, TAllEvents, TV2EventPayload } from './types'
 import { CountryUtils } from '@deriv-com/utils'
 
 declare global {
@@ -22,7 +22,7 @@ export function createAnalyticsInstance(options?: Options) {
         _rudderstack: RudderStack,
         core_data: Partial<TCoreAttributes> = {},
         tracking_config: { [key: string]: boolean } = {},
-        event_cache: Array<{ event: keyof TEvents; payload: TEvents[keyof TEvents] }> = [],
+        event_cache: Array<{ event: keyof TAllEvents; payload: any }> = [],
         _pending_identify_calls: Array<string> = []
 
     const getClientCountry = async () => {
@@ -252,7 +252,38 @@ export function createAnalyticsInstance(options?: Options) {
         _rudderstack?.reset()
     }
 
-    const trackEvent = <T extends keyof TEvents>(event: T, analytics_data: TEvents[T]) => {
+    // Runtime guard for V2 Events
+    const isV2Payload = (payload: any): payload is TV2EventPayload => {
+        return 'event_metadata' in payload || 'cta_information' in payload || 'error' in payload
+    }
+
+    const trackEvent = <T extends keyof TAllEvents>(event: T, analytics_data: TAllEvents[T]) => {
+        const userId = getId()
+        let final_payload: any = {}
+
+        if (isV2Payload(analytics_data)) {
+            // --- V2 LOGIC: Nest Core Data ---
+            const v2_data = analytics_data as TV2EventPayload
+            final_payload = {
+                ...v2_data,
+                event_metadata: {
+                    // 1. Inject Global Core Data
+                    ...core_data,
+                    // 2. Inject User ID if present
+                    ...(userId && { user_id: userId }),
+                    // 3. Merge/Overwrite with specific metadata passed in the call
+                    ...v2_data.event_metadata,
+                },
+            }
+        } else {
+            // --- V1 LOGIC: Flatten Core Data (Backward Compatible) ---
+            final_payload = {
+                ...core_data,
+                ...analytics_data,
+                ...(userId && { user_id: userId }),
+            }
+        }
+
         if (navigator.onLine && _rudderstack) {
             if (event_cache.length > 0) {
                 event_cache.forEach((cache, index) => {
@@ -261,26 +292,13 @@ export function createAnalyticsInstance(options?: Options) {
                 })
             }
 
-            const userId = getId()
-            const payload = {
-                ...core_data,
-                ...analytics_data,
-                ...(userId && { user_id: userId }),
-            }
-
             if (event in tracking_config) {
-                tracking_config[event] && _rudderstack?.track(event, payload)
+                tracking_config[event as string] && _rudderstack?.track(event, final_payload)
             } else {
-                _rudderstack?.track(event, payload)
+                _rudderstack?.track(event, final_payload)
             }
         } else {
-            const userId = getId()
-            const payload = {
-                ...core_data,
-                ...analytics_data,
-                ...(userId && { user_id: userId }),
-            }
-            event_cache.push({ event, payload })
+            event_cache.push({ event, payload: final_payload })
         }
     }
 

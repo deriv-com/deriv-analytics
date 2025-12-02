@@ -421,6 +421,7 @@ type TDtraderTradeForm = {
     contract_id?: number
 }
 
+// ================= V1 EVENTS =================
 export type TEvents = {
     ce_virtual_signup_form: VirtualSignupForm
     ce_email_verification_form: EmailVerificationForm
@@ -451,3 +452,38 @@ export type TEvents = {
     ce_cashier_deposit_onboarding_form: TCashierDepositOnboardingFormAction
     ce_dtrader_trade_form: TDtraderTradeForm
 }
+
+// ================= V2 TYPES & EVENTS =================
+
+export type TCtaInformation = {
+    cta_name: string
+    section_name?: string
+    container_name?: string
+}
+
+export type TErrorInformation = {
+    error_message: string
+    error_code?: string
+}
+
+// V2 Metadata: 'any' is used for marketing_data to prevent 'unknown' index signature errors in RudderStack
+export type TV2EventMetadata = {
+    page_name?: string
+    marketing_data?: Record<string, any>
+} & Partial<TCoreAttributes>
+
+export type TV2EventPayload = {
+    action: string
+    form_name?: string
+    cta_information?: TCtaInformation | null
+    error?: TErrorInformation | null
+    event_metadata: TV2EventMetadata
+}
+
+export type TEventsV2 = {
+    ce_get_start_page: TV2EventPayload
+    // Add future V2 events here
+}
+
+// Master Type for all events
+export type TAllEvents = TEvents & TEventsV2
