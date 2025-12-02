@@ -15,7 +15,6 @@ type Options = {
     rudderstackKey: string
     growthbookOptions?: TGrowthbookOptions
     disableRudderstackAMD?: boolean
-    //test
 }
 
 export function createAnalyticsInstance(options?: Options) {

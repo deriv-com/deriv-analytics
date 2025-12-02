@@ -216,6 +216,21 @@ type IndicatorsTypesFormAction = {
     search_string?: string
     subform_name?: string
 }
+
+type DrawingToolsTypesFormAction = {
+    action: 'open' | 'add' | 'delete' | 'edit_px' | 'edit_color'
+    form_name?: string
+    drawing_tool_name?: string
+    pxthickness?: string
+    color_name?: string
+}
+
+type CrossHairFormAction = {
+    action: 'click'
+    form_name?: string
+    cta_name?: 'enable' | 'disable'
+}
+
 type MarketTypesFormAction = {
     action:
         | 'open'
@@ -284,7 +299,7 @@ type ReportsFormAction =
       }
 
 type ChartTypesFormAction = {
-    action?: 'open' | 'close' | 'choose_chart_type' | 'choose_time_interval'
+    action?: 'open' | 'close' | 'choose_chart_type' | 'choose_time_interval' | 'switch_toggle'
     form_name?: string
     chart_type_name?: string
     time_interval_name?: string
@@ -420,6 +435,8 @@ export type TEvents = {
     ce_bot_form: BotForm
     ce_contracts_set_up_form: ContractsSetupForm
     ce_indicators_types_form: IndicatorsTypesFormAction
+    ce_drawing_tools_form: DrawingToolsTypesFormAction
+    ce_crosshair: CrossHairFormAction
     ce_trade_types_form: TradeTypesForm
     ce_chart_types_form: ChartTypesFormAction
     ce_market_types_form: MarketTypesFormAction

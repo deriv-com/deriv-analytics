@@ -2,6 +2,7 @@ import { RudderAnalytics } from '@rudderstack/analytics-js'
 import { TCoreAttributes, TAllEvents } from './types'
 import { v6 as uuidv6 } from 'uuid'
 import Cookies from 'js-cookie'
+
 export class RudderStack {
     analytics = new RudderAnalytics()
     has_identified = false
@@ -170,17 +171,14 @@ export class RudderStack {
     }
 
     /**
-     * Pushes track events to Rudderstack. When this method is called before `identifyEvent` method is called, the events tracked will be associated with an anonymous ID.
-     * Otherwise, if the events needs to be associated with a user ID, call `identifyEvent` with the user ID passed first before calling this method.
-     *
-     * @param event The event name to track
-     * @param payload Additional information related to the event
+     * Pushes track events to Rudderstack.
      */
     track = <T extends keyof TAllEvents>(event: T, payload: TAllEvents[T] & Partial<TCoreAttributes>) => {
         const clean_payload = Object.fromEntries(Object.entries(payload).filter(([_, value]) => value !== undefined))
         if (this.has_initialized) {
             try {
-                this.analytics.track(event, clean_payload)
+                // Cast to 'any' allows passing complex V2 objects that RudderStack's strictest types might reject
+                this.analytics.track(event, clean_payload as any)
             } catch (err) {
                 console.error(err)
             }
