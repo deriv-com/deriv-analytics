@@ -1,5 +1,5 @@
 import { RudderAnalytics } from '@rudderstack/analytics-js'
-import { TCoreAttributes, TEvents } from './types'
+import { TCoreAttributes, TAllEvents } from './types'
 import { v6 as uuidv6 } from 'uuid'
 import Cookies from 'js-cookie'
 export class RudderStack {
@@ -176,7 +176,7 @@ export class RudderStack {
      * @param event The event name to track
      * @param payload Additional information related to the event
      */
-    track = <T extends keyof TEvents>(event: T, payload: TEvents[T] & Partial<TCoreAttributes>) => {
+    track = <T extends keyof TAllEvents>(event: T, payload: TAllEvents[T] & Partial<TCoreAttributes>) => {
         const clean_payload = Object.fromEntries(Object.entries(payload).filter(([_, value]) => value !== undefined))
         if (this.has_initialized) {
             try {
