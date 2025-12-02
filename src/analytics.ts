@@ -22,7 +22,7 @@ export function createAnalyticsInstance(options?: Options) {
         _rudderstack: RudderStack,
         core_data: Partial<TCoreAttributes> = {},
         tracking_config: { [key: string]: boolean } = {},
-        event_cache: Array<{ event: keyof TAllEvents; payload: any }> = [],
+        event_cache: Array<{ event: keyof TAllEvents; payload: TAllEvents[keyof TAllEvents] }> = [],
         _pending_identify_calls: Array<string> = []
 
     const getClientCountry = async () => {
@@ -252,11 +252,9 @@ export function createAnalyticsInstance(options?: Options) {
         _rudderstack?.reset()
     }
 
-    // Runtime guard for V2 Events
     const isV2Payload = (payload: any): payload is TV2EventPayload => {
         return 'event_metadata' in payload || 'cta_information' in payload || 'error' in payload
     }
-
     const trackEvent = <T extends keyof TAllEvents>(event: T, analytics_data: TAllEvents[T]) => {
         const userId = getId()
         let final_payload: any = {}
