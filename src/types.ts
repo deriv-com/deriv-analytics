@@ -216,6 +216,21 @@ type IndicatorsTypesFormAction = {
     search_string?: string
     subform_name?: string
 }
+
+type DrawingToolsTypesFormAction = {
+    action: 'open' | 'add' | 'delete' | 'edit_px' | 'edit_color'
+    form_name?: string
+    drawing_tool_name?: string
+    pxthickness?: string
+    color_name?: string
+}
+
+type CrossHairFormAction = {
+    action: 'click'
+    form_name?: string
+    cta_name?: 'enable' | 'disable'
+}
+
 type MarketTypesFormAction = {
     action:
         | 'open'
@@ -284,7 +299,7 @@ type ReportsFormAction =
       }
 
 type ChartTypesFormAction = {
-    action?: 'open' | 'close' | 'choose_chart_type' | 'choose_time_interval'
+    action?: 'open' | 'close' | 'choose_chart_type' | 'choose_time_interval' | 'switch_toggle'
     form_name?: string
     chart_type_name?: string
     time_interval_name?: string
@@ -406,6 +421,7 @@ type TDtraderTradeForm = {
     contract_id?: number
 }
 
+// ================= V1 EVENTS =================
 export type TEvents = {
     ce_virtual_signup_form: VirtualSignupForm
     ce_email_verification_form: EmailVerificationForm
@@ -419,6 +435,8 @@ export type TEvents = {
     ce_bot_form: BotForm
     ce_contracts_set_up_form: ContractsSetupForm
     ce_indicators_types_form: IndicatorsTypesFormAction
+    ce_drawing_tools_form: DrawingToolsTypesFormAction
+    ce_crosshair: CrossHairFormAction
     ce_trade_types_form: TradeTypesForm
     ce_chart_types_form: ChartTypesFormAction
     ce_market_types_form: MarketTypesFormAction
@@ -434,3 +452,38 @@ export type TEvents = {
     ce_cashier_deposit_onboarding_form: TCashierDepositOnboardingFormAction
     ce_dtrader_trade_form: TDtraderTradeForm
 }
+
+// ================= V2 TYPES & EVENTS =================
+
+export type TCtaInformation = {
+    cta_name: string
+    section_name: string
+    container_name: string
+}
+
+export type TErrorInformation = {
+    error_message: string
+    error_code: string
+}
+
+// V2 Metadata: 'any' is used for marketing_data to prevent 'unknown' index signature errors in RudderStack
+export type TV2EventMetadata = {
+    page_name?: string
+    marketing_data?: Record<string, any>
+} & Partial<TCoreAttributes>
+
+export type TV2EventPayload = {
+    action: string
+    form_name?: string
+    cta_information?: TCtaInformation | null
+    error?: TErrorInformation | null
+    event_metadata?: TV2EventMetadata
+}
+
+export type TEventsV2 = {
+    ce_get_start_page: TV2EventPayload
+    // Add future V2 events here
+}
+
+// Master Type for all events
+export type TAllEvents = TEvents & TEventsV2
