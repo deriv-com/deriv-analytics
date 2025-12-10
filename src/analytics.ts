@@ -52,10 +52,9 @@ export function createAnalyticsInstance(options?: Options) {
     }: Options) => {
         try {
             const country = growthbookOptions?.attributes?.country || (await getClientCountry())
-
             _rudderstack = RudderStack.getRudderStackInstance(rudderstackKey, disableRudderstackAMD, () => {
                 _pending_identify_calls.forEach(userId => {
-                    if (userId && !isUUID(userId)) {
+                    if (userId) {
                         _rudderstack?.identifyEvent(userId, {
                             language: core_data?.user_language || 'en',
                         })
@@ -234,14 +233,14 @@ export function createAnalyticsInstance(options?: Options) {
     const identifyEvent = (user_id?: string) => {
         const stored_user_id = user_id || getId()
 
-        if (_rudderstack?.has_initialized && stored_user_id && !isUUID(stored_user_id)) {
+        if (_rudderstack?.has_initialized && stored_user_id) {
             _rudderstack?.identifyEvent(stored_user_id, {
                 language: core_data?.user_language || 'en',
             })
             return
         }
 
-        if (stored_user_id && !isUUID(stored_user_id)) {
+        if (stored_user_id) {
             _pending_identify_calls.push(stored_user_id)
         }
     }

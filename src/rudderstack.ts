@@ -177,7 +177,6 @@ export class RudderStack {
         const clean_payload = Object.fromEntries(Object.entries(payload).filter(([_, value]) => value !== undefined))
         if (this.has_initialized) {
             try {
-                // Cast to 'any' allows passing complex V2 objects that RudderStack's strictest types might reject
                 this.analytics.track(event, clean_payload as any)
             } catch (err) {
                 console.error(err)
