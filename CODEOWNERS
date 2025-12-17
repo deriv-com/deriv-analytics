@@ -3,6 +3,6 @@
 
 # These owners will be the default owners for everything in
 # the repo. Unless a later match takes precedence,
-# @ali-hosseini-deriv @habib-deriv and @prince-deriv will be requested for
+# @shayan-deriv-deriv @habib-deriv and @prince-deriv will be requested for
 # review when someone opens a pull request.
-*  @ali-hosseini-deriv @habib-deriv @prince-deriv
+*  @ashayan-deriv @habib-deriv @prince-deriv
