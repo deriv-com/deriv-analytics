@@ -1,5 +1,6 @@
 import { Growthbook, GrowthbookConfigs } from './growthbook'
 import { RudderStack } from './rudderstack'
+import { PostHogAnalytics } from './posthog'
 import Cookies from 'js-cookie'
 import { TCoreAttributes, TGrowthbookAttributes, TGrowthbookOptions, TAllEvents, TV2EventPayload } from './types'
 import { CountryUtils } from '@deriv-com/utils'
@@ -9,10 +10,13 @@ declare global {
         AnalyticsInstance: ReturnType<typeof createAnalyticsInstance>
     }
 }
+
 type Options = {
     growthbookKey?: string
     growthbookDecryptionKey?: string
     rudderstackKey: string
+    posthogKey: string
+    posthogHost?: string
     growthbookOptions?: TGrowthbookOptions
     disableRudderstackAMD?: boolean
 }
@@ -20,6 +24,7 @@ type Options = {
 export function createAnalyticsInstance(options?: Options) {
     let _growthbook: Growthbook,
         _rudderstack: RudderStack,
+        _posthog: PostHogAnalytics,
         core_data: Partial<TCoreAttributes> = {},
         tracking_config: { [key: string]: boolean } = {},
         event_cache: Array<{ event: keyof TAllEvents; payload: TAllEvents[keyof TAllEvents] }> = [],
@@ -47,21 +52,47 @@ export function createAnalyticsInstance(options?: Options) {
         growthbookKey,
         growthbookDecryptionKey,
         rudderstackKey,
+        posthogKey,
+        posthogHost,
         growthbookOptions,
         disableRudderstackAMD = false,
     }: Options) => {
         try {
             const country = growthbookOptions?.attributes?.country || (await getClientCountry())
+
+            // Initialize RudderStack
             _rudderstack = RudderStack.getRudderStackInstance(rudderstackKey, disableRudderstackAMD, () => {
                 _pending_identify_calls.forEach(userId => {
                     if (userId) {
                         _rudderstack?.identifyEvent(userId, {
                             language: core_data?.user_language || 'en',
                         })
+                        // Also identify in PostHog if initialized
+                        if (_posthog?.has_initialized) {
+                            _posthog?.identifyEvent(userId, {
+                                language: core_data?.user_language || 'en',
+                            })
+                        }
                     }
                 })
                 _pending_identify_calls = []
             })
+
+            // Initialize PostHog
+            _posthog = PostHogAnalytics.getPostHogInstance(
+                posthogKey,
+                posthogHost || 'https://ph.deriv.com',
+                disableRudderstackAMD,
+                () => {
+                    _pending_identify_calls.forEach(userId => {
+                        if (userId) {
+                            _posthog?.identifyEvent(userId, {
+                                language: core_data?.user_language || 'en',
+                            })
+                        }
+                    })
+                }
+            )
 
             if (growthbookOptions?.attributes && Object.keys(growthbookOptions.attributes).length > 0)
                 core_data = {
@@ -124,7 +155,7 @@ export function createAnalyticsInstance(options?: Options) {
 
                 let interval = setInterval(() => {
                     if (Object.keys(tracking_config).length > 0) clearInterval(interval)
-                    else tracking_config = getFeatureValue('tracking-buttons-config', {})
+                    else tracking_config = getFeatureValue('tracking-buttons-config', {}) as { [key: string]: boolean }
                 }, 1000)
             }
         } catch (error) {
@@ -218,25 +249,41 @@ export function createAnalyticsInstance(options?: Options) {
         const userId = _rudderstack?.getUserId() || ''
         return userId && !isUUID(userId) ? userId : ''
     }
+
     /**
-     * Pushes page view event to Rudderstack
+     * Pushes page view event to RudderStack and PostHog
      *
-     * @param curret_page The name or URL of the current page to track the page view event
+     * @param current_page The name or URL of the current page to track the page view event
      */
     const pageView = (current_page: string, platform = 'Deriv App', properties?: {}) => {
         if (!_rudderstack) return
 
         const userId = getId()
+
+        // Send to RudderStack
         _rudderstack?.pageView(current_page, platform, userId, properties)
+
+        // Send to PostHog
+        _posthog?.pageView(current_page, platform, userId, properties)
     }
 
     const identifyEvent = (user_id?: string) => {
         const stored_user_id = user_id || getId()
 
-        if (_rudderstack?.has_initialized && stored_user_id) {
-            _rudderstack?.identifyEvent(stored_user_id, {
-                language: core_data?.user_language || 'en',
-            })
+        if ((_rudderstack?.has_initialized || _posthog?.has_initialized) && stored_user_id) {
+            // Identify in RudderStack
+            if (_rudderstack?.has_initialized) {
+                _rudderstack?.identifyEvent(stored_user_id, {
+                    language: core_data?.user_language || 'en',
+                })
+            }
+
+            // Identify in PostHog
+            if (_posthog?.has_initialized) {
+                _posthog?.identifyEvent(stored_user_id, {
+                    language: core_data?.user_language || 'en',
+                })
+            }
             return
         }
 
@@ -246,14 +293,19 @@ export function createAnalyticsInstance(options?: Options) {
     }
 
     const reset = () => {
-        if (!_rudderstack) return
+        if (!_rudderstack && !_posthog) return
 
+        // Reset RudderStack
         _rudderstack?.reset()
+
+        // Reset PostHog
+        _posthog?.reset()
     }
 
     const isV2Payload = (payload: any): payload is TV2EventPayload => {
         return 'event_metadata' in payload || 'cta_information' in payload || 'error' in payload
     }
+
     const trackEvent = <T extends keyof TAllEvents>(event: T, analytics_data: TAllEvents[T]) => {
         const userId = getId()
         let final_payload: any = {}
@@ -281,25 +333,33 @@ export function createAnalyticsInstance(options?: Options) {
             }
         }
 
-        if (navigator.onLine && _rudderstack) {
+        if (navigator.onLine && (_rudderstack || _posthog)) {
             if (event_cache.length > 0) {
                 event_cache.forEach((cache, index) => {
-                    _rudderstack.track(cache.event, cache.payload)
+                    // Send cached events to both providers
+                    _rudderstack?.track(cache.event, cache.payload)
+                    _posthog?.track(cache.event, cache.payload)
                     delete event_cache[index]
                 })
             }
 
             if (event in tracking_config) {
-                tracking_config[event as string] && _rudderstack?.track(event, final_payload)
+                if (tracking_config[event as string]) {
+                    // Send to both RudderStack and PostHog
+                    _rudderstack?.track(event, final_payload)
+                    _posthog?.track(event, final_payload)
+                }
             } else {
+                // Send to both RudderStack and PostHog
                 _rudderstack?.track(event, final_payload)
+                _posthog?.track(event, final_payload)
             }
         } else {
             event_cache.push({ event, payload: final_payload })
         }
     }
 
-    const getInstances = () => ({ ab: _growthbook, tracking: _rudderstack })
+    const getInstances = () => ({ ab: _growthbook, tracking: _rudderstack, posthog: _posthog })
 
     const AnalyticsInstance = {
         initialise,
