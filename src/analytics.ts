@@ -15,7 +15,7 @@ type Options = {
     growthbookKey?: string
     growthbookDecryptionKey?: string
     rudderstackKey: string
-    posthogKey: string
+    posthogKey?: string
     posthogHost?: string
     growthbookOptions?: TGrowthbookOptions
     disableRudderstackAMD?: boolean
@@ -78,21 +78,23 @@ export function createAnalyticsInstance(options?: Options) {
                 _pending_identify_calls = []
             })
 
-            // Initialize PostHog
-            _posthog = PostHogAnalytics.getPostHogInstance(
-                posthogKey,
-                posthogHost || 'https://ph.deriv.com',
-                disableRudderstackAMD,
-                () => {
-                    _pending_identify_calls.forEach(userId => {
-                        if (userId) {
-                            _posthog?.identifyEvent(userId, {
-                                language: core_data?.user_language || 'en',
-                            })
-                        }
-                    })
-                }
-            )
+            // Initialize PostHog only if key is provided
+            if (posthogKey) {
+                _posthog = PostHogAnalytics.getPostHogInstance(
+                    posthogKey,
+                    posthogHost || 'https://ph.deriv.com',
+                    disableRudderstackAMD,
+                    () => {
+                        _pending_identify_calls.forEach(userId => {
+                            if (userId) {
+                                _posthog?.identifyEvent(userId, {
+                                    language: core_data?.user_language || 'en',
+                                })
+                            }
+                        })
+                    }
+                )
+            }
 
             if (growthbookOptions?.attributes && Object.keys(growthbookOptions.attributes).length > 0)
                 core_data = {
@@ -263,7 +265,7 @@ export function createAnalyticsInstance(options?: Options) {
         // Send to RudderStack
         _rudderstack?.pageView(current_page, platform, userId, properties)
 
-        // Send to PostHog
+        // Send to PostHog (if initialized)
         _posthog?.pageView(current_page, platform, userId, properties)
     }
 
@@ -278,7 +280,7 @@ export function createAnalyticsInstance(options?: Options) {
                 })
             }
 
-            // Identify in PostHog
+            // Identify in PostHog (if initialized)
             if (_posthog?.has_initialized) {
                 _posthog?.identifyEvent(stored_user_id, {
                     language: core_data?.user_language || 'en',
@@ -298,7 +300,7 @@ export function createAnalyticsInstance(options?: Options) {
         // Reset RudderStack
         _rudderstack?.reset()
 
-        // Reset PostHog
+        // Reset PostHog (if initialized)
         _posthog?.reset()
     }
 
