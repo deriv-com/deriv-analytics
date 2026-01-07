@@ -150,6 +150,7 @@ export class PostHogAnalytics {
 
                 // Disable automatic pageleave capture
                 capture_pageleave: false,
+                autocapture: true, // Captures clicks, form submissions automatically
 
                 loaded: ph => {
                     if (disableAMD) {
