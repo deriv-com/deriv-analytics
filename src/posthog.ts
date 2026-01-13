@@ -133,7 +133,38 @@ export class PostHogAnalytics {
         // Flatten event_metadata
         if (payload.event_metadata) {
             Object.keys(payload.event_metadata).forEach(key => {
-                transformed[key] = payload.event_metadata[key]
+                // Handle nested marketing_data within event_metadata
+                if (key === 'marketing_data' && typeof payload.event_metadata[key] === 'object') {
+                    const marketingData = payload.event_metadata[key]
+                    Object.keys(marketingData).forEach(marketingKey => {
+                        // Flatten utm_data within marketing_data
+                        if (marketingKey === 'utm_data') {
+                            try {
+                                // Parse utm_data if it's a JSON string
+                                const utmData =
+                                    typeof marketingData[marketingKey] === 'string'
+                                        ? JSON.parse(marketingData[marketingKey])
+                                        : marketingData[marketingKey]
+
+                                // Flatten utm_data properties to root level
+                                if (typeof utmData === 'object' && utmData !== null) {
+                                    Object.keys(utmData).forEach(utmKey => {
+                                        transformed[utmKey] = utmData[utmKey]
+                                    })
+                                }
+                            } catch (error) {
+                                // If parsing fails, add the raw value
+                                console.error('Failed to parse utm_data:', error)
+                                transformed[marketingKey] = marketingData[marketingKey]
+                            }
+                        } else {
+                            // Add other marketing_data properties directly
+                            transformed[marketingKey] = marketingData[marketingKey]
+                        }
+                    })
+                } else {
+                    transformed[key] = payload.event_metadata[key]
+                }
             })
         }
 
