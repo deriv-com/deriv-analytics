@@ -263,6 +263,12 @@ export class PostHogAnalytics {
 
         // Only identify if not already identified or if it's still using anonymous ID
         if (!currentUserId || currentUserId === anonymousId) {
+            // CRITICAL: Use alias to link anonymous ID with user ID before identifying
+            // This preserves the pre-signup journey in PostHog
+            if (anonymousId && currentUserId === anonymousId) {
+                posthog.alias(user_id, anonymousId)
+            }
+
             posthog.identify(user_id, payload)
         }
         this.has_identified = true
