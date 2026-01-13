@@ -1,7 +1,16 @@
 import posthog from 'posthog-js'
+import type { PostHogConfig as PostHogInitConfig } from 'posthog-js'
 import { TCoreAttributes, TAllEvents } from './types'
 import { v6 as uuidv6 } from 'uuid'
 import Cookies from 'js-cookie'
+
+// Omit the configs we're already handling and create our custom type
+export type PostHogConfig = Omit<Partial<PostHogInitConfig>, 'api_host' | 'ui_host' | 'bootstrap' | 'loaded'> & {
+    // Our required/default configs can be optionally overridden
+    capture_pageview?: boolean
+    capture_pageleave?: boolean
+    autocapture?: boolean
+}
 
 export class PostHogAnalytics {
     has_identified = false
@@ -12,19 +21,26 @@ export class PostHogAnalytics {
     private static _instance: PostHogAnalytics
     private onLoadedCallback?: () => void
 
-    constructor(POSTHOG_KEY: string, POSTHOG_HOST?: string, disableAMD: boolean = false, onLoaded?: () => void) {
+    constructor(
+        POSTHOG_KEY: string,
+        POSTHOG_HOST?: string,
+        disableAMD: boolean = false,
+        onLoaded?: () => void,
+        config?: PostHogConfig
+    ) {
         this.onLoadedCallback = onLoaded
-        this.init(POSTHOG_KEY, POSTHOG_HOST, disableAMD)
+        this.init(POSTHOG_KEY, POSTHOG_HOST, disableAMD, config)
     }
 
     public static getPostHogInstance = (
         POSTHOG_KEY: string,
         POSTHOG_HOST?: string,
         disableAMD: boolean = false,
-        onLoaded?: () => void
+        onLoaded?: () => void,
+        config?: PostHogConfig
     ) => {
         if (!PostHogAnalytics._instance) {
-            PostHogAnalytics._instance = new PostHogAnalytics(POSTHOG_KEY, POSTHOG_HOST, disableAMD, onLoaded)
+            PostHogAnalytics._instance = new PostHogAnalytics(POSTHOG_KEY, POSTHOG_HOST, disableAMD, onLoaded, config)
             return PostHogAnalytics._instance
         }
         return PostHogAnalytics._instance
@@ -109,6 +125,43 @@ export class PostHogAnalytics {
     }
 
     /**
+     * Transform V2 event payload to PostHog flat structure
+     */
+    private transformToPostHogPayload = (payload: any): any => {
+        const transformed: any = {}
+
+        // Flatten event_metadata
+        if (payload.event_metadata) {
+            Object.keys(payload.event_metadata).forEach(key => {
+                transformed[key] = payload.event_metadata[key]
+            })
+        }
+
+        // Flatten cta_information
+        if (payload.cta_information) {
+            Object.keys(payload.cta_information).forEach(key => {
+                transformed[key] = payload.cta_information[key]
+            })
+        }
+
+        // Flatten error
+        if (payload.error) {
+            Object.keys(payload.error).forEach(key => {
+                transformed[key] = payload.error[key]
+            })
+        }
+
+        // Add top-level properties (excluding nested objects)
+        Object.keys(payload).forEach(key => {
+            if (!['event_metadata', 'cta_information', 'error'].includes(key)) {
+                transformed[key] = payload[key]
+            }
+        })
+
+        return transformed
+    }
+
+    /**
      * Initializes the PostHog SDK using proxy endpoint.
      * For local/staging environment, ensure that `POSTHOG_STAGING_KEY` is set.
      * For production environment, ensure that `POSTHOG_PRODUCTION_KEY` is set.
@@ -119,7 +172,7 @@ export class PostHogAnalytics {
      * - X-headers are configured on the proxy server (not client-side)
      * - See: https://posthog.com/docs/advanced/proxy
      */
-    init = (POSTHOG_KEY: string, POSTHOG_HOST?: string, disableAMD: boolean = false) => {
+    init = (POSTHOG_KEY: string, POSTHOG_HOST?: string, disableAMD: boolean = false, config?: PostHogConfig) => {
         if (POSTHOG_KEY) {
             let _define: any
             if (disableAMD) {
@@ -145,12 +198,13 @@ export class PostHogAnalytics {
                     distinctID: anonymous_id,
                 },
 
-                // Disable automatic pageview capture since we'll handle it manually
+                // Default configurations
                 capture_pageview: false,
-
-                // Disable automatic pageleave capture
                 capture_pageleave: false,
-                autocapture: true, // Captures clicks, form submissions automatically
+                autocapture: true,
+
+                // Override with consumer's config (this will override any of the above defaults)
+                ...config,
 
                 loaded: ph => {
                     if (disableAMD) {
@@ -213,12 +267,19 @@ export class PostHogAnalytics {
     }
 
     /**
-     * Pushes track events to PostHog.
+     * Pushes track events to PostHog with automatic payload transformation
      */
     track = <T extends keyof TAllEvents>(event: T, payload: TAllEvents[T] & Partial<TCoreAttributes>) => {
-        const clean_payload = Object.fromEntries(Object.entries(payload).filter(([_, value]) => value !== undefined))
         if (this.has_initialized) {
             try {
+                // Transform payload to flat structure for PostHog
+                const transformedPayload = this.transformToPostHogPayload(payload)
+
+                // Clean undefined values
+                const clean_payload = Object.fromEntries(
+                    Object.entries(transformedPayload).filter(([_, value]) => value !== undefined)
+                )
+
                 posthog.capture(event as string, clean_payload as any)
             } catch (err) {
                 console.error(err)

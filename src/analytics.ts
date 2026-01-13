@@ -1,6 +1,6 @@
 import { Growthbook, GrowthbookConfigs } from './growthbook'
 import { RudderStack } from './rudderstack'
-import { PostHogAnalytics } from './posthog'
+import { PostHogAnalytics, PostHogConfig } from './posthog'
 import Cookies from 'js-cookie'
 import { TCoreAttributes, TGrowthbookAttributes, TGrowthbookOptions, TAllEvents, TV2EventPayload } from './types'
 import { CountryUtils } from '@deriv-com/utils'
@@ -17,6 +17,7 @@ type Options = {
     rudderstackKey: string
     posthogKey?: string
     posthogHost?: string
+    posthogConfig?: PostHogConfig
     growthbookOptions?: TGrowthbookOptions
     disableRudderstackAMD?: boolean
 }
@@ -54,6 +55,7 @@ export function createAnalyticsInstance(options?: Options) {
         rudderstackKey,
         posthogKey,
         posthogHost,
+        posthogConfig,
         growthbookOptions,
         disableRudderstackAMD = false,
     }: Options) => {
@@ -92,7 +94,8 @@ export function createAnalyticsInstance(options?: Options) {
                                 })
                             }
                         })
-                    }
+                    },
+                    posthogConfig
                 )
             }
 
