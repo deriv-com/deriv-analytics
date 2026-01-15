@@ -1,5 +1,5 @@
 import { RudderAnalytics } from '@rudderstack/analytics-js'
-import { RudderStack } from '../src/rudderstack'
+import { RudderStack } from '../src/integrations/Rudderstack'
 
 jest.mock('@rudderstack/analytics-js', () => {
     return {

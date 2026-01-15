@@ -1,5 +1,5 @@
 import { RudderAnalytics } from '@rudderstack/analytics-js'
-import { TCoreAttributes, TAllEvents } from './types'
+import { TCoreAttributes, TAllEvents } from '../types/types'
 import { v6 as uuidv6 } from 'uuid'
 import Cookies from 'js-cookie'
 

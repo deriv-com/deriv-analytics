@@ -1,6 +1,6 @@
 import { Context, GrowthBook, InitResponse } from '@growthbook/growthbook'
 import { RudderAnalytics } from '@rudderstack/analytics-js'
-import { TCoreAttributes, TGrowthbookAttributes, TGrowthbookOptions } from './types'
+import { TCoreAttributes, TGrowthbookAttributes, TGrowthbookOptions } from '../types/types'
 
 export type GrowthbookConfigs = {
     // feature flags for framework needs
