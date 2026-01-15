@@ -1,6 +1,6 @@
 import posthog from 'posthog-js'
 import type { PostHogConfig as PostHogInitConfig } from 'posthog-js'
-import { TCoreAttributes, TAllEvents } from './types'
+import { TCoreAttributes, TAllEvents } from '../types/types'
 import { v6 as uuidv6 } from 'uuid'
 import Cookies from 'js-cookie'
 
