@@ -1,4 +1,4 @@
-import { Growthbook } from '../src/growthbook'
+import { Growthbook } from '../src/integrations/Growthbook'
 
 jest.mock('@rudderstack/analytics-js')
 

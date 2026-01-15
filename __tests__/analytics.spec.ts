@@ -1,4 +1,4 @@
-import { createAnalyticsInstance } from '../src/analytics'
+import { createAnalyticsInstance } from '../src/core/AnalyticsCore'
 
 jest.mock('../src/analytics', () => {
     return {
