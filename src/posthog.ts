@@ -53,22 +53,37 @@ export class PostHogAnalytics {
 
     getUserId = () => posthog.get_distinct_id()
 
-    private transformToPostHogPayload = (payload: any): any => {
+    private transformToPostHogPayload = (payload: any, maxDepth = 10): any => {
         const transformed: any = {}
 
-        const flatten = (obj: any) => {
+        const flatten = (obj: any, depth = 0) => {
+            if (depth > maxDepth) return
             if (obj === null || obj === undefined) return
 
             Object.keys(obj).forEach(key => {
                 const value = obj[key]
 
-                if (typeof value === 'object' && value !== null && !Array.isArray(value)) {
-                    flatten(value)
-                } else if (typeof value === 'string' && value.startsWith('{') && value.endsWith('}')) {
-                    try {
-                        const parsed = JSON.parse(value)
-                        flatten(parsed)
-                    } catch {
+                if (Array.isArray(value)) {
+                    transformed[key] = value
+                } else if (typeof value === 'object' && value !== null) {
+                    flatten(value, depth + 1)
+                } else if (typeof value === 'string') {
+                    const trimmed = value.trim()
+                    if (
+                        (trimmed.startsWith('{') && trimmed.endsWith('}')) ||
+                        (trimmed.startsWith('[') && trimmed.endsWith(']'))
+                    ) {
+                        try {
+                            const parsed = JSON.parse(trimmed)
+                            if (typeof parsed === 'object' && parsed !== null) {
+                                flatten(parsed, depth + 1)
+                            } else {
+                                transformed[key] = value
+                            }
+                        } catch {
+                            transformed[key] = value
+                        }
+                    } else {
                         transformed[key] = value
                     }
                 } else {
@@ -154,6 +169,8 @@ export class PostHogAnalytics {
                 Object.entries(transformedPayload).filter(([_, value]) => value !== undefined)
             )
             posthog.capture(event as string, clean_payload as any)
-        } catch {}
+        } catch (err) {
+            console.warn('PostHog: Failed to track event', err)
+        }
     }
 }

@@ -96,6 +96,8 @@ export class RudderStack {
                 Object.entries(payload).filter(([_, value]) => value !== undefined)
             )
             this.analytics.track(event, clean_payload as any)
-        } catch {}
+        } catch (err) {
+            console.warn('RudderStack: Failed to track event', err)
+        }
     }
 }

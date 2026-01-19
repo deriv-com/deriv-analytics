@@ -38,9 +38,9 @@ const CACHE_COOKIE_EVENTS = 'cached_analytics_events'
 const CACHE_COOKIE_PAGES = 'cached_analytics_page_views'
 
 const isLikelyBot = (): boolean => {
-    if (typeof window === 'undefined' || typeof navigator === 'undefined') return true
+    if (typeof window === 'undefined' || typeof navigator === 'undefined') return false
 
-    const ua = navigator.userAgent?.toLowerCase() || ''
+    const ua = navigator.userAgent?.toLowerCase()?.trim() || ''
 
     const botPatterns = [
         'bot',
@@ -96,6 +96,9 @@ export function createAnalyticsInstance(options?: Options) {
         if (typeof window === 'undefined') return '.deriv.com'
         const allowedDomains = ['deriv.com', 'deriv.team', 'deriv.ae']
         const hostname = window.location.hostname
+
+        if (hostname === 'localhost') return ''
+
         const matched = allowedDomains.find(d => hostname.includes(d))
         return matched ? `.${matched}` : `.${allowedDomains[0]}`
     }
@@ -106,6 +109,7 @@ export function createAnalyticsInstance(options?: Options) {
 
         _cookie_cache_processed = true
         const domain = getAllowedDomain()
+        const cookieOptions = domain ? { domain } : {}
 
         try {
             const storedEventsString = Cookies.get(CACHE_COOKIE_EVENTS)
@@ -116,7 +120,7 @@ export function createAnalyticsInstance(options?: Options) {
                         _rudderstack?.track(event.name as keyof TAllEvents, event.properties as any)
                         _posthog?.track(event.name as keyof TAllEvents, event.properties as any)
                     })
-                    Cookies.remove(CACHE_COOKIE_EVENTS, { domain })
+                    Cookies.remove(CACHE_COOKIE_EVENTS, cookieOptions)
                 }
             }
 
@@ -128,10 +132,12 @@ export function createAnalyticsInstance(options?: Options) {
                         _rudderstack?.pageView(page.name, 'Deriv App', getId(), page.properties)
                         _posthog?.pageView(page.name, 'Deriv App', getId(), page.properties)
                     })
-                    Cookies.remove(CACHE_COOKIE_PAGES, { domain })
+                    Cookies.remove(CACHE_COOKIE_PAGES, cookieOptions)
                 }
             }
-        } catch {}
+        } catch (err) {
+            console.warn('Analytics: Failed to process cookie cache', err)
+        }
     }
 
     const cacheEventToCookie = (eventName: string, properties: Record<string, unknown>) => {
@@ -140,8 +146,12 @@ export function createAnalyticsInstance(options?: Options) {
             const existingCache = Cookies.get(CACHE_COOKIE_EVENTS)
             const events: CachedEvent[] = existingCache ? JSON.parse(existingCache) : []
             events.push({ name: eventName, properties, timestamp: Date.now() })
-            Cookies.set(CACHE_COOKIE_EVENTS, JSON.stringify(events), { domain, expires: 1 })
-        } catch {}
+            const cookieOptions: Cookies.CookieAttributes = { expires: 1 }
+            if (domain) cookieOptions.domain = domain
+            Cookies.set(CACHE_COOKIE_EVENTS, JSON.stringify(events), cookieOptions)
+        } catch (err) {
+            console.warn('Analytics: Failed to cache event', err)
+        }
     }
 
     const cachePageViewToCookie = (pageName: string, properties?: Record<string, unknown>) => {
@@ -150,8 +160,12 @@ export function createAnalyticsInstance(options?: Options) {
             const existingCache = Cookies.get(CACHE_COOKIE_PAGES)
             const pages: CachedPageView[] = existingCache ? JSON.parse(existingCache) : []
             pages.push({ name: pageName, properties, timestamp: Date.now() })
-            Cookies.set(CACHE_COOKIE_PAGES, JSON.stringify(pages), { domain, expires: 1 })
-        } catch {}
+            const cookieOptions: Cookies.CookieAttributes = { expires: 1 }
+            if (domain) cookieOptions.domain = domain
+            Cookies.set(CACHE_COOKIE_PAGES, JSON.stringify(pages), cookieOptions)
+        } catch (err) {
+            console.warn('Analytics: Failed to cache page view', err)
+        }
     }
 
     const getClientCountry = async () => {
@@ -163,7 +177,9 @@ export function createAnalyticsInstance(options?: Options) {
         if (websiteStatus) {
             try {
                 countryFromWebsiteStatus = JSON.parse(websiteStatus)?.clients_country || ''
-            } catch {}
+            } catch (err) {
+                console.warn('Analytics: Failed to parse website_status cookie', err)
+            }
         }
 
         return countryFromCookie || countryFromWebsiteStatus || countryFromCloudflare
@@ -272,7 +288,9 @@ export function createAnalyticsInstance(options?: Options) {
                     else tracking_config = getFeatureValue('tracking-buttons-config', {}) as { [key: string]: boolean }
                 }, 1000)
             }
-        } catch {}
+        } catch (err) {
+            console.warn('Analytics: Failed to initialize', err)
+        }
     }
 
     const setAttributes = ({
@@ -381,14 +399,15 @@ export function createAnalyticsInstance(options?: Options) {
 
     const identifyEvent = (user_id?: string) => {
         const stored_user_id = user_id || getId()
+        if (!stored_user_id) return
 
-        if ((_rudderstack?.has_initialized || _posthog?.has_initialized) && stored_user_id) {
+        if (_rudderstack?.has_initialized || _posthog?.has_initialized) {
             _rudderstack?.identifyEvent(stored_user_id, { language: core_data?.user_language || 'en' })
             _posthog?.identifyEvent(stored_user_id, { language: core_data?.user_language || 'en' })
             return
         }
 
-        if (stored_user_id) {
+        if (!_pending_identify_calls.includes(stored_user_id)) {
             _pending_identify_calls.push(stored_user_id)
         }
     }
