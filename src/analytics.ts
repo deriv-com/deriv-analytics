@@ -19,7 +19,7 @@ type Options = {
     posthogHost?: string
     posthogConfig?: PostHogConfig
     growthbookOptions?: TGrowthbookOptions
-    disableRudderstackAMD?: boolean
+    enableBotFiltering?: boolean
 }
 
 type CachedEvent = {
@@ -37,10 +37,55 @@ type CachedPageView = {
 const CACHE_COOKIE_EVENTS = 'cached_analytics_events'
 const CACHE_COOKIE_PAGES = 'cached_analytics_page_views'
 
+const isLikelyBot = (): boolean => {
+    if (typeof window === 'undefined' || typeof navigator === 'undefined') return true
+
+    const ua = navigator.userAgent?.toLowerCase() || ''
+
+    const botPatterns = [
+        'bot',
+        'crawler',
+        'spider',
+        'scraper',
+        'headless',
+        'phantom',
+        'selenium',
+        'puppeteer',
+        'playwright',
+        'wget',
+        'curl',
+        'python-requests',
+        'python-urllib',
+        'java/',
+        'apache-http',
+        'node-fetch',
+        'axios',
+        'googlebot',
+        'bingbot',
+        'yandex',
+        'baiduspider',
+        'facebookexternalhit',
+        'twitterbot',
+        'linkedinbot',
+        'slackbot',
+        'telegrambot',
+        'whatsapp',
+        'discordbot',
+    ]
+
+    if (botPatterns.some(pattern => ua.includes(pattern))) return true
+    if ((navigator as any).webdriver === true) return true
+    if (!navigator.languages || navigator.languages.length === 0) return true
+    if (ua.includes('chrome') && !(window as any).chrome) return true
+
+    return false
+}
+
 export function createAnalyticsInstance(options?: Options) {
     let _growthbook: Growthbook,
         _rudderstack: RudderStack,
         _posthog: PostHogAnalytics,
+        _enableBotFiltering = false,
         core_data: Partial<TCoreAttributes> = {},
         tracking_config: { [key: string]: boolean } = {},
         offline_event_cache: Array<{ event: keyof TAllEvents; payload: TAllEvents[keyof TAllEvents] }> = [],
@@ -48,6 +93,7 @@ export function createAnalyticsInstance(options?: Options) {
         _cookie_cache_processed = false
 
     const getAllowedDomain = (): string => {
+        if (typeof window === 'undefined') return '.deriv.com'
         const allowedDomains = ['deriv.com', 'deriv.team', 'deriv.ae']
         const hostname = window.location.hostname
         const matched = allowedDomains.find(d => hostname.includes(d))
@@ -85,9 +131,7 @@ export function createAnalyticsInstance(options?: Options) {
                     Cookies.remove(CACHE_COOKIE_PAGES, { domain })
                 }
             }
-        } catch (error) {
-            // Silent fail for cache processing
-        }
+        } catch {}
     }
 
     const cacheEventToCookie = (eventName: string, properties: Record<string, unknown>) => {
@@ -97,9 +141,7 @@ export function createAnalyticsInstance(options?: Options) {
             const events: CachedEvent[] = existingCache ? JSON.parse(existingCache) : []
             events.push({ name: eventName, properties, timestamp: Date.now() })
             Cookies.set(CACHE_COOKIE_EVENTS, JSON.stringify(events), { domain, expires: 1 })
-        } catch (error) {
-            // Silent fail
-        }
+        } catch {}
     }
 
     const cachePageViewToCookie = (pageName: string, properties?: Record<string, unknown>) => {
@@ -109,9 +151,7 @@ export function createAnalyticsInstance(options?: Options) {
             const pages: CachedPageView[] = existingCache ? JSON.parse(existingCache) : []
             pages.push({ name: pageName, properties, timestamp: Date.now() })
             Cookies.set(CACHE_COOKIE_PAGES, JSON.stringify(pages), { domain, expires: 1 })
-        } catch (error) {
-            // Silent fail
-        }
+        } catch {}
     }
 
     const getClientCountry = async () => {
@@ -123,9 +163,7 @@ export function createAnalyticsInstance(options?: Options) {
         if (websiteStatus) {
             try {
                 countryFromWebsiteStatus = JSON.parse(websiteStatus)?.clients_country || ''
-            } catch (e) {
-                // console.error('Failed to parse cookie: ', e)
-            }
+            } catch {}
         }
 
         return countryFromCookie || countryFromWebsiteStatus || countryFromCloudflare
@@ -151,20 +189,20 @@ export function createAnalyticsInstance(options?: Options) {
         posthogHost,
         posthogConfig,
         growthbookOptions,
-        disableRudderstackAMD = false,
+        enableBotFiltering = false,
     }: Options) => {
         try {
+            _enableBotFiltering = enableBotFiltering
             const country = growthbookOptions?.attributes?.country || (await getClientCountry())
 
             if (rudderstackKey) {
-                _rudderstack = RudderStack.getRudderStackInstance(rudderstackKey, disableRudderstackAMD, onSdkLoaded)
+                _rudderstack = RudderStack.getRudderStackInstance(rudderstackKey, onSdkLoaded)
             }
 
             if (posthogKey) {
                 _posthog = PostHogAnalytics.getPostHogInstance(
                     posthogKey,
                     posthogHost || 'https://ph.deriv.com',
-                    disableRudderstackAMD,
                     onSdkLoaded,
                     posthogConfig
                 )
@@ -234,9 +272,7 @@ export function createAnalyticsInstance(options?: Options) {
                     else tracking_config = getFeatureValue('tracking-buttons-config', {}) as { [key: string]: boolean }
                 }, 1000)
             }
-        } catch (error) {
-            // console.log('Error in initializing analytics', error)
-        }
+        } catch {}
     }
 
     const setAttributes = ({
@@ -328,11 +364,11 @@ export function createAnalyticsInstance(options?: Options) {
         return userId && !isUUID(userId) ? userId : ''
     }
 
-    const getAnonymousId = () => {
-        return _rudderstack?.getAnonymousId() || _posthog?.getAnonymousId() || ''
-    }
+    const getAnonymousId = () => _rudderstack?.getAnonymousId() || _posthog?.getAnonymousId() || ''
 
     const pageView = (current_page: string, platform = 'Deriv App', properties?: Record<string, unknown>) => {
+        if (_enableBotFiltering && isLikelyBot()) return
+
         if (!_rudderstack && !_posthog) {
             cachePageViewToCookie(current_page, { platform, ...properties })
             return
@@ -367,6 +403,8 @@ export function createAnalyticsInstance(options?: Options) {
     }
 
     const trackEvent = <T extends keyof TAllEvents>(event: T, analytics_data: TAllEvents[T]) => {
+        if (_enableBotFiltering && isLikelyBot()) return
+
         const userId = getId()
         let final_payload: any = {}
 

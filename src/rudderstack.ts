@@ -11,18 +11,14 @@ export class RudderStack {
     private static _instance: RudderStack
     private onLoadedCallback?: () => void
 
-    constructor(RUDDERSTACK_KEY: string, disableAMD: boolean = false, onLoaded?: () => void) {
+    constructor(RUDDERSTACK_KEY: string, onLoaded?: () => void) {
         this.onLoadedCallback = onLoaded
-        this.init(RUDDERSTACK_KEY, disableAMD)
+        this.init(RUDDERSTACK_KEY)
     }
 
-    public static getRudderStackInstance = (
-        RUDDERSTACK_KEY: string,
-        disableAMD: boolean = false,
-        onLoaded?: () => void
-    ) => {
+    public static getRudderStackInstance = (RUDDERSTACK_KEY: string, onLoaded?: () => void) => {
         if (!RudderStack._instance) {
-            RudderStack._instance = new RudderStack(RUDDERSTACK_KEY, disableAMD, onLoaded)
+            RudderStack._instance = new RudderStack(RUDDERSTACK_KEY, onLoaded)
         }
         return RudderStack._instance
     }
@@ -46,23 +42,14 @@ export class RudderStack {
 
     getUserId = () => this.analytics.getUserId()
 
-    init = (RUDDERSTACK_KEY: string, disableAMD: boolean = false) => {
+    init = (RUDDERSTACK_KEY: string) => {
         if (!RUDDERSTACK_KEY) return
-
-        let _define: any
-        if (disableAMD) {
-            _define = window.define
-            window.define = undefined
-        }
 
         this.setCookieIfNotExists()
 
         this.analytics.load(RUDDERSTACK_KEY, 'https://deriv-dataplane.rudderstack.com', {
             externalAnonymousIdCookieName: this.rudderstack_anonymous_cookie_key,
             onLoaded: () => {
-                if (disableAMD) {
-                    window.define = _define
-                }
                 this.has_initialized = true
                 this.has_identified = !!this.getUserId()
                 this.onLoadedCallback?.()
@@ -90,7 +77,7 @@ export class RudderStack {
             ...(user_id && { user_id }),
             ...properties,
         }
-        // RudderStack page() signature: page(category, name, properties)
+
         this.analytics.page(platform, current_page, pageProperties as any)
         this.current_page = current_page
     }
@@ -109,8 +96,6 @@ export class RudderStack {
                 Object.entries(payload).filter(([_, value]) => value !== undefined)
             )
             this.analytics.track(event, clean_payload as any)
-        } catch (err) {
-            // console.error(err)
-        }
+        } catch {}
     }
 }

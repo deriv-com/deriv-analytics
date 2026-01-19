@@ -17,26 +17,19 @@ export class PostHogAnalytics {
     private static _instance: PostHogAnalytics
     private onLoadedCallback?: () => void
 
-    constructor(
-        POSTHOG_KEY: string,
-        POSTHOG_HOST?: string,
-        disableAMD: boolean = false,
-        onLoaded?: () => void,
-        config?: PostHogConfig
-    ) {
+    constructor(POSTHOG_KEY: string, POSTHOG_HOST?: string, onLoaded?: () => void, config?: PostHogConfig) {
         this.onLoadedCallback = onLoaded
-        this.init(POSTHOG_KEY, POSTHOG_HOST, disableAMD, config)
+        this.init(POSTHOG_KEY, POSTHOG_HOST, config)
     }
 
     public static getPostHogInstance = (
         POSTHOG_KEY: string,
         POSTHOG_HOST?: string,
-        disableAMD: boolean = false,
         onLoaded?: () => void,
         config?: PostHogConfig
     ) => {
         if (!PostHogAnalytics._instance) {
-            PostHogAnalytics._instance = new PostHogAnalytics(POSTHOG_KEY, POSTHOG_HOST, disableAMD, onLoaded, config)
+            PostHogAnalytics._instance = new PostHogAnalytics(POSTHOG_KEY, POSTHOG_HOST, onLoaded, config)
         }
         return PostHogAnalytics._instance
     }
@@ -88,14 +81,8 @@ export class PostHogAnalytics {
         return Object.fromEntries(Object.entries(transformed).filter(([_, value]) => value !== undefined))
     }
 
-    init = (POSTHOG_KEY: string, POSTHOG_HOST?: string, disableAMD: boolean = false, config?: PostHogConfig) => {
+    init = (POSTHOG_KEY: string, POSTHOG_HOST?: string, config?: PostHogConfig) => {
         if (!POSTHOG_KEY) return
-
-        let _define: any
-        if (disableAMD) {
-            _define = window.define
-            window.define = undefined
-        }
 
         this.setCookieIfNotExists()
         const anonymous_id = this.getAnonymousId()
@@ -109,9 +96,6 @@ export class PostHogAnalytics {
             autocapture: true,
             ...config,
             loaded: () => {
-                if (disableAMD) {
-                    window.define = _define
-                }
                 this.has_initialized = true
                 this.has_identified = posthog.get_distinct_id() !== anonymous_id
                 this.onLoadedCallback?.()
@@ -140,7 +124,11 @@ export class PostHogAnalytics {
     ) => {
         if (!this.has_initialized || current_page === this.current_page) return
 
-        const pageProperties = user_id ? { user_id, platform, ...properties } : { platform, ...properties }
+        const pageProperties = {
+            platform,
+            ...(user_id && { user_id }),
+            ...properties,
+        }
 
         posthog.capture('$pageview', {
             $current_url: window.location.href,
@@ -166,8 +154,6 @@ export class PostHogAnalytics {
                 Object.entries(transformedPayload).filter(([_, value]) => value !== undefined)
             )
             posthog.capture(event as string, clean_payload as any)
-        } catch (err) {
-            // console.error(err)
-        }
+        } catch {}
     }
 }
