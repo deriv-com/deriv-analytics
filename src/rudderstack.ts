@@ -110,7 +110,7 @@ export class RudderStack {
             )
             this.analytics.track(event, clean_payload as any)
         } catch (err) {
-            console.error(err)
+            // console.error(err)
         }
     }
 }

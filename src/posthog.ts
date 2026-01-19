@@ -104,6 +104,8 @@ export class PostHogAnalytics {
             api_host: POSTHOG_HOST || 'https://ph.deriv.com',
             ui_host: 'https://us.posthog.com',
             bootstrap: { distinctID: anonymous_id },
+            capture_pageview: false,
+            capture_pageleave: false,
             autocapture: true,
             ...config,
             loaded: () => {
@@ -165,7 +167,7 @@ export class PostHogAnalytics {
             )
             posthog.capture(event as string, clean_payload as any)
         } catch (err) {
-            console.error(err)
+            // console.error(err)
         }
     }
 }

@@ -64,7 +64,7 @@ export class Growthbook {
     reapplyExperiment(url?: string) {
         const currentUrl = url ?? window.location.href
         this.GrowthBook.setURL(currentUrl)
-        console.log('Route changed, new URL:', currentUrl)
+        // console.log('Route changed, new URL:', currentUrl)
     }
 
     // Utility function to wait for isLoaded to become true
@@ -141,7 +141,7 @@ export class Growthbook {
 
     init = async () => {
         const status = await this.GrowthBook.init({ timeout: 2000, streaming: true }).catch(err => {
-            console.error(err)
+            // console.error(err)
         })
 
         this.status = status

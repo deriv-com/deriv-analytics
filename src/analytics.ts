@@ -124,7 +124,7 @@ export function createAnalyticsInstance(options?: Options) {
             try {
                 countryFromWebsiteStatus = JSON.parse(websiteStatus)?.clients_country || ''
             } catch (e) {
-                console.error('Failed to parse cookie: ', e)
+                // console.error('Failed to parse cookie: ', e)
             }
         }
 
@@ -235,7 +235,7 @@ export function createAnalyticsInstance(options?: Options) {
                 }, 1000)
             }
         } catch (error) {
-            console.log('Error in initializing analytics', error)
+            // console.log('Error in initializing analytics', error)
         }
     }
 
