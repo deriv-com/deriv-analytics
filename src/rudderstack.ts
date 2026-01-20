@@ -1,7 +1,6 @@
 import { RudderAnalytics } from '@rudderstack/analytics-js'
 import { TCoreAttributes, TAllEvents } from './types'
 import { v6 as uuidv6 } from 'uuid'
-import Cookies from 'js-cookie'
 
 export class RudderStack {
     analytics = new RudderAnalytics()
@@ -12,19 +11,14 @@ export class RudderStack {
     private static _instance: RudderStack
     private onLoadedCallback?: () => void
 
-    constructor(RUDDERSTACK_KEY: string, disableAMD: boolean = false, onLoaded?: () => void) {
+    constructor(RUDDERSTACK_KEY: string, onLoaded?: () => void) {
         this.onLoadedCallback = onLoaded
-        this.init(RUDDERSTACK_KEY, disableAMD)
+        this.init(RUDDERSTACK_KEY)
     }
 
-    public static getRudderStackInstance = (
-        RUDDERSTACK_KEY: string,
-        disableAMD: boolean = false,
-        onLoaded?: () => void
-    ) => {
+    public static getRudderStackInstance = (RUDDERSTACK_KEY: string, onLoaded?: () => void) => {
         if (!RudderStack._instance) {
-            RudderStack._instance = new RudderStack(RUDDERSTACK_KEY, disableAMD, onLoaded)
-            return RudderStack._instance
+            RudderStack._instance = new RudderStack(RUDDERSTACK_KEY, onLoaded)
         }
         return RudderStack._instance
     }
@@ -38,107 +32,31 @@ export class RudderStack {
 
         if (!anonymous_id) {
             const hostname = window.location.hostname
-
-            // List of external domains where we should use the full hostname
             const external_domains = ['webflow.io']
-
-            // Check if the hostname ends with any of the external domains
             const is_external_domain = external_domains.some(domain => hostname.endsWith(domain))
-
-            // If it's an external domain, use the full hostname, otherwise use the last two parts
             const domain_name = is_external_domain ? hostname : hostname.split('.').slice(-2).join('.')
 
-            // Set cookie to expire in 2 years
-            document.cookie = `${
-                this.rudderstack_anonymous_cookie_key
-            }=${uuidv6()}; path=/; Domain=${domain_name}; max-age=${2 * 365 * 24 * 60 * 60}`
+            document.cookie = `${this.rudderstack_anonymous_cookie_key}=${uuidv6()}; path=/; Domain=${domain_name}; max-age=${2 * 365 * 24 * 60 * 60}`
         }
     }
 
-    /**
-     * @returns The user ID that was assigned to the user after calling identify event
-     */
     getUserId = () => this.analytics.getUserId()
 
-    /** For caching mechanism, Rudderstack  SDK, first page load  */
-    handleCachedEvents = () => {
-        const allowedDomains = ['deriv.com', 'deriv.team', 'deriv.ae']
-        const domain = allowedDomains.some(d => window.location.hostname.includes(d))
-            ? `.${allowedDomains.find(d => window.location.hostname.includes(d))}`
-            : `.${allowedDomains[0]}`
-        const storedEventsString: string | undefined = Cookies.get('cached_analytics_events')
-        const storedPagesString: string | undefined = Cookies.get('cached_analytics_page_views')
+    init = (RUDDERSTACK_KEY: string) => {
+        if (!RUDDERSTACK_KEY) return
 
-        try {
-            // Handle cached analytics events
-            if (storedEventsString) {
-                const storedEvents = JSON.parse(storedEventsString)
+        this.setCookieIfNotExists()
 
-                if (Array.isArray(storedEvents) && storedEvents.length > 0) {
-                    storedEvents.forEach((event: any) => {
-                        this.analytics.track(event.name, event.properties)
-                    })
-
-                    // Clear the stored events cookie
-                    Cookies.remove('cached_analytics_events', { domain })
-                }
-            }
-
-            // Handle cached page views
-            if (storedPagesString) {
-                const storedPages = JSON.parse(storedPagesString)
-
-                if (Array.isArray(storedPages) && storedPages.length > 0) {
-                    storedPages.forEach((page: any) => {
-                        this.analytics.page(page?.name, page?.properties)
-                    })
-
-                    // Clear the stored page views cookie
-                    Cookies.remove('cached_analytics_page_views', { domain })
-                }
-            }
-        } catch (error) {
-            // eslint-disable-next-line no-console
-            console.log(error)
-        }
+        this.analytics.load(RUDDERSTACK_KEY, 'https://deriv-dataplane.rudderstack.com', {
+            externalAnonymousIdCookieName: this.rudderstack_anonymous_cookie_key,
+            onLoaded: () => {
+                this.has_initialized = true
+                this.has_identified = !!this.getUserId()
+                this.onLoadedCallback?.()
+            },
+        })
     }
 
-    /**
-     * Initializes the Rudderstack SDK. Ensure that the appropriate environment variables are set before this is called.
-     * For local/staging environment, ensure that `RUDDERSTACK_STAGING_KEY` and `RUDDERSTACK_URL` is set.
-     * For production environment, ensure that `RUDDERSTACK_PRODUCTION_KEY` and `RUDDERSTACK_URL` is set.
-     */
-
-    init = (RUDDERSTACK_KEY: string, disableAMD: boolean = false) => {
-        if (RUDDERSTACK_KEY) {
-            let _define: any
-            if (disableAMD) {
-                _define = window.define
-                window.define = undefined
-            }
-
-            this.setCookieIfNotExists()
-            this.analytics.load(RUDDERSTACK_KEY, 'https://deriv-dataplane.rudderstack.com', {
-                externalAnonymousIdCookieName: this.rudderstack_anonymous_cookie_key,
-                onLoaded: () => {
-                    if (disableAMD) {
-                        window.define = _define
-                    }
-                    this.has_initialized = true
-                    this.has_identified = !!this.getUserId()
-                    this.handleCachedEvents()
-
-                    this.onLoadedCallback?.()
-                },
-            })
-        }
-    }
-
-    /**
-     *
-     * @param user_id The user ID of the user to identify and associate all events with that particular user ID
-     * @param payload Additional information passed to identify the user
-     */
     identifyEvent = (user_id: string, payload: { language: string }) => {
         const currentUserId = this.getUserId()
         if (!currentUserId) {
@@ -147,40 +65,39 @@ export class RudderStack {
         this.has_identified = true
     }
 
-    /**
-     * Pushes page view event to Rudderstack
-     *
-     * @param curret_page The name or URL of the current page to track the page view event
-     */
-    pageView = (current_page: string, platform = 'Deriv App', user_id: string, properties?: {}) => {
-        if (this.has_initialized && current_page !== this.current_page) {
-            const pageProperties = user_id ? { user_id, ...properties } : properties
-            this.analytics.page(platform, current_page, pageProperties)
-            this.current_page = current_page
+    pageView = (
+        current_page: string,
+        platform = 'Deriv App',
+        user_id: string,
+        properties?: Record<string, unknown>
+    ) => {
+        if (!this.has_initialized || current_page === this.current_page) return
+
+        const pageProperties = {
+            ...(user_id && { user_id }),
+            ...properties,
         }
+
+        this.analytics.page(platform, current_page, pageProperties as any)
+        this.current_page = current_page
     }
 
-    /**
-     * Pushes reset event to rudderstack
-     */
     reset = () => {
-        if (this.has_initialized) {
-            this.analytics.reset()
-            this.has_identified = false
-        }
+        if (!this.has_initialized) return
+        this.analytics.reset()
+        this.has_identified = false
     }
 
-    /**
-     * Pushes track events to Rudderstack.
-     */
     track = <T extends keyof TAllEvents>(event: T, payload: TAllEvents[T] & Partial<TCoreAttributes>) => {
-        const clean_payload = Object.fromEntries(Object.entries(payload).filter(([_, value]) => value !== undefined))
-        if (this.has_initialized) {
-            try {
-                this.analytics.track(event, clean_payload as any)
-            } catch (err) {
-                console.error(err)
-            }
+        if (!this.has_initialized) return
+
+        try {
+            const clean_payload = Object.fromEntries(
+                Object.entries(payload).filter(([_, value]) => value !== undefined)
+            )
+            this.analytics.track(event, clean_payload as any)
+        } catch (err) {
+            console.warn('RudderStack: Failed to track event', err)
         }
     }
 }

@@ -4,10 +4,10 @@ The analytics package contains all the utility functions used for tracking user 
 
 **In this document**
 
--   [Analytics](#analytics)
-    -   [What is Analytics?](#what-is-analytics)
-    -   [Installation and initialisation](#installation)
-    -   [Usage](#usage)
+- [Analytics](#analytics)
+    - [What is Analytics?](#what-is-analytics)
+    - [Installation and initialisation](#installation)
+    - [Usage](#usage)
 
 ### What is Analytics?
 
@@ -39,7 +39,7 @@ Analytics?.initialise({
         subscribeToChanges: true,
         enableDevMode: window?.location.hostname.includes('localhost'),
         trackingCallback: (experiment, result) => {
-            console.log('Tracking callback', experiment, result)
+            // console.log('Tracking callback', experiment, result)
         }
         navigate: (url) => window.location.href = url,
     }

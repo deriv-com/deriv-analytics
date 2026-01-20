@@ -14,39 +14,187 @@ declare global {
 type Options = {
     growthbookKey?: string
     growthbookDecryptionKey?: string
-    rudderstackKey: string
+    rudderstackKey?: string
     posthogKey?: string
     posthogHost?: string
     posthogConfig?: PostHogConfig
     growthbookOptions?: TGrowthbookOptions
-    disableRudderstackAMD?: boolean
+    enableBotFiltering?: boolean
+}
+
+type CachedEvent = {
+    name: string
+    properties: Record<string, unknown>
+    timestamp: number
+}
+
+type CachedPageView = {
+    name: string
+    properties?: Record<string, unknown>
+    timestamp: number
+}
+
+const CACHE_COOKIE_EVENTS = 'cached_analytics_events'
+const CACHE_COOKIE_PAGES = 'cached_analytics_page_views'
+
+const isLikelyBot = (): boolean => {
+    if (typeof window === 'undefined' || typeof navigator === 'undefined') return false
+
+    const ua = navigator.userAgent?.toLowerCase()?.trim() || ''
+
+    const botPatterns = [
+        'bot',
+        'crawler',
+        'spider',
+        'scraper',
+        'headless',
+        'phantom',
+        'selenium',
+        'puppeteer',
+        'playwright',
+        'wget',
+        'curl',
+        'python-requests',
+        'python-urllib',
+        'java/',
+        'apache-http',
+        'node-fetch',
+        'axios',
+        'googlebot',
+        'bingbot',
+        'yandex',
+        'baiduspider',
+        'facebookexternalhit',
+        'twitterbot',
+        'linkedinbot',
+        'slackbot',
+        'telegrambot',
+        'whatsapp',
+        'discordbot',
+    ]
+
+    if (botPatterns.some(pattern => ua.includes(pattern))) return true
+    if ((navigator as any).webdriver === true) return true
+    if (!navigator.languages || navigator.languages.length === 0) return true
+    if (ua.includes('chrome') && !(window as any).chrome) return true
+
+    return false
 }
 
 export function createAnalyticsInstance(options?: Options) {
     let _growthbook: Growthbook,
         _rudderstack: RudderStack,
         _posthog: PostHogAnalytics,
+        _enableBotFiltering = false,
         core_data: Partial<TCoreAttributes> = {},
         tracking_config: { [key: string]: boolean } = {},
-        event_cache: Array<{ event: keyof TAllEvents; payload: TAllEvents[keyof TAllEvents] }> = [],
-        _pending_identify_calls: Array<string> = []
+        offline_event_cache: Array<{ event: keyof TAllEvents; payload: TAllEvents[keyof TAllEvents] }> = [],
+        _pending_identify_calls: Array<string> = [],
+        _cookie_cache_processed = false
+
+    const getAllowedDomain = (): string => {
+        if (typeof window === 'undefined') return '.deriv.com'
+        const allowedDomains = ['deriv.com', 'deriv.team', 'deriv.ae']
+        const hostname = window.location.hostname
+
+        if (hostname === 'localhost') return ''
+
+        const matched = allowedDomains.find(d => hostname.includes(d))
+        return matched ? `.${matched}` : `.${allowedDomains[0]}`
+    }
+
+    const processCookieCache = () => {
+        if (_cookie_cache_processed) return
+        if (!_rudderstack?.has_initialized && !_posthog?.has_initialized) return
+
+        _cookie_cache_processed = true
+        const domain = getAllowedDomain()
+        const cookieOptions = domain ? { domain } : {}
+
+        try {
+            const storedEventsString = Cookies.get(CACHE_COOKIE_EVENTS)
+            if (storedEventsString) {
+                const storedEvents: CachedEvent[] = JSON.parse(storedEventsString)
+                if (Array.isArray(storedEvents) && storedEvents.length > 0) {
+                    storedEvents.forEach(event => {
+                        _rudderstack?.track(event.name as keyof TAllEvents, event.properties as any)
+                        _posthog?.track(event.name as keyof TAllEvents, event.properties as any)
+                    })
+                    Cookies.remove(CACHE_COOKIE_EVENTS, cookieOptions)
+                }
+            }
+
+            const storedPagesString = Cookies.get(CACHE_COOKIE_PAGES)
+            if (storedPagesString) {
+                const storedPages: CachedPageView[] = JSON.parse(storedPagesString)
+                if (Array.isArray(storedPages) && storedPages.length > 0) {
+                    storedPages.forEach(page => {
+                        _rudderstack?.pageView(page.name, 'Deriv App', getId(), page.properties)
+                        _posthog?.pageView(page.name, 'Deriv App', getId(), page.properties)
+                    })
+                    Cookies.remove(CACHE_COOKIE_PAGES, cookieOptions)
+                }
+            }
+        } catch (err) {
+            console.warn('Analytics: Failed to process cookie cache', err)
+        }
+    }
+
+    const cacheEventToCookie = (eventName: string, properties: Record<string, unknown>) => {
+        try {
+            const domain = getAllowedDomain()
+            const existingCache = Cookies.get(CACHE_COOKIE_EVENTS)
+            const events: CachedEvent[] = existingCache ? JSON.parse(existingCache) : []
+            events.push({ name: eventName, properties, timestamp: Date.now() })
+            const cookieOptions: Cookies.CookieAttributes = { expires: 1 }
+            if (domain) cookieOptions.domain = domain
+            Cookies.set(CACHE_COOKIE_EVENTS, JSON.stringify(events), cookieOptions)
+        } catch (err) {
+            console.warn('Analytics: Failed to cache event', err)
+        }
+    }
+
+    const cachePageViewToCookie = (pageName: string, properties?: Record<string, unknown>) => {
+        try {
+            const domain = getAllowedDomain()
+            const existingCache = Cookies.get(CACHE_COOKIE_PAGES)
+            const pages: CachedPageView[] = existingCache ? JSON.parse(existingCache) : []
+            pages.push({ name: pageName, properties, timestamp: Date.now() })
+            const cookieOptions: Cookies.CookieAttributes = { expires: 1 }
+            if (domain) cookieOptions.domain = domain
+            Cookies.set(CACHE_COOKIE_PAGES, JSON.stringify(pages), cookieOptions)
+        } catch (err) {
+            console.warn('Analytics: Failed to cache page view', err)
+        }
+    }
 
     const getClientCountry = async () => {
         const countryFromCloudflare = await CountryUtils.getCountry()
         const countryFromCookie = Cookies.get('clients_country')
-
         const websiteStatus = Cookies.get('website_status')
         let countryFromWebsiteStatus = ''
 
         if (websiteStatus) {
             try {
                 countryFromWebsiteStatus = JSON.parse(websiteStatus)?.clients_country || ''
-            } catch (e) {
-                console.error('Failed to parse cookie: ', e)
+            } catch (err) {
+                console.warn('Analytics: Failed to parse website_status cookie', err)
             }
         }
 
         return countryFromCookie || countryFromWebsiteStatus || countryFromCloudflare
+    }
+
+    const onSdkLoaded = () => {
+        processCookieCache()
+
+        _pending_identify_calls.forEach(userId => {
+            if (userId) {
+                _rudderstack?.identifyEvent(userId, { language: core_data?.user_language || 'en' })
+                _posthog?.identifyEvent(userId, { language: core_data?.user_language || 'en' })
+            }
+        })
+        _pending_identify_calls = []
     }
 
     const initialise = async ({
@@ -57,49 +205,27 @@ export function createAnalyticsInstance(options?: Options) {
         posthogHost,
         posthogConfig,
         growthbookOptions,
-        disableRudderstackAMD = false,
+        enableBotFiltering = false,
     }: Options) => {
         try {
+            _enableBotFiltering = enableBotFiltering
             const country = growthbookOptions?.attributes?.country || (await getClientCountry())
 
-            // Initialize RudderStack
-            _rudderstack = RudderStack.getRudderStackInstance(rudderstackKey, disableRudderstackAMD, () => {
-                _pending_identify_calls.forEach(userId => {
-                    if (userId) {
-                        _rudderstack?.identifyEvent(userId, {
-                            language: core_data?.user_language || 'en',
-                        })
-                        // Also identify in PostHog if initialized
-                        if (_posthog?.has_initialized) {
-                            _posthog?.identifyEvent(userId, {
-                                language: core_data?.user_language || 'en',
-                            })
-                        }
-                    }
-                })
-                _pending_identify_calls = []
-            })
+            if (rudderstackKey) {
+                _rudderstack = RudderStack.getRudderStackInstance(rudderstackKey, onSdkLoaded)
+            }
 
-            // Initialize PostHog only if key is provided
             if (posthogKey) {
                 _posthog = PostHogAnalytics.getPostHogInstance(
                     posthogKey,
                     posthogHost || 'https://ph.deriv.com',
-                    disableRudderstackAMD,
-                    () => {
-                        _pending_identify_calls.forEach(userId => {
-                            if (userId) {
-                                _posthog?.identifyEvent(userId, {
-                                    language: core_data?.user_language || 'en',
-                                })
-                            }
-                        })
-                    },
+                    onSdkLoaded,
                     posthogConfig
                 )
             }
 
-            if (growthbookOptions?.attributes && Object.keys(growthbookOptions.attributes).length > 0)
+            if (growthbookOptions?.attributes && Object.keys(growthbookOptions.attributes).length > 0) {
+                const anonymousId = _rudderstack?.getAnonymousId() || _posthog?.getAnonymousId()
                 core_data = {
                     ...core_data,
                     country,
@@ -117,9 +243,7 @@ export function createAnalyticsInstance(options?: Options) {
                         device_type: growthbookOptions?.attributes.device_type,
                     }),
                     ...(growthbookOptions?.attributes?.url && { url: growthbookOptions?.attributes.url }),
-                    ...(growthbookOptions?.attributes && {
-                        loggedIn: !!growthbookOptions?.attributes?.loggedIn,
-                    }),
+                    ...(growthbookOptions?.attributes && { loggedIn: !!growthbookOptions?.attributes?.loggedIn }),
                     ...(growthbookOptions?.attributes?.email_hash && {
                         email_hash: growthbookOptions?.attributes.email_hash,
                     }),
@@ -136,9 +260,7 @@ export function createAnalyticsInstance(options?: Options) {
                         !isUUID(growthbookOptions?.attributes?.user_id) && {
                             user_id: growthbookOptions?.attributes?.user_id,
                         }),
-                    ...(growthbookOptions?.attributes && {
-                        anonymous_id: _rudderstack.getAnonymousId(),
-                    }),
+                    ...(anonymousId && { anonymous_id: anonymousId }),
                     ...(growthbookOptions?.attributes?.account_currency && {
                         account_currency: growthbookOptions?.attributes.account_currency,
                     }),
@@ -146,9 +268,12 @@ export function createAnalyticsInstance(options?: Options) {
                         account_mode: growthbookOptions?.attributes.account_mode,
                     }),
                 }
+            }
+
             growthbookOptions ??= {}
             growthbookOptions.attributes ??= {}
-            growthbookOptions.attributes.id ??= _rudderstack.getAnonymousId()
+            const anonId = _rudderstack?.getAnonymousId() || _posthog?.getAnonymousId()
+            growthbookOptions.attributes.id ??= anonId
             growthbookOptions.attributes.country ??= country
 
             if (growthbookKey) {
@@ -158,13 +283,13 @@ export function createAnalyticsInstance(options?: Options) {
                     growthbookOptions
                 )
 
-                let interval = setInterval(() => {
+                const interval = setInterval(() => {
                     if (Object.keys(tracking_config).length > 0) clearInterval(interval)
                     else tracking_config = getFeatureValue('tracking-buttons-config', {}) as { [key: string]: boolean }
                 }, 1000)
             }
-        } catch (error) {
-            console.log('Error in initializing analytics', error)
+        } catch (err) {
+            console.warn('Analytics: Failed to initialize', err)
         }
     }
 
@@ -192,11 +317,10 @@ export function createAnalyticsInstance(options?: Options) {
         account_currency,
         account_mode,
     }: TCoreAttributes) => {
-        if (!_rudderstack) return
+        if (!_rudderstack && !_posthog) return
 
         const user_identity = user_id ?? getId()
 
-        // Check if we have Growthbook instance and update its attributes
         if (_growthbook) {
             const config: TGrowthbookAttributes = {
                 country,
@@ -243,67 +367,53 @@ export function createAnalyticsInstance(options?: Options) {
     }
 
     const getFeatureState = (id: string) => _growthbook?.getFeatureState(id)?.experimentResult?.name
+
     const getFeatureValue = <K extends keyof GrowthbookConfigs, V extends GrowthbookConfigs[K]>(
         id: K,
         defaultValue: V
     ) => _growthbook?.getFeatureValue(id as string, defaultValue)
+
     const getGrowthbookStatus = async () => await _growthbook?.getStatus()
     const isFeatureOn = (key: string) => _growthbook?.isOn(key)
     const setUrl = (href: string) => _growthbook?.setUrl(href)
+
     const getId = () => {
-        const userId = _rudderstack?.getUserId() || ''
+        const userId = _rudderstack?.getUserId() || _posthog?.getUserId() || ''
         return userId && !isUUID(userId) ? userId : ''
     }
 
-    /**
-     * Pushes page view event to RudderStack and PostHog
-     *
-     * @param current_page The name or URL of the current page to track the page view event
-     */
-    const pageView = (current_page: string, platform = 'Deriv App', properties?: {}) => {
-        if (!_rudderstack) return
+    const getAnonymousId = () => _rudderstack?.getAnonymousId() || _posthog?.getAnonymousId() || ''
+
+    const pageView = (current_page: string, platform = 'Deriv App', properties?: Record<string, unknown>) => {
+        if (_enableBotFiltering && isLikelyBot()) return
+
+        if (!_rudderstack && !_posthog) {
+            cachePageViewToCookie(current_page, { platform, ...properties })
+            return
+        }
 
         const userId = getId()
-
-        // Send to RudderStack
         _rudderstack?.pageView(current_page, platform, userId, properties)
-
-        // Send to PostHog (if initialized)
         _posthog?.pageView(current_page, platform, userId, properties)
     }
 
     const identifyEvent = (user_id?: string) => {
         const stored_user_id = user_id || getId()
+        if (!stored_user_id) return
 
-        if ((_rudderstack?.has_initialized || _posthog?.has_initialized) && stored_user_id) {
-            // Identify in RudderStack
-            if (_rudderstack?.has_initialized) {
-                _rudderstack?.identifyEvent(stored_user_id, {
-                    language: core_data?.user_language || 'en',
-                })
-            }
-
-            // Identify in PostHog (if initialized)
-            if (_posthog?.has_initialized) {
-                _posthog?.identifyEvent(stored_user_id, {
-                    language: core_data?.user_language || 'en',
-                })
-            }
+        if (_rudderstack?.has_initialized || _posthog?.has_initialized) {
+            _rudderstack?.identifyEvent(stored_user_id, { language: core_data?.user_language || 'en' })
+            _posthog?.identifyEvent(stored_user_id, { language: core_data?.user_language || 'en' })
             return
         }
 
-        if (stored_user_id) {
+        if (!_pending_identify_calls.includes(stored_user_id)) {
             _pending_identify_calls.push(stored_user_id)
         }
     }
 
     const reset = () => {
-        if (!_rudderstack && !_posthog) return
-
-        // Reset RudderStack
         _rudderstack?.reset()
-
-        // Reset PostHog (if initialized)
         _posthog?.reset()
     }
 
@@ -312,25 +422,22 @@ export function createAnalyticsInstance(options?: Options) {
     }
 
     const trackEvent = <T extends keyof TAllEvents>(event: T, analytics_data: TAllEvents[T]) => {
+        if (_enableBotFiltering && isLikelyBot()) return
+
         const userId = getId()
         let final_payload: any = {}
 
         if (isV2Payload(analytics_data)) {
-            // --- V2 LOGIC: Nest Core Data ---
             const v2_data = analytics_data as TV2EventPayload
             final_payload = {
                 ...v2_data,
                 event_metadata: {
-                    // 1. Inject Global Core Data
                     ...core_data,
-                    // 2. Inject User ID if present
                     ...(userId && { user_id: userId }),
-                    // 3. Merge/Overwrite with specific metadata passed in the call
                     ...v2_data.event_metadata,
                 },
             }
         } else {
-            // --- V1 LOGIC: Flatten Core Data (Backward Compatible) ---
             final_payload = {
                 ...core_data,
                 ...analytics_data,
@@ -338,29 +445,29 @@ export function createAnalyticsInstance(options?: Options) {
             }
         }
 
-        if (navigator.onLine && (_rudderstack || _posthog)) {
-            if (event_cache.length > 0) {
-                event_cache.forEach((cache, index) => {
-                    // Send cached events to both providers
-                    _rudderstack?.track(cache.event, cache.payload)
-                    _posthog?.track(cache.event, cache.payload)
-                    delete event_cache[index]
-                })
-            }
+        const hasInitializedProvider = _rudderstack?.has_initialized || _posthog?.has_initialized
 
-            if (event in tracking_config) {
-                if (tracking_config[event as string]) {
-                    // Send to both RudderStack and PostHog
-                    _rudderstack?.track(event, final_payload)
-                    _posthog?.track(event, final_payload)
-                }
+        if (!navigator.onLine || !hasInitializedProvider) {
+            if (!hasInitializedProvider) {
+                cacheEventToCookie(event as string, final_payload)
             } else {
-                // Send to both RudderStack and PostHog
-                _rudderstack?.track(event, final_payload)
-                _posthog?.track(event, final_payload)
+                offline_event_cache.push({ event, payload: final_payload })
             }
-        } else {
-            event_cache.push({ event, payload: final_payload })
+            return
+        }
+
+        if (offline_event_cache.length > 0) {
+            offline_event_cache.forEach(cache => {
+                _rudderstack?.track(cache.event, cache.payload)
+                _posthog?.track(cache.event, cache.payload)
+            })
+            offline_event_cache = []
+        }
+
+        const shouldTrack = !(event in tracking_config) || tracking_config[event as string]
+        if (shouldTrack) {
+            _rudderstack?.track(event, final_payload)
+            _posthog?.track(event, final_payload)
         }
     }
 
@@ -376,6 +483,7 @@ export function createAnalyticsInstance(options?: Options) {
         isFeatureOn,
         setUrl,
         getId,
+        getAnonymousId,
         trackEvent,
         getInstances,
         pageView,
