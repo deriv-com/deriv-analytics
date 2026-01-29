@@ -19,20 +19,12 @@ describe('Growthbook Provider', () => {
     beforeEach(() => {
         jest.clearAllMocks()
 
-        // Mock window.location
-        Object.defineProperty(window, 'location', {
-            writable: true,
-            value: { hostname: 'app.deriv.com' },
-        })
+        // window.location.hostname is already 'app.deriv.com' from jest.config testEnvironmentOptions
 
         // Mock window.dataLayer
         ;(window as any).dataLayer = []
 
         growthbook = new Growthbook('clientKey', 'decryptionKey')
-    })
-
-    afterEach(() => {
-        jest.clearAllMocks()
     })
 
     describe('Initialization', () => {
@@ -171,14 +163,10 @@ describe('Growthbook Provider', () => {
         })
 
         test('should reapply experiment with window location', () => {
-            Object.defineProperty(window, 'location', {
-                writable: true,
-                value: { href: 'https://example.com/current' },
-            })
-
+            // Use the default location href from jsdom
             growthbook.reapplyExperiment()
 
-            expect(growthbook.GrowthBook.setURL).toHaveBeenCalledWith('https://example.com/current')
+            expect(growthbook.GrowthBook.setURL).toHaveBeenCalledWith(window.location.href)
         })
     })
 

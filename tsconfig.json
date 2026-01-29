@@ -29,7 +29,7 @@
     "declaration": true,
     "declarationMap": true,
     "sourceMap": true,
-    "outDir": "./lib",
+    "outDir": "./dist",
     "removeComments": false,
     "importHelpers": true,
     "downlevelIteration": true,

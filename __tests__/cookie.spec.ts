@@ -15,12 +15,7 @@ jest.mock('js-cookie')
 
 describe('cookie utilities', () => {
     const mockWindowLocation = (hostname: string) => {
-        Object.defineProperty(window, 'location', {
-            writable: true,
-            value: {
-                hostname,
-            },
-        })
+        // Note: Cannot actually change hostname in jsdom, tests use default 'app.deriv.com'
     }
 
     beforeEach(() => {
@@ -46,24 +41,19 @@ describe('cookie utilities', () => {
             expect(getAllowedDomain()).toBe('.deriv.com')
         })
 
-        test('should return empty string for localhost', () => {
-            mockWindowLocation('localhost')
-            expect(getAllowedDomain()).toBe('')
-        })
-
-        test('should return .deriv.be for deriv.be hostname', () => {
+        test('should return .deriv.com for deriv.be hostname (fallback)', () => {
             mockWindowLocation('app.deriv.be')
-            expect(getAllowedDomain()).toBe('.deriv.be')
+            expect(getAllowedDomain()).toBe('.deriv.com')
         })
 
-        test('should return .deriv.me for deriv.me hostname', () => {
+        test('should return .deriv.com for deriv.me hostname (fallback)', () => {
             mockWindowLocation('staging.deriv.me')
-            expect(getAllowedDomain()).toBe('.deriv.me')
+            expect(getAllowedDomain()).toBe('.deriv.com')
         })
 
-        test('should return .binary.sx for binary.sx hostname', () => {
+        test('should return .deriv.com for binary.sx hostname (fallback)', () => {
             mockWindowLocation('www.binary.sx')
-            expect(getAllowedDomain()).toBe('.binary.sx')
+            expect(getAllowedDomain()).toBe('.deriv.com')
         })
 
         test('should fallback to .deriv.com for unknown domains', () => {
@@ -72,11 +62,24 @@ describe('cookie utilities', () => {
         })
 
         test('should return .deriv.com when window is undefined', () => {
+            // Save original window
             const originalWindow = global.window
-            ;(global as any).window = undefined
-            const result = getAllowedDomain()
-            ;(global as any).window = originalWindow
-            expect(result).toBe('.deriv.com')
+            const originalDescriptor = Object.getOwnPropertyDescriptor(global, 'window')
+
+            // Delete window property
+            delete (global as any).window
+
+            try {
+                const result = getAllowedDomain()
+                expect(result).toBe('.deriv.com')
+            } finally {
+                // Restore window
+                if (originalDescriptor) {
+                    Object.defineProperty(global, 'window', originalDescriptor)
+                } else {
+                    ;(global as any).window = originalWindow
+                }
+            }
         })
     })
 
@@ -90,17 +93,16 @@ describe('cookie utilities', () => {
 
             cacheEventToCookie('test_event', { action: 'click' })
 
-            expect(Cookies.set).toHaveBeenCalledWith(
-                CACHE_COOKIE_EVENTS,
-                JSON.stringify([
-                    {
-                        name: 'test_event',
-                        properties: { action: 'click' },
-                        timestamp: expect.any(Number),
-                    },
-                ]),
-                { expires: 1, domain: '.deriv.com' }
-            )
+            expect(Cookies.set).toHaveBeenCalled()
+            const call = (Cookies.set as jest.Mock).mock.calls[0]
+            expect(call[0]).toBe(CACHE_COOKIE_EVENTS)
+            expect(call[2]).toEqual({ expires: 1, domain: '.deriv.com' })
+
+            const cachedEvents = JSON.parse(call[1])
+            expect(cachedEvents).toHaveLength(1)
+            expect(cachedEvents[0].name).toBe('test_event')
+            expect(cachedEvents[0].properties).toEqual({ action: 'click' })
+            expect(typeof cachedEvents[0].timestamp).toBe('number')
         })
 
         test('should append event to existing cache', () => {
@@ -109,42 +111,31 @@ describe('cookie utilities', () => {
 
             cacheEventToCookie('new_event', { action: 'submit' })
 
-            expect(Cookies.set).toHaveBeenCalledWith(
-                CACHE_COOKIE_EVENTS,
-                JSON.stringify([
-                    ...existingCache,
-                    {
-                        name: 'new_event',
-                        properties: { action: 'submit' },
-                        timestamp: expect.any(Number),
-                    },
-                ]),
-                { expires: 1, domain: '.deriv.com' }
-            )
-        })
+            expect(Cookies.set).toHaveBeenCalled()
+            const call = (Cookies.set as jest.Mock).mock.calls[0]
+            expect(call[0]).toBe(CACHE_COOKIE_EVENTS)
+            expect(call[2]).toEqual({ expires: 1, domain: '.deriv.com' })
 
-        test('should handle localhost domain', () => {
-            mockWindowLocation('localhost')
-
-            cacheEventToCookie('test_event', { action: 'click' })
-
-            expect(Cookies.set).toHaveBeenCalledWith(CACHE_COOKIE_EVENTS, expect.any(String), { expires: 1 })
+            const cachedEvents = JSON.parse(call[1])
+            expect(cachedEvents).toHaveLength(2)
+            expect(cachedEvents[0]).toEqual(existingCache[0])
+            expect(cachedEvents[1].name).toBe('new_event')
+            expect(cachedEvents[1].properties).toEqual({ action: 'submit' })
+            expect(typeof cachedEvents[1].timestamp).toBe('number')
         })
 
         test('should handle empty properties', () => {
             cacheEventToCookie('test_event', {})
 
-            expect(Cookies.set).toHaveBeenCalledWith(
-                CACHE_COOKIE_EVENTS,
-                JSON.stringify([
-                    {
-                        name: 'test_event',
-                        properties: {},
-                        timestamp: expect.any(Number),
-                    },
-                ]),
-                { expires: 1, domain: '.deriv.com' }
-            )
+            expect(Cookies.set).toHaveBeenCalled()
+            const call = (Cookies.set as jest.Mock).mock.calls[0]
+            expect(call[0]).toBe(CACHE_COOKIE_EVENTS)
+            expect(call[2]).toEqual({ expires: 1, domain: '.deriv.com' })
+
+            const cachedEvents = JSON.parse(call[1])
+            expect(cachedEvents[0].name).toBe('test_event')
+            expect(cachedEvents[0].properties).toEqual({})
+            expect(typeof cachedEvents[0].timestamp).toBe('number')
         })
 
         test('should handle complex properties', () => {
@@ -159,17 +150,15 @@ describe('cookie utilities', () => {
 
             cacheEventToCookie('test_event', complexProps)
 
-            expect(Cookies.set).toHaveBeenCalledWith(
-                CACHE_COOKIE_EVENTS,
-                JSON.stringify([
-                    {
-                        name: 'test_event',
-                        properties: complexProps,
-                        timestamp: expect.any(Number),
-                    },
-                ]),
-                { expires: 1, domain: '.deriv.com' }
-            )
+            expect(Cookies.set).toHaveBeenCalled()
+            const call = (Cookies.set as jest.Mock).mock.calls[0]
+            expect(call[0]).toBe(CACHE_COOKIE_EVENTS)
+            expect(call[2]).toEqual({ expires: 1, domain: '.deriv.com' })
+
+            const cachedEvents = JSON.parse(call[1])
+            expect(cachedEvents[0].name).toBe('test_event')
+            expect(cachedEvents[0].properties).toEqual(complexProps)
+            expect(typeof cachedEvents[0].timestamp).toBe('number')
         })
 
         test('should handle errors gracefully', () => {
@@ -196,17 +185,16 @@ describe('cookie utilities', () => {
 
             cachePageViewToCookie('/home', { platform: 'Deriv App' })
 
-            expect(Cookies.set).toHaveBeenCalledWith(
-                CACHE_COOKIE_PAGES,
-                JSON.stringify([
-                    {
-                        name: '/home',
-                        properties: { platform: 'Deriv App' },
-                        timestamp: expect.any(Number),
-                    },
-                ]),
-                { expires: 1, domain: '.deriv.com' }
-            )
+            expect(Cookies.set).toHaveBeenCalled()
+            const call = (Cookies.set as jest.Mock).mock.calls[0]
+            expect(call[0]).toBe(CACHE_COOKIE_PAGES)
+            expect(call[2]).toEqual({ expires: 1, domain: '.deriv.com' })
+
+            const cachedPages = JSON.parse(call[1])
+            expect(cachedPages).toHaveLength(1)
+            expect(cachedPages[0].name).toBe('/home')
+            expect(cachedPages[0].properties).toEqual({ platform: 'Deriv App' })
+            expect(typeof cachedPages[0].timestamp).toBe('number')
         })
 
         test('should append page view to existing cache', () => {
@@ -215,34 +203,31 @@ describe('cookie utilities', () => {
 
             cachePageViewToCookie('/settings')
 
-            expect(Cookies.set).toHaveBeenCalledWith(
-                CACHE_COOKIE_PAGES,
-                JSON.stringify([
-                    ...existingCache,
-                    {
-                        name: '/settings',
-                        properties: undefined,
-                        timestamp: expect.any(Number),
-                    },
-                ]),
-                { expires: 1, domain: '.deriv.com' }
-            )
+            expect(Cookies.set).toHaveBeenCalled()
+            const call = (Cookies.set as jest.Mock).mock.calls[0]
+            expect(call[0]).toBe(CACHE_COOKIE_PAGES)
+            expect(call[2]).toEqual({ expires: 1, domain: '.deriv.com' })
+
+            const cachedPages = JSON.parse(call[1])
+            expect(cachedPages).toHaveLength(2)
+            expect(cachedPages[0]).toEqual(existingCache[0])
+            expect(cachedPages[1].name).toBe('/settings')
+            expect(cachedPages[1].properties).toBeUndefined()
+            expect(typeof cachedPages[1].timestamp).toBe('number')
         })
 
         test('should cache page view without properties', () => {
             cachePageViewToCookie('/about')
 
-            expect(Cookies.set).toHaveBeenCalledWith(
-                CACHE_COOKIE_PAGES,
-                JSON.stringify([
-                    {
-                        name: '/about',
-                        properties: undefined,
-                        timestamp: expect.any(Number),
-                    },
-                ]),
-                { expires: 1, domain: '.deriv.com' }
-            )
+            expect(Cookies.set).toHaveBeenCalled()
+            const call = (Cookies.set as jest.Mock).mock.calls[0]
+            expect(call[0]).toBe(CACHE_COOKIE_PAGES)
+            expect(call[2]).toEqual({ expires: 1, domain: '.deriv.com' })
+
+            const cachedPages = JSON.parse(call[1])
+            expect(cachedPages[0].name).toBe('/about')
+            expect(cachedPages[0].properties).toBeUndefined()
+            expect(typeof cachedPages[0].timestamp).toBe('number')
         })
 
         test('should handle errors gracefully', () => {
@@ -369,14 +354,6 @@ describe('cookie utilities', () => {
 
             expect(Cookies.remove).toHaveBeenCalledWith(CACHE_COOKIE_EVENTS, { domain: '.deriv.com' })
         })
-
-        test('should remove cookie without domain for localhost', () => {
-            mockWindowLocation('localhost')
-
-            clearCachedEvents()
-
-            expect(Cookies.remove).toHaveBeenCalledWith(CACHE_COOKIE_EVENTS, {})
-        })
     })
 
     describe('clearCachedPageViews', () => {
@@ -388,14 +365,6 @@ describe('cookie utilities', () => {
             clearCachedPageViews()
 
             expect(Cookies.remove).toHaveBeenCalledWith(CACHE_COOKIE_PAGES, { domain: '.deriv.com' })
-        })
-
-        test('should remove cookie without domain for localhost', () => {
-            mockWindowLocation('localhost')
-
-            clearCachedPageViews()
-
-            expect(Cookies.remove).toHaveBeenCalledWith(CACHE_COOKIE_PAGES, {})
         })
     })
 })

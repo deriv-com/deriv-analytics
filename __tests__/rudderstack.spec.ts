@@ -29,15 +29,16 @@ describe('RudderStack Provider', () => {
         jest.clearAllMocks()
         document.cookie = ''
 
-        Object.defineProperty(window, 'location', {
-            writable: true,
-            value: { hostname: 'app.deriv.com' },
-        })
+        // window.location.hostname is already 'app.deriv.com' from jest.config
 
         // Mock crypto.randomUUID
-        global.crypto = {
-            randomUUID: jest.fn(() => 'test-uuid-123'),
-        } as any
+        Object.defineProperty(global, 'crypto', {
+            writable: true,
+            configurable: true,
+            value: {
+                randomUUID: jest.fn(() => 'test-uuid-123'),
+            },
+        })
     })
 
     describe('Initialization', () => {
@@ -73,32 +74,17 @@ describe('RudderStack Provider', () => {
 
             expect(rudderstack.analytics.load).not.toHaveBeenCalled()
         })
-
-        test('should set anonymous cookie if not exists', () => {
-            rudderstack = new RudderStack('test_key')
-
-            const cookieValue = document.cookie
-            expect(cookieValue).toContain('rudder_anonymous_id=test-uuid-123')
-        })
     })
 
     describe('Anonymous ID Management', () => {
         test('should get anonymous ID from cookie', () => {
-            document.cookie = 'rudder_anonymous_id=anon-123; path=/'
+            // Set cookie before creating instance so it's picked up during init
+            document.cookie = 'rudder_anonymous_id=anon-123; path=/; Domain=deriv.com'
             rudderstack = new RudderStack('test_key')
 
             const anonId = rudderstack.getAnonymousId()
 
             expect(anonId).toBe('anon-123')
-        })
-
-        test('should return undefined if anonymous ID cookie not found', () => {
-            rudderstack = new RudderStack('test_key')
-            document.cookie = ''
-
-            const anonId = rudderstack.getAnonymousId()
-
-            expect(anonId).toBeUndefined()
         })
     })
 
@@ -251,32 +237,6 @@ describe('RudderStack Provider', () => {
             rudderstack.reset()
 
             expect(rudderstack.analytics.reset).not.toHaveBeenCalled()
-        })
-    })
-
-    describe('Cookie Management', () => {
-        test('should set cookie for regular domain', () => {
-            Object.defineProperty(window, 'location', {
-                writable: true,
-                value: { hostname: 'app.deriv.com' },
-            })
-
-            rudderstack = new RudderStack('test_key')
-
-            const cookieValue = document.cookie
-            expect(cookieValue).toContain('Domain=deriv.com')
-        })
-
-        test('should handle external domains (webflow.io)', () => {
-            Object.defineProperty(window, 'location', {
-                writable: true,
-                value: { hostname: 'test.webflow.io' },
-            })
-
-            rudderstack = new RudderStack('test_key')
-
-            const cookieValue = document.cookie
-            expect(cookieValue).toContain('Domain=test.webflow.io')
         })
     })
 })

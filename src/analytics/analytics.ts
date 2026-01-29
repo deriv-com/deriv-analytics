@@ -466,7 +466,7 @@ export function createAnalyticsInstance(_options?: Options) {
                 ...v2_data,
                 event_metadata: {
                     ...core_data,
-                    ...(userId && { user_id: userId }),
+                    ...(userId && !core_data.user_id && { user_id: userId }),
                     ...v2_data.event_metadata,
                 },
             }
@@ -474,7 +474,7 @@ export function createAnalyticsInstance(_options?: Options) {
             final_payload = {
                 ...core_data,
                 ...analytics_data,
-                ...(userId && { user_id: userId }),
+                ...(userId && !core_data.user_id && { user_id: userId }),
             }
         }
 

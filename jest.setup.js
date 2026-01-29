@@ -14,10 +14,19 @@ if (!crypto.randomUUID) {
 }
 
 // Setup navigator.onLine
-Object.defineProperty(navigator, 'onLine', {
-    writable: true,
-    value: true,
-})
+try {
+    const descriptor = Object.getOwnPropertyDescriptor(navigator, 'onLine')
+    if (!descriptor || descriptor.configurable) {
+        Object.defineProperty(navigator, 'onLine', {
+            writable: true,
+            configurable: true,
+            value: true,
+        })
+    }
+} catch (e) {
+    // navigator.onLine might already be defined and not configurable
+    // In that case, we'll just use the default value
+}
 
 // Setup XMLHttpRequest if not available
 if (typeof XMLHttpRequest === 'undefined') {

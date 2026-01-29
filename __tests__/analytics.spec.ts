@@ -30,7 +30,13 @@ describe('Analytics - createAnalyticsInstance', () => {
             getUserId: jest.fn().mockReturnValue('CR123'),
             getAnonymousId: jest.fn().mockReturnValue('anon-123'),
         }
-        ;(RudderStack.getRudderStackInstance as jest.Mock).mockReturnValue(mockRudderstack)
+        ;(RudderStack.getRudderStackInstance as jest.Mock).mockImplementation((_key, callback) => {
+            // Call the callback asynchronously to simulate SDK loading
+            if (callback && typeof callback === 'function') {
+                setTimeout(() => callback(), 0)
+            }
+            return mockRudderstack
+        })
         ;(isLikelyBot as jest.Mock).mockReturnValue(false)
         ;(getCountry as jest.Mock).mockResolvedValue('us')
         ;(isUUID as jest.Mock).mockReturnValue(false)
@@ -170,6 +176,35 @@ describe('Analytics - createAnalyticsInstance', () => {
         beforeEach(async () => {
             analytics = createAnalyticsInstance()
             await analytics.initialise({ rudderstackKey: 'test_key' })
+            // Wait for async initialization callback
+            await new Promise(resolve => setTimeout(resolve, 10))
+        })
+
+        test('should handle V2 event payload format', async () => {
+            // Wait for async initialization to complete
+            await new Promise(resolve => setTimeout(resolve, 10))
+
+            // Ensure has_initialized is true
+            expect(mockRudderstack.has_initialized).toBe(true)
+
+            const v2Payload = {
+                event_metadata: {
+                    page: 'home',
+                },
+                cta_information: {
+                    button: 'submit',
+                },
+            }
+
+            analytics.trackEvent('test_event' as any, v2Payload as any)
+
+            expect(mockRudderstack.track).toHaveBeenCalledWith(
+                'test_event',
+                expect.objectContaining({
+                    event_metadata: expect.any(Object),
+                    cta_information: v2Payload.cta_information,
+                })
+            )
         })
 
         test('should track event with properties', () => {
@@ -217,32 +252,15 @@ describe('Analytics - createAnalyticsInstance', () => {
         })
 
         test('should cache event to cookie when RudderStack not initialized', () => {
+            const originalValue = mockRudderstack.has_initialized
             mockRudderstack.has_initialized = false
 
             analytics.trackEvent('test_event' as any, { action: 'click' })
 
             expect(cookieUtils.cacheEventToCookie).toHaveBeenCalledWith('test_event', expect.any(Object))
-        })
 
-        test('should handle V2 event payload format', () => {
-            const v2Payload = {
-                event_metadata: {
-                    page: 'home',
-                },
-                cta_information: {
-                    button: 'submit',
-                },
-            }
-
-            analytics.trackEvent('test_event' as any, v2Payload as any)
-
-            expect(mockRudderstack.track).toHaveBeenCalledWith(
-                'test_event',
-                expect.objectContaining({
-                    event_metadata: expect.any(Object),
-                    cta_information: v2Payload.cta_information,
-                })
-            )
+            // Restore original value
+            mockRudderstack.has_initialized = originalValue
         })
     })
 

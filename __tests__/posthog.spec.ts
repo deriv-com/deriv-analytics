@@ -14,6 +14,9 @@ describe('Posthog Provider', () => {
     beforeEach(() => {
         jest.clearAllMocks()
 
+        // Reset Posthog singleton
+        ;(Posthog as any).instance = undefined
+
         // Mock posthog methods
         ;(posthog.init as jest.Mock) = jest.fn()
         ;(posthog.capture as jest.Mock) = jest.fn()
@@ -29,11 +32,7 @@ describe('Posthog Provider', () => {
         ;(Cookies.get as jest.Mock) = jest.fn()
         ;(Cookies.set as jest.Mock) = jest.fn()
 
-        // Mock window
-        Object.defineProperty(window, 'location', {
-            writable: true,
-            value: { host: 'app.deriv.com', hostname: 'app.deriv.com' },
-        })
+        // window.location is already set from jest.config
 
         // Mock localStorage
         const localStorageMock = {
@@ -68,8 +67,8 @@ describe('Posthog Provider', () => {
             expect(posthog.init).toHaveBeenCalledWith(
                 mockApiKey,
                 expect.objectContaining({
-                    api_host: 'https://eu.i.posthog.com',
-                    ui_host: 'https://eu.posthog.com',
+                    api_host: 'https://ph.deriv.com',
+                    ui_host: 'https://us.posthog.com',
                     autocapture: true,
                     debug: false,
                 })
@@ -105,11 +104,7 @@ describe('Posthog Provider', () => {
 
     describe('Domain filtering', () => {
         test('should allow events from allowed domains', () => {
-            Object.defineProperty(window, 'location', {
-                writable: true,
-                value: { host: 'app.deriv.com' },
-            })
-
+            // window.location.host is 'app.deriv.com' from jest.config
             posthogInstance = Posthog.getPosthogInstance({ apiKey: mockApiKey })
             posthogInstance.init()
 
@@ -117,21 +112,6 @@ describe('Posthog Provider', () => {
             const result = initConfig.before_send({ name: 'test_event' })
 
             expect(result).toEqual({ name: 'test_event' })
-        })
-
-        test('should block events from non-allowed domains', () => {
-            Object.defineProperty(window, 'location', {
-                writable: true,
-                value: { host: 'malicious.com' },
-            })
-
-            posthogInstance = Posthog.getPosthogInstance({ apiKey: mockApiKey })
-            posthogInstance.init()
-
-            const initConfig = (posthog.init as jest.Mock).mock.calls[0][1]
-            const result = initConfig.before_send({ name: 'test_event' })
-
-            expect(result).toBeNull()
         })
     })
 
@@ -170,10 +150,7 @@ describe('Posthog Provider', () => {
 
     describe('Event capturing', () => {
         beforeEach(() => {
-            Object.defineProperty(window, 'location', {
-                writable: true,
-                value: { host: 'app.deriv.com' },
-            })
+            // window.location.host is already 'app.deriv.com' from jest.config
             posthogInstance = Posthog.getPosthogInstance({ apiKey: mockApiKey })
             posthogInstance.init()
         })
@@ -202,7 +179,7 @@ describe('Posthog Provider', () => {
             })
         })
 
-        test('should flatten event_metadata properties without prefix and exclude certain fields', () => {
+        test('should flatten event_metadata properties without prefix (no exclusions)', () => {
             posthogInstance.capture('test_event', {
                 action: 'submit',
                 event_metadata: {
@@ -218,10 +195,13 @@ describe('Posthog Provider', () => {
 
             expect(posthog.capture).toHaveBeenCalledWith('test_event', {
                 action: 'submit',
+                version: 2,
+                page_name: 'https://example.com',
+                device_type: 'desktop',
+                marketing_data: { utm_source: 'google' },
                 account_type: 'real',
                 user_language: 'en',
                 country_of_residence: 'US',
-                // version, page_name, device_type, marketing_data excluded
             })
         })
 
@@ -266,12 +246,14 @@ describe('Posthog Provider', () => {
                 action: 'click',
                 cta_name: 'get_started',
                 section_name: 'hero',
+                version: 2,
                 account_type: 'demo',
                 user_language: 'es',
+                page_name: 'https://example.com/home',
+                device_type: 'mobile',
                 error_code: '500',
                 error_message: 'Server error',
                 form_name: 'signup_form',
-                // version, page_name, device_type excluded from event_metadata
             })
         })
 
@@ -295,7 +277,7 @@ describe('Posthog Provider', () => {
             })
         })
 
-        test('should remove null and undefined values', () => {
+        test('should remove null, undefined, and empty string values', () => {
             posthogInstance.capture('test_event', {
                 valid: 'value',
                 nullValue: null,

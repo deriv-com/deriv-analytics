@@ -37,7 +37,6 @@ export class Growthbook {
             },
             ...growthbookOptions,
         })
-        this.init()
     }
 
     // for make instance by singleton

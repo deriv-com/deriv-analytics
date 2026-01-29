@@ -17,10 +17,7 @@ describe('PostHog Event Flattening - User Specification', () => {
         ;(posthog._isIdentified as jest.Mock) = jest.fn(() => false)
         ;(posthog as any).__loaded = true
 
-        Object.defineProperty(window, 'location', {
-            writable: true,
-            value: { host: 'app.deriv.com', origin: 'https://app.deriv.com', pathname: '/home' },
-        })
+        // window.location is already set from jest.config
 
         posthogInstance = Posthog.getPosthogInstance({ apiKey: mockApiKey })
         posthogInstance.init()
