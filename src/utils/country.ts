@@ -1,5 +1,5 @@
 import Cookies from 'js-cookie'
-import { cloudflareTrace } from '../constants/urls'
+import { cloudflareTrace } from './urls'
 
 type TraceData = {
     loc?: string

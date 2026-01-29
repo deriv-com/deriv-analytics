@@ -1,5 +1,5 @@
 import Cookies from 'js-cookie'
-import { allowedDomains, deriv } from '../constants/urls'
+import { allowedDomains, deriv } from './urls'
 
 export const CACHE_COOKIE_EVENTS = 'cached_analytics_events'
 export const CACHE_COOKIE_PAGES = 'cached_analytics_page_views'

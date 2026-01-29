@@ -1,7 +1,7 @@
 import posthog, { PostHog } from 'posthog-js'
 import Cookies from 'js-cookie'
 import type { TPosthogOptions, TPosthogAttributes, TPosthogEvent } from './types'
-import { POSTHOG_API_HOST, POSTHOG_UI_HOST, POSTHOG_ALLOWED_DOMAINS } from './constants'
+import { posthogApiHost, posthogUiHost, posthogAllowedDomains } from '../../utils/urls'
 
 export class Posthog {
     private static instance: Posthog
@@ -17,7 +17,7 @@ export class Posthog {
         }
 
         this.api_key = options.apiKey
-        this.allowed_domains = options.allowedDomains || POSTHOG_ALLOWED_DOMAINS
+        this.allowed_domains = options.allowedDomains || posthogAllowedDomains
     }
 
     public static getPosthogInstance(options: TPosthogOptions): Posthog {
@@ -63,8 +63,8 @@ export class Posthog {
     public init(options: Partial<TPosthogOptions> = {}): void {
         if (this.is_initialized || typeof window === 'undefined') return
 
-        const apiHost = options.apiHost || POSTHOG_API_HOST
-        const uiHost = options.uiHost || POSTHOG_UI_HOST
+        const apiHost = options.apiHost || posthogApiHost
+        const uiHost = options.uiHost || posthogUiHost
         const enableSessionRecording = options.enableSessionRecording ?? true
         const enableAutocapture = options.enableAutocapture ?? true
         const debug = options.debug ?? false
