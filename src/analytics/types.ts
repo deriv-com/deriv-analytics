@@ -1,13 +1,15 @@
-import type { Context } from '@growthbook/growthbook'
-
 declare global {
     interface Window {
         define: any
     }
 }
 
-export type TGrowthbookAttributes = {
-    id?: string
+export type TCoreAttributes = {
+    account_type?: string
+    user_id?: string
+    anonymous_id?: string
+    app_id?: string
+    user_identity?: string
     country?: string
     user_language?: string
     device_language?: string
@@ -20,29 +22,15 @@ export type TGrowthbookAttributes = {
     domain?: string
     utm_content?: string
     residence_country?: string
-    loggedIn?: boolean
-    network_type?: string
-    network_downlink?: number
-    user_id?: string
-    anonymous_id?: string
-    account_mode?: string
-}
-
-export type TGrowthbookOptions = Partial<Omit<Context, 'attributes'> & { attributes: TCoreAttributes }>
-export type TCoreAttributes = {
-    account_type?: string
-    user_id?: string
-    anonymous_id?: string
-    app_id?: string
-    user_identity?: string
-    residence_country?: string
     geo_location?: string
     email_hash?: string
     network_type?: string
     network_rtt?: number
     network_downlink?: number
     account_currency?: string
-} & Partial<TGrowthbookAttributes>
+    loggedIn?: boolean
+    account_mode?: string
+}
 
 type SignupProvider = 'email' | 'phone' | 'google' | 'facebook' | 'apple'
 

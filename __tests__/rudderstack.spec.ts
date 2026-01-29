@@ -1,5 +1,5 @@
 import { RudderAnalytics } from '@rudderstack/analytics-js'
-import { RudderStack } from '../src/rudderstack'
+import { RudderStack } from '../src/providers/rudderstack'
 
 jest.mock('@rudderstack/analytics-js', () => {
     return {
@@ -22,50 +22,261 @@ jest.mock('@rudderstack/analytics-js', () => {
     }
 })
 
-describe('RudderStack', () => {
+describe('RudderStack Provider', () => {
     let rudderstack: RudderStack
-    const analytics = new RudderAnalytics()
 
     beforeEach(() => {
         jest.clearAllMocks()
-        rudderstack = new RudderStack('test_key')
+        document.cookie = ''
+
+        Object.defineProperty(window, 'location', {
+            writable: true,
+            value: { hostname: 'app.deriv.com' },
+        })
+
+        // Mock crypto.randomUUID
+        global.crypto = {
+            randomUUID: jest.fn(() => 'test-uuid-123'),
+        } as any
     })
 
-    test('should initialize RudderStack instance properly', done => {
-        // Since initialization is async, we need to wait for it
-        setTimeout(() => {
-            expect(rudderstack.has_initialized).toBe(true)
-            done()
-        }, 10)
+    describe('Initialization', () => {
+        test('should initialize RudderStack instance properly', done => {
+            rudderstack = new RudderStack('test_key')
+
+            setTimeout(() => {
+                expect(rudderstack.has_initialized).toBe(true)
+                done()
+            }, 10)
+        })
+
+        test('should create singleton instance', () => {
+            const instance1 = RudderStack.getRudderStackInstance('key1')
+            const instance2 = RudderStack.getRudderStackInstance('key2')
+
+            expect(instance1).toBe(instance2)
+        })
+
+        test('should call onLoaded callback when initialized', done => {
+            const onLoaded = jest.fn()
+
+            rudderstack = new RudderStack('test_key', onLoaded)
+
+            setTimeout(() => {
+                expect(onLoaded).toHaveBeenCalled()
+                done()
+            }, 10)
+        })
+
+        test('should not initialize without key', () => {
+            rudderstack = new RudderStack('')
+
+            expect(rudderstack.analytics.load).not.toHaveBeenCalled()
+        })
+
+        test('should set anonymous cookie if not exists', () => {
+            rudderstack = new RudderStack('test_key')
+
+            const cookieValue = document.cookie
+            expect(cookieValue).toContain('rudder_anonymous_id=test-uuid-123')
+        })
     })
 
-    test('should identify user when identifyEvent is called', done => {
-        setTimeout(() => {
-            rudderstack.identifyEvent('C123', { language: 'en' })
+    describe('Anonymous ID Management', () => {
+        test('should get anonymous ID from cookie', () => {
+            document.cookie = 'rudder_anonymous_id=anon-123; path=/'
+            rudderstack = new RudderStack('test_key')
+
+            const anonId = rudderstack.getAnonymousId()
+
+            expect(anonId).toBe('anon-123')
+        })
+
+        test('should return undefined if anonymous ID cookie not found', () => {
+            rudderstack = new RudderStack('test_key')
+            document.cookie = ''
+
+            const anonId = rudderstack.getAnonymousId()
+
+            expect(anonId).toBeUndefined()
+        })
+    })
+
+    describe('User Identification', () => {
+        beforeEach(done => {
+            rudderstack = new RudderStack('test_key')
+            setTimeout(done, 10)
+        })
+
+        test('should identify user when identifyEvent is called', () => {
+            rudderstack.analytics.getUserId = jest.fn().mockReturnValue(null)
+
+            rudderstack.identifyEvent('CR123', { language: 'en' })
+
+            expect(rudderstack.analytics.identify).toHaveBeenCalledWith('CR123', { language: 'en' })
             expect(rudderstack.has_identified).toBe(true)
-            done()
-        }, 10)
+        })
+
+        test('should not call identify if user already identified', () => {
+            rudderstack.analytics.getUserId = jest.fn().mockReturnValue('CR123')
+
+            rudderstack.identifyEvent('CR123', { language: 'en' })
+
+            expect(rudderstack.analytics.identify).not.toHaveBeenCalled()
+            expect(rudderstack.has_identified).toBe(true)
+        })
+
+        test('should get user ID from analytics', () => {
+            rudderstack.analytics.getUserId = jest.fn().mockReturnValue('CR456')
+
+            const userId = rudderstack.getUserId()
+
+            expect(userId).toBe('CR456')
+        })
     })
 
-    test('should properly track events when initialized and identified', done => {
-        setTimeout(() => {
-            rudderstack.identifyEvent('C123', { language: 'en' })
-            rudderstack.track('ce_trade_types_form', { action: 'open' })
+    describe('Page View Tracking', () => {
+        beforeEach(done => {
+            rudderstack = new RudderStack('test_key')
+            setTimeout(done, 10)
+        })
 
-            expect(rudderstack.current_page).toBe('')
+        test('should track page view', () => {
+            rudderstack.pageView('/dashboard', 'Deriv App', 'CR123')
+
+            expect(rudderstack.analytics.page).toHaveBeenCalledWith('Deriv App', '/dashboard', { user_id: 'CR123' })
+            expect(rudderstack.current_page).toBe('/dashboard')
+        })
+
+        test('should track page view with custom properties', () => {
+            rudderstack.pageView('/home', 'Deriv App', 'CR123', { section: 'hero' })
+
+            expect(rudderstack.analytics.page).toHaveBeenCalledWith('Deriv App', '/home', {
+                user_id: 'CR123',
+                section: 'hero',
+            })
+        })
+
+        test('should not track same page twice', () => {
+            rudderstack.pageView('/dashboard', 'Deriv App', 'CR123')
+            rudderstack.pageView('/dashboard', 'Deriv App', 'CR123')
+
+            expect(rudderstack.analytics.page).toHaveBeenCalledTimes(1)
+        })
+
+        test('should not track page view if not initialized', () => {
+            rudderstack.has_initialized = false
+
+            rudderstack.pageView('/dashboard', 'Deriv App', 'CR123')
+
             expect(rudderstack.analytics.page).not.toHaveBeenCalled()
-            expect(rudderstack.analytics.track).toHaveBeenCalledWith('ce_trade_types_form', { action: 'open' })
-            done()
-        }, 10)
+        })
+
+        test('should track page view without user_id', () => {
+            rudderstack.pageView('/dashboard', 'Deriv App', '')
+
+            expect(rudderstack.analytics.page).toHaveBeenCalledWith('Deriv App', '/dashboard', {})
+        })
     })
 
-    test('should get anonymous ID from RudderStack', () => {
-        const anonymousId = '12345'
-        ;(analytics.getAnonymousId as jest.Mock).mockReturnValue(anonymousId)
+    describe('Event Tracking', () => {
+        beforeEach(done => {
+            rudderstack = new RudderStack('test_key')
+            setTimeout(done, 10)
+        })
 
-        const result = analytics.getAnonymousId()
+        test('should track events with payload', () => {
+            rudderstack.track('ce_trade_types_form' as any, { action: 'open' })
 
-        expect(analytics.getAnonymousId).toHaveBeenCalled()
-        expect(result).toBe(anonymousId)
+            expect(rudderstack.analytics.track).toHaveBeenCalledWith('ce_trade_types_form', { action: 'open' })
+        })
+
+        test('should filter out undefined values from payload', () => {
+            rudderstack.track(
+                'test_event' as any,
+                {
+                    action: 'click',
+                    undefined_value: undefined,
+                    null_value: null,
+                } as any
+            )
+
+            expect(rudderstack.analytics.track).toHaveBeenCalledWith('test_event', {
+                action: 'click',
+                null_value: null,
+            })
+        })
+
+        test('should not track if not initialized', () => {
+            rudderstack.has_initialized = false
+
+            rudderstack.track('test_event' as any, { action: 'click' })
+
+            expect(rudderstack.analytics.track).not.toHaveBeenCalled()
+        })
+
+        test('should handle tracking errors gracefully', () => {
+            rudderstack.analytics.track = jest.fn().mockImplementation(() => {
+                throw new Error('Tracking error')
+            })
+
+            const consoleSpy = jest.spyOn(console, 'warn').mockImplementation()
+
+            rudderstack.track('test_event' as any, { action: 'click' })
+
+            expect(consoleSpy).toHaveBeenCalledWith('RudderStack: Failed to track event', expect.any(Error))
+
+            consoleSpy.mockRestore()
+        })
+    })
+
+    describe('Reset Functionality', () => {
+        beforeEach(done => {
+            rudderstack = new RudderStack('test_key')
+            setTimeout(done, 10)
+        })
+
+        test('should reset analytics', () => {
+            rudderstack.has_identified = true
+
+            rudderstack.reset()
+
+            expect(rudderstack.analytics.reset).toHaveBeenCalled()
+            expect(rudderstack.has_identified).toBe(false)
+        })
+
+        test('should not reset if not initialized', () => {
+            rudderstack.has_initialized = false
+
+            rudderstack.reset()
+
+            expect(rudderstack.analytics.reset).not.toHaveBeenCalled()
+        })
+    })
+
+    describe('Cookie Management', () => {
+        test('should set cookie for regular domain', () => {
+            Object.defineProperty(window, 'location', {
+                writable: true,
+                value: { hostname: 'app.deriv.com' },
+            })
+
+            rudderstack = new RudderStack('test_key')
+
+            const cookieValue = document.cookie
+            expect(cookieValue).toContain('Domain=deriv.com')
+        })
+
+        test('should handle external domains (webflow.io)', () => {
+            Object.defineProperty(window, 'location', {
+                writable: true,
+                value: { hostname: 'test.webflow.io' },
+            })
+
+            rudderstack = new RudderStack('test_key')
+
+            const cookieValue = document.cookie
+            expect(cookieValue).toContain('Domain=test.webflow.io')
+        })
     })
 })

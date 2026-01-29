@@ -1,6 +1,5 @@
 import { RudderAnalytics } from '@rudderstack/analytics-js'
-import { TCoreAttributes, TAllEvents } from './types'
-import { v6 as uuidv6 } from 'uuid'
+import type { TCoreAttributes, TAllEvents } from '../../analytics/types'
 
 export class RudderStack {
     analytics = new RudderAnalytics()
@@ -36,7 +35,7 @@ export class RudderStack {
             const is_external_domain = external_domains.some(domain => hostname.endsWith(domain))
             const domain_name = is_external_domain ? hostname : hostname.split('.').slice(-2).join('.')
 
-            document.cookie = `${this.rudderstack_anonymous_cookie_key}=${uuidv6()}; path=/; Domain=${domain_name}; max-age=${2 * 365 * 24 * 60 * 60}`
+            document.cookie = `${this.rudderstack_anonymous_cookie_key}=${crypto.randomUUID()}; path=/; Domain=${domain_name}; max-age=${2 * 365 * 24 * 60 * 60}`
         }
     }
 
@@ -49,12 +48,18 @@ export class RudderStack {
 
         this.analytics.load(RUDDERSTACK_KEY, 'https://deriv-dataplane.rudderstack.com', {
             externalAnonymousIdCookieName: this.rudderstack_anonymous_cookie_key,
+            // Performance optimizations
+            useBeacon: true,
+            flushAt: 10,
+            flushInterval: 10000,
+            lockIntegrationsVersion: true,
+            retryQueue: true,
             onLoaded: () => {
                 this.has_initialized = true
                 this.has_identified = !!this.getUserId()
                 this.onLoadedCallback?.()
             },
-        })
+        } as any)
     }
 
     identifyEvent = (user_id: string, payload: { language: string }) => {

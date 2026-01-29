@@ -1,16 +1,58 @@
 {
   "compilerOptions": {
-    "target": "es5",
-    "module": "commonjs",
-    "declaration": true,
-    "outDir": "./lib",
-    "baseUrl": "./",
-    "esModuleInterop": true,
-    "forceConsistentCasingInFileNames": true,
+    /* Language and Environment */
+    "target": "ES2020",
+    "lib": ["ES2020", "DOM", "DOM.Iterable"],
+    "module": "ESNext",
+    "moduleResolution": "bundler",
+    "jsx": "react",
+
+    /* Type Checking */
     "strict": true,
     "noImplicitAny": true,
-    "skipLibCheck": true                                 /* Skip type checking all .d.ts files. */
+    "strictNullChecks": true,
+    "strictFunctionTypes": true,
+    "strictBindCallApply": true,
+    "strictPropertyInitialization": true,
+    "noImplicitThis": true,
+    "useUnknownInCatchVariables": true,
+    "alwaysStrict": true,
+    "noUnusedLocals": false,
+    "noUnusedParameters": false,
+    "noImplicitReturns": true,
+    "noFallthroughCasesInSwitch": true,
+    "noUncheckedIndexedAccess": true,
+    "noImplicitOverride": true,
+    "noPropertyAccessFromIndexSignature": false,
+
+    /* Emit */
+    "declaration": true,
+    "declarationMap": true,
+    "sourceMap": true,
+    "outDir": "./lib",
+    "removeComments": false,
+    "importHelpers": true,
+    "downlevelIteration": true,
+
+    /* Interop Constraints */
+    "esModuleInterop": true,
+    "allowSyntheticDefaultImports": true,
+    "forceConsistentCasingInFileNames": true,
+    "isolatedModules": true,
+    "verbatimModuleSyntax": false,
+
+    /* Completeness */
+    "skipLibCheck": true,
+
+    /* Path Mapping */
+    "baseUrl": "./",
+    "paths": {
+      "@/*": ["src/*"]
+    },
+
+    /* Advanced */
+    "resolveJsonModule": true
   },
-  "include": ["src"],
-  "exclude": ["node_modules", "**/__tests__/*"]
+  "include": ["src/**/*"],
+  "exclude": ["node_modules", "dist", "lib", "**/__tests__/*", "**/*.test.ts", "**/*.spec.ts"]
 }

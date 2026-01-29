@@ -1,14 +1,6 @@
 import { Context, GrowthBook, InitResponse } from '@growthbook/growthbook'
 import { RudderAnalytics } from '@rudderstack/analytics-js'
-import { TCoreAttributes, TGrowthbookAttributes, TGrowthbookOptions } from './types'
-
-export type GrowthbookConfigs = {
-    // feature flags for framework needs
-    'tracking-buttons-config': Record<string, boolean>
-} & {
-    // any feature flags from growthbook
-    [key: string]: Record<string, boolean> | string | boolean | []
-}
+import { TGrowthbookAttributes, TGrowthbookOptions, GrowthbookConfigs, TGrowthbookCoreAttributes } from './types'
 
 export class Growthbook {
     analytics = new RudderAnalytics()
@@ -148,3 +140,5 @@ export class Growthbook {
         this.isLoaded = true
     }
 }
+
+export type { GrowthbookConfigs, TGrowthbookAttributes, TGrowthbookOptions, TGrowthbookCoreAttributes }
