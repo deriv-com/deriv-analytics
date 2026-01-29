@@ -44,6 +44,11 @@
       "import": "./dist/providers/posthog/index.mjs",
       "require": "./dist/providers/posthog/index.js"
     },
+    "./rudderstack": {
+      "types": "./dist/providers/rudderstack/index.d.ts",
+      "import": "./dist/providers/rudderstack/index.mjs",
+      "require": "./dist/providers/rudderstack/index.js"
+    },
     "./cache": {
       "types": "./dist/utils/analytics-cache.d.ts",
       "import": "./dist/utils/analytics-cache.mjs",

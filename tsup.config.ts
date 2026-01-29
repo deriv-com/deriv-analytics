@@ -3,11 +3,12 @@ import { defineConfig } from 'tsup'
 export default defineConfig([
     // NPM Package Build (ESM + CJS)
     {
-        // Entry points - main bundle and optional Growthbook/Posthog/Cache modules
+        // Entry points - main bundle and optional Growthbook/Posthog/Rudderstack/Cache modules
         entry: {
             index: 'src/index.ts',
             'providers/growthbook/index': 'src/providers/growthbook/index.ts',
             'providers/posthog/index': 'src/providers/posthog/index.ts',
+            'providers/rudderstack/index': 'src/providers/rudderstack/index.ts',
             'utils/analytics-cache': 'src/utils/analytics-cache.ts',
         },
 
@@ -33,7 +34,8 @@ export default defineConfig([
         splitting: true,
 
         // Don't bundle these dependencies (they should be installed by consumers)
-        external: ['@rudderstack/analytics-js', 'js-cookie', '@growthbook/growthbook', 'posthog-js'],
+        // Only GrowthBook is external (optional dependency)
+        external: ['@growthbook/growthbook'],
 
         // Target modern browsers and Node
         target: 'es2020',
