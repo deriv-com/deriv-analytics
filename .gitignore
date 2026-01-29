@@ -3,6 +3,7 @@
 /lib
 /.idea/**
 /dist
+/agent-skills
 
 *.env
 .env.*
