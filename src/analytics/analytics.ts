@@ -16,10 +16,6 @@ import { getCountry } from '../utils/country'
 import type { Growthbook, GrowthbookConfigs } from '../providers/growthbook'
 import type { TGrowthbookAttributes, TGrowthbookOptions } from '../providers/growthbook/types'
 
-// Optional Posthog types - only import if using Posthog
-import type { Posthog } from '../providers/posthog'
-import type { TPosthogOptions } from '../providers/posthog/types'
-
 declare global {
     interface Window {
         AnalyticsInstance: ReturnType<typeof createAnalyticsInstance>
@@ -36,23 +32,18 @@ type Options = {
     growthbookDecryptionKey?: string
     /** RudderStack write key for event tracking */
     rudderstackKey?: string
-    /** PostHog API key for analytics and session recording */
-    posthogKey?: string
     /** Additional configuration options for GrowthBook */
     growthbookOptions?: TGrowthbookOptions
-    /** Additional configuration options for PostHog (apiKey is provided separately) */
-    posthogOptions?: Omit<TPosthogOptions, 'apiKey'>
     /** Enable automatic bot detection and filtering. When true, events from bots won't be tracked */
     enableBotFiltering?: boolean
 }
 
 /**
- * Creates a unified analytics instance that integrates RudderStack, GrowthBook, and PostHog.
+ * Creates a unified analytics instance that integrates RudderStack and GrowthBook.
  *
  * This function provides a centralized interface for:
  * - Event tracking across multiple analytics platforms
  * - A/B testing and feature flag management via GrowthBook
- * - User session analytics via PostHog
  * - Offline event caching with automatic replay
  * - Bot detection and filtering
  *
@@ -68,7 +59,6 @@ type Options = {
  *   rudderstackKey: 'YOUR_RS_KEY',
  *   growthbookKey: 'YOUR_GB_KEY',
  *   growthbookDecryptionKey: 'YOUR_GB_DECRYPT_KEY',
- *   posthogKey: 'YOUR_PH_KEY',
  *   enableBotFiltering: true
  * });
  *
@@ -89,7 +79,6 @@ type Options = {
 export function createAnalyticsInstance(_options?: Options) {
     let _growthbook: Growthbook | undefined,
         _rudderstack: RudderStack,
-        _posthog: Posthog | undefined,
         _enableBotFiltering = false,
         core_data: Partial<TCoreAttributes> = {},
         tracking_config: { [key: string]: boolean } = {},
@@ -140,7 +129,7 @@ export function createAnalyticsInstance(_options?: Options) {
      * This method should be called before tracking any events.
      *
      * Features:
-     * - Lazy-loads providers (GrowthBook, PostHog) only when configured
+     * - Lazy-loads providers (GrowthBook) only when configured
      * - Automatically fetches user's country for GrowthBook targeting
      * - Processes any cached events from previous sessions
      * - Sets up event tracking callback for GrowthBook experiments
@@ -162,9 +151,7 @@ export function createAnalyticsInstance(_options?: Options) {
         growthbookKey,
         growthbookDecryptionKey,
         rudderstackKey,
-        posthogKey,
         growthbookOptions,
-        posthogOptions,
         enableBotFiltering = false,
     }: Options) => {
         try {
@@ -220,17 +207,6 @@ export function createAnalyticsInstance(_options?: Options) {
                     if (Object.keys(tracking_config).length > 0) clearInterval(interval)
                     else tracking_config = getFeatureValue('tracking-buttons-config', {}) as { [key: string]: boolean }
                 }, 1000)
-            }
-
-            if (posthogKey && typeof window !== 'undefined') {
-                // Dynamically import Posthog only when needed
-                const { Posthog } = await import('../providers/posthog')
-                const posthogConfig: TPosthogOptions = {
-                    apiKey: posthogKey,
-                    ...(posthogOptions || {}),
-                }
-                _posthog = Posthog.getPosthogInstance(posthogConfig)
-                _posthog.init(posthogOptions || {})
             }
         } catch (err) {
             console.warn('Analytics: Failed to initialize', err)
@@ -388,7 +364,6 @@ export function createAnalyticsInstance(_options?: Options) {
      * Features:
      * - Queues identify calls if provider not yet initialized
      * - Automatically includes user language from core attributes
-     * - Syncs user identity to PostHog if configured
      *
      * @param {string} [user_id] - The user ID to identify. If not provided, uses stored user ID
      *
@@ -408,20 +383,10 @@ export function createAnalyticsInstance(_options?: Options) {
                 _pending_identify_calls.push(stored_user_id)
             }
         }
-
-        // Identify in Posthog if initialized
-        if (_posthog?.isLoaded()) {
-            _posthog.identify(stored_user_id, {
-                user_language: core_data?.user_language,
-                country: core_data?.country || core_data?.residence_country,
-                account_type: core_data?.account_type,
-            })
-        }
     }
 
     const reset = () => {
         _rudderstack?.reset()
-        _posthog?.reset()
     }
 
     const isV2Payload = (payload: any): payload is TV2EventPayload => {
@@ -436,7 +401,7 @@ export function createAnalyticsInstance(_options?: Options) {
      * - Supports both V1 and V2 event payload formats
      * - Caches events when offline or provider not initialized
      * - Respects bot filtering and feature flag configurations
-     * - Sends to both RudderStack and PostHog (if configured)
+     * - Sends to RudderStack
      *
      * @template T - The event name type from TAllEvents
      * @param {T} event - The event name to track
@@ -499,19 +464,10 @@ export function createAnalyticsInstance(_options?: Options) {
         const shouldTrack = !(event in tracking_config) || tracking_config[event as string]
         if (shouldTrack) {
             _rudderstack?.track(event, final_payload)
-
-            // Track in Posthog if initialized
-            if (_posthog?.isLoaded()) {
-                _posthog.capture(event as string, final_payload)
-            }
         }
     }
 
-    const getInstances = () => ({ ab: _growthbook, tracking: _rudderstack, posthog: _posthog })
-
-    const updatePosthogConfig = (options: Partial<Omit<TPosthogOptions, 'apiKey'>>) => {
-        _posthog?.updateConfig(options)
-    }
+    const getInstances = () => ({ ab: _growthbook, tracking: _rudderstack })
 
     const AnalyticsInstance = {
         initialise,
@@ -528,7 +484,6 @@ export function createAnalyticsInstance(_options?: Options) {
         getInstances,
         pageView,
         reset,
-        updatePosthogConfig,
     }
 
     if (typeof window !== 'undefined') {

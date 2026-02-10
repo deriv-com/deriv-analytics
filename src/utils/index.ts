@@ -24,7 +24,4 @@ export {
     cloudflareTrace,
     growthbookApi,
     rudderstackDataplane,
-    posthogApiHost,
-    posthogUiHost,
-    posthogAllowedDomains,
 } from './urls'

@@ -1,15 +1,14 @@
 # @deriv-com/analytics
 
-A modern, tree-shakeable analytics library for tracking user events with RudderStack, Posthog, and GrowthBook feature flags. Designed for optimal performance with advanced caching, batching, and independent package usage.
+A modern, tree-shakeable analytics library for tracking user events with RudderStack and GrowthBook feature flags. Designed for optimal performance with advanced caching, batching, and independent package usage.
 
 ## Features
 
-- ✅ **Multi-Provider Support**: RudderStack for tracking, Posthog for product analytics, and GrowthBook for A/B testing
+- ✅ **Multi-Provider Support**: RudderStack for tracking and GrowthBook for A/B testing
 - 🎄 **Tree-Shakeable**: Only bundle what you use - each provider can be imported independently
 - 📡 **Offline-First**: Automatic event caching when offline with replay on reconnection
 - ⚡ **Performance Optimized**: Batching, deduplication, and SendBeacon API for fast tracking
 - 🔐 **Type-Safe**: Full TypeScript support with discriminated unions for event payloads
-- 🔗 **Anonymous ID Sync**: Automatic synchronization between Posthog and RudderStack
 - 🔄 **Backward Compatible**: Supports older React, Node.js, and other legacy package versions
 - 🤖 **Bot Filtering**: Optional bot detection to filter crawler traffic
 - 💾 **Advanced Caching**: Built-in utilities for complex caching scenarios
@@ -27,9 +26,6 @@ Install only what you need:
 ```bash
 # For A/B testing with GrowthBook (optional)
 npm install @growthbook/growthbook
-
-# For product analytics with Posthog (optional - requires explicit API key)
-npm install posthog-js
 ```
 
 **Note**: Core dependencies (`@rudderstack/analytics-js` and `js-cookie`) are installed automatically.
@@ -94,14 +90,6 @@ await Analytics.initialise({
     // RudderStack for tracking (required)
     rudderstackKey: 'YOUR_RUDDERSTACK_KEY',
 
-    // Posthog for product analytics (optional - user must provide their own API key)
-    // Note: API host, UI host, and allowed domains are hardcoded in the library for security
-    posthogKey: 'YOUR_POSTHOG_API_KEY',
-    posthogOptions: {
-        enableSessionRecording: true,
-        enableAutocapture: true,
-    },
-
     // GrowthBook for A/B testing (optional)
     growthbookKey: 'YOUR_GROWTHBOOK_KEY',
     growthbookDecryptionKey: 'YOUR_DECRYPTION_KEY',
@@ -116,7 +104,7 @@ await Analytics.initialise({
     enableBotFiltering: true,
 })
 
-// All events are automatically sent to both RudderStack and Posthog
+// Track events
 Analytics.trackEvent('ce_login_form', {
     action: 'login_cta',
     login_provider: 'google',
@@ -130,20 +118,6 @@ const buttonConfig = Analytics.getFeatureValue('tracking-buttons-config', {})
 ### Independent Package Usage
 
 Each provider can be used independently for maximum flexibility:
-
-#### Posthog Only
-
-```typescript
-import { Posthog } from '@deriv-com/analytics/posthog'
-
-const posthog = Posthog.getPosthogInstance({
-    apiKey: 'YOUR_POSTHOG_API_KEY',
-})
-
-posthog.init()
-posthog.capture('button_click', { button_name: 'signup' })
-posthog.identify('user-123', { user_language: 'en' })
-```
 
 #### GrowthBook Only
 
@@ -238,7 +212,7 @@ Track page navigation.
 
 #### `identifyEvent(userId?: string): void`
 
-Link anonymous session to a user ID. Automatically syncs to both RudderStack and Posthog.
+Link anonymous session to a user ID.
 
 #### `setAttributes(attributes: TCoreAttributes): void`
 
@@ -257,23 +231,9 @@ Analytics.setAttributes({
 
 Clear user session from all providers.
 
-#### `getInstances(): { ab, tracking, posthog }`
+#### `getInstances(): { ab, tracking }`
 
 Access raw provider instances for advanced use cases.
-
-#### `updatePosthogConfig(options: Partial<TPosthogOptions>): void`
-
-Update Posthog configuration at runtime.
-
-```typescript
-// Note: Allowed domains, API host, and UI host cannot be updated after initialization
-// They are hardcoded in the library for security reasons
-Analytics.updatePosthogConfig({
-    customConfig: {
-        // Any other PostHog config options
-    },
-})
-```
 
 ### Feature Flag Methods (GrowthBook)
 
@@ -300,23 +260,6 @@ The RudderStack integration includes performance optimizations:
 - **Retry Queue**: Automatic retry for failed requests
 - **Cookie Management**: Automatic anonymous ID generation and persistence
 
-### Posthog Configuration
-
-```typescript
-posthogOptions: {
-    apiKey: 'YOUR_API_KEY', // Required: User must provide their own
-    // Note: apiHost, uiHost, and allowedDomains are hardcoded in the library for security
-    // apiHost: 'https://ph.deriv.com' (hardcoded)
-    // uiHost: 'https://us.posthog.com' (hardcoded)
-    // allowedDomains: ['deriv.com', 'deriv.team', 'deriv.ae'] (hardcoded)
-    enableSessionRecording: true,
-    enableAutocapture: true,
-    debug: false,
-}
-```
-
-**Important**: Posthog API key must be provided by the user. The library does not include default keys.
-
 ### GrowthBook Configuration
 
 ```typescript
@@ -339,16 +282,10 @@ growthbookOptions: {
 - **Retry Queue**: Failed requests are retried automatically
 - **Reduced API Calls**: From 600ms-1s to <200ms with batching
 
-### Posthog
-
-- **Self-Managed Caching**: Posthog handles its own caching and replay
-- **Domain Filtering**: Events blocked for non-allowed domains before sending
-- **Object Flattening**: Nested objects are flattened for better querying
-
 ### General
 
 - **Tree-Shaking**: Unused providers are completely removed from bundle
-- **Lazy Loading**: GrowthBook and Posthog are dynamically imported only when needed
+- **Lazy Loading**: GrowthBook is dynamically imported only when needed
 - **Bot Filtering**: Optional bot detection prevents wasted API calls
 
 ## Bundle Size
@@ -363,9 +300,8 @@ ls -lh dist/
 Estimated sizes (minified + gzipped):
 
 - Core only (RudderStack): ~8-12 KB
--   - Posthog: +15-20 KB
 -   - GrowthBook: +12-18 KB
-- Full (all providers): ~35-50 KB
+- Full (all providers): ~20-30 KB
 
 ## Examples
 
@@ -379,7 +315,6 @@ function App() {
     useEffect(() => {
         Analytics.initialise({
             rudderstackKey: process.env.REACT_APP_RUDDERSTACK_KEY,
-            posthogKey: process.env.REACT_APP_POSTHOG_KEY,
         })
     }, [])
 
@@ -407,7 +342,6 @@ export function AnalyticsProvider({ children }) {
     useEffect(() => {
         Analytics.initialise({
             rudderstackKey: process.env.NEXT_PUBLIC_RUDDERSTACK_KEY!,
-            posthogKey: process.env.NEXT_PUBLIC_POSTHOG_KEY!,
         })
     }, [])
 
@@ -428,19 +362,6 @@ export function AnalyticsProvider({ children }) {
 - Check that `rudderstackKey` is correct
 - Verify network requests in DevTools (should see batched requests)
 - Ensure initialization: `Analytics.getInstances().tracking.has_initialized`
-
-### Posthog events not tracking
-
-- Verify your domain is in the hardcoded allowed domains list (deriv.com, deriv.team, deriv.ae)
-- Check browser console for warnings
-- Ensure Posthog is loaded: `Analytics.getInstances().posthog?.isLoaded()`
-- Confirm API key is valid and provided
-
-### Anonymous IDs not syncing
-
-- Check that both RudderStack and Posthog are initialized
-- Verify cookies: `rudder_anonymous_id` and Posthog's localStorage
-- Check console for sync-related warnings
 
 ## Contributing
 
@@ -467,11 +388,9 @@ For issues and questions:
 
 ### v1.35.1 (2026-01-28)
 
-- ✨ Added Posthog integration with automatic ID synchronization
 - ⚡ Performance optimizations for RudderStack (batching, SendBeacon, retry queue)
 - 💾 Advanced caching utilities for complex scenarios
 - 🔧 Dynamic configuration updates
 - 🎄 Tree-shakeable exports for independent package usage
 - 📘 Full TypeScript support with comprehensive types
-- ⚠️ **Breaking**: Posthog API key now user-provided (not hardcoded)
 - 📚 Improved documentation and examples

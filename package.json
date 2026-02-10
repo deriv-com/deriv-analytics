@@ -1,12 +1,11 @@
 {
   "name": "@deriv-com/analytics",
   "version": "1.35.1",
-  "description": "Comprehensive analytics package for Deriv applications. Provides unified event tracking, A/B testing, and user analytics through RudderStack, PostHog, and GrowthBook integrations with built-in caching, bot detection, and offline support.",
+  "description": "Comprehensive analytics package for Deriv applications. Provides unified event tracking, A/B testing, and user analytics through RudderStack and GrowthBook integrations with built-in caching, bot detection, and offline support.",
   "keywords": [
     "analytics",
     "rudderstack",
     "growthbook",
-    "posthog",
     "event-tracking",
     "ab-testing",
     "feature-flags",
@@ -38,11 +37,6 @@
       "types": "./dist/providers/growthbook/index.d.ts",
       "import": "./dist/providers/growthbook/index.mjs",
       "require": "./dist/providers/growthbook/index.js"
-    },
-    "./posthog": {
-      "types": "./dist/providers/posthog/index.d.ts",
-      "import": "./dist/providers/posthog/index.mjs",
-      "require": "./dist/providers/posthog/index.js"
     },
     "./rudderstack": {
       "types": "./dist/providers/rudderstack/index.d.ts",
@@ -92,8 +86,7 @@
   },
   "dependencies": {
     "@rudderstack/analytics-js": "^3.14.0",
-    "js-cookie": "^3.0.5",
-    "posthog-js": "^1.336.1"
+    "js-cookie": "^3.0.5"
   },
   "optionalDependencies": {
     "@growthbook/growthbook": "^1.4.1"

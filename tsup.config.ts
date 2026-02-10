@@ -3,11 +3,10 @@ import { defineConfig } from 'tsup'
 export default defineConfig([
     // NPM Package Build (ESM + CJS)
     {
-        // Entry points - main bundle and optional Growthbook/Posthog/Rudderstack/Cache modules
+        // Entry points - main bundle and optional Growthbook/Rudderstack/Cache modules
         entry: {
             index: 'src/index.ts',
             'providers/growthbook/index': 'src/providers/growthbook/index.ts',
-            'providers/posthog/index': 'src/providers/posthog/index.ts',
             'providers/rudderstack/index': 'src/providers/rudderstack/index.ts',
             'utils/analytics-cache': 'src/utils/analytics-cache.ts',
         },
@@ -52,7 +51,7 @@ export default defineConfig([
     },
 
     // Browser Bundle (IIFE/UMD) - For <script> tag usage
-    // Includes: RudderStack + PostHog + js-cookie
+    // Includes: RudderStack + js-cookie
     // Perfect for: Next.js, React, Webflow, OutSystems scripts
     // Note: GrowthBook is NOT included (optional dependency, requires separate loading)
     {
@@ -69,7 +68,7 @@ export default defineConfig([
         // Bundle core dependencies for standalone browser use
         // GrowthBook excluded (optional) - dynamically imported only when needed
         external: ['@growthbook/growthbook'],
-        noExternal: ['@rudderstack/analytics-js', 'js-cookie', 'posthog-js'],
+        noExternal: ['@rudderstack/analytics-js', 'js-cookie'],
 
         // Minify for production
         minify: true,
@@ -89,7 +88,7 @@ export default defineConfig([
         // Banner
         esbuildOptions(options) {
             options.banner = {
-                js: '/* @deriv-com/analytics - Browser Bundle (RudderStack + PostHog) - Built with tsup */',
+                js: '/* @deriv-com/analytics - Browser Bundle (RudderStack) - Built with tsup */',
             }
         },
     },

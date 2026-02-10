@@ -20,8 +20,3 @@ export const growthbookApi = 'https://cdn.growthbook.io'
 
 // RudderStack dataplane endpoint
 export const rudderstackDataplane = 'https://deriv-dataplane.rudderstack.com'
-
-// PostHog endpoints
-export const posthogApiHost = 'https://ph.deriv.com'
-export const posthogUiHost = 'https://us.posthog.com'
-export const posthogAllowedDomains = ['deriv.com', 'deriv.team', 'deriv.ae']
