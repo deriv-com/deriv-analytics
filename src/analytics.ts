@@ -1,4 +1,4 @@
-import { RudderStack } from '../providers/rudderstack'
+import { RudderStack } from './providers/rudderstack'
 import type { TCoreAttributes, TAllEvents, TV2EventPayload } from './types'
 import {
     cacheEventToCookie,
@@ -7,12 +7,12 @@ import {
     getCachedPageViews,
     clearCachedEvents,
     clearCachedPageViews,
-} from '../utils/cookie'
-import { isUUID, getCountry } from '../utils/helpers'
+} from './utils/cookie'
+import { isUUID, getCountry } from './utils/helpers'
 
 // Optional Growthbook types - only import if using Growthbook
-import type { Growthbook, GrowthbookConfigs } from '../providers/growthbook'
-import type { TGrowthbookAttributes, TGrowthbookOptions } from '../providers/growthbookTypes'
+import type { Growthbook, GrowthbookConfigs } from './providers/growthbook'
+import type { TGrowthbookAttributes, TGrowthbookOptions } from './providers/growthbookTypes'
 
 declare global {
     interface Window {
@@ -186,7 +186,7 @@ export function createAnalyticsInstance(_options?: Options) {
 
             if (growthbookKey) {
                 // Dynamically import Growthbook only when needed
-                const { Growthbook } = await import('../providers/growthbook')
+                const { Growthbook } = await import('./providers/growthbook')
                 _growthbook = Growthbook.getGrowthBookInstance(
                     growthbookKey,
                     growthbookDecryptionKey,

@@ -1,5 +1,5 @@
 import { RudderAnalytics } from '@rudderstack/analytics-js'
-import type { TCoreAttributes, TAllEvents } from '../analytics/types'
+import type { TCoreAttributes, TAllEvents } from '../types'
 import { rudderstackDataplane } from '../utils/urls'
 
 // Constants
