@@ -1,3 +1,8 @@
+/**
+ * Analytics Cache Manager - Version 1.1.0
+ * Enhanced TypeScript implementation with better type safety and SSR support
+ */
+
 type CachedEvent = {
     name: string
     properties: Record<string, any>
@@ -207,29 +212,42 @@ class AnalyticsCacheManager {
 
         let storedCookies: any[] = []
         const cacheCookie = this.parseCookies(cookieName)
-        if (cacheCookie) storedCookies = cacheCookie
+        if (cacheCookie && Array.isArray(cacheCookie)) {
+            storedCookies = cacheCookie
+        }
 
         storedCookies.push(data)
 
         const domain = this.getAllowedDomain()
-        document.cookie = `${cookieName}=${JSON.stringify(storedCookies)}; path=/; Domain=${domain}; max-age=${
-            365 * 24 * 60 * 60
-        }`
+        const maxAge = 365 * 24 * 60 * 60 // 1 year
+        const cookieString = `${cookieName}=${encodeURIComponent(JSON.stringify(storedCookies))}; path=/; Domain=${domain}; max-age=${maxAge}; SameSite=Lax`
+
+        document.cookie = cookieString
     }
 
     /**
      * Get the allowed domain for cookies
+     * For localhost/single-part domains: use as-is
+     * For multi-part domains: use top-level domain (e.g., .deriv.com)
      */
     private getAllowedDomain(): string {
         if (typeof window === 'undefined') return ''
 
         const hostname = window.location.hostname
-        const parts = hostname.split('.')
 
-        if (hostname === 'localhost' || parts.length === 1) {
+        // Handle IP addresses and localhost
+        if (hostname === 'localhost' || /^\d+\.\d+\.\d+\.\d+$/.test(hostname)) {
             return hostname
         }
 
+        const parts = hostname.split('.')
+
+        // Single part domain (e.g., "localhost")
+        if (parts.length === 1) {
+            return hostname
+        }
+
+        // Use top-level domain for proper subdomain sharing
         return `.${parts.slice(-2).join('.')}`
     }
 
@@ -340,6 +358,7 @@ class AnalyticsCacheManager {
 
     /**
      * Add event handlers to multiple elements with auto-retry
+     * Alias for backward compatibility with typo
      */
     addEventHandler(items: EventListenerConfig[]): this {
         if (typeof window === 'undefined') return this
@@ -370,6 +389,11 @@ class AnalyticsCacheManager {
 
         return this
     }
+
+    /**
+     * Backward compatibility alias (with typo from original)
+     */
+    addEventhandler = this.addEventHandler.bind(this)
 
     /**
      * Load events immediately
@@ -417,13 +441,22 @@ class AnalyticsCacheManager {
     }
 
     /**
-     * Clear the interval
+     * Clear the interval and cleanup
      */
     clearInterval(): void {
         if (this.interval) {
             clearInterval(this.interval)
             this.interval = null
         }
+    }
+
+    /**
+     * Cleanup method for removing event listeners and intervals
+     */
+    cleanup(): void {
+        this.clearInterval()
+        this.responses = []
+        this.isTrackingResponses = false
     }
 }
 
