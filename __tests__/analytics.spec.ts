@@ -3,15 +3,11 @@ import { createAnalyticsInstance } from '../src/analytics'
 // Mock dependencies
 jest.mock('../src/providers/rudderstack')
 jest.mock('../src/utils/cookie')
-jest.mock('../src/utils/bot-detection')
-jest.mock('../src/utils/country')
 jest.mock('../src/utils/helpers')
 
 import { RudderStack } from '../src/providers/rudderstack'
 import * as cookieUtils from '../src/utils/cookie'
-import { isLikelyBot } from '../src/utils/bot-detection'
-import { getCountry } from '../src/utils/country'
-import { isUUID } from '../src/utils/helpers'
+import { getCountry, isUUID } from '../src/utils/helpers'
 
 describe('Analytics - createAnalyticsInstance', () => {
     let mockRudderstack: any
@@ -37,7 +33,6 @@ describe('Analytics - createAnalyticsInstance', () => {
             }
             return mockRudderstack
         })
-        ;(isLikelyBot as jest.Mock).mockReturnValue(false)
         ;(getCountry as jest.Mock).mockResolvedValue('us')
         ;(isUUID as jest.Mock).mockReturnValue(false)
         ;(cookieUtils.getCachedEvents as jest.Mock).mockReturnValue([])
@@ -229,16 +224,6 @@ describe('Analytics - createAnalyticsInstance', () => {
             )
         })
 
-        test('should not track when bot is detected', () => {
-            ;(isLikelyBot as jest.Mock).mockReturnValue(true)
-
-            const botAnalytics = createAnalyticsInstance()
-            botAnalytics.initialise({ rudderstackKey: 'test_key', enableBotFiltering: true })
-            botAnalytics.trackEvent('test_event' as any, {})
-
-            expect(mockRudderstack.track).not.toHaveBeenCalled()
-        })
-
         test('should cache event when offline', () => {
             Object.defineProperty(navigator, 'onLine', {
                 writable: true,
@@ -286,16 +271,6 @@ describe('Analytics - createAnalyticsInstance', () => {
             analytics.pageView('/home', 'Deriv App', { section: 'hero' })
 
             expect(mockRudderstack.pageView).toHaveBeenCalledWith('/home', 'Deriv App', 'CR123', { section: 'hero' })
-        })
-
-        test('should not track page view when bot is detected', async () => {
-            ;(isLikelyBot as jest.Mock).mockReturnValue(true)
-
-            const botAnalytics = createAnalyticsInstance()
-            await botAnalytics.initialise({ rudderstackKey: 'test_key', enableBotFiltering: true })
-            botAnalytics.pageView('/dashboard')
-
-            expect(mockRudderstack.pageView).not.toHaveBeenCalled()
         })
 
         test('should cache page view when RudderStack not initialized', () => {

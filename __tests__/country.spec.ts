@@ -14,8 +14,8 @@ describe('country - getCountry', () => {
 
         // Re-import both the module under test and the mocked dependency
         Cookies = require('js-cookie')
-        const countryModule = require('../src/utils/country')
-        getCountry = countryModule.getCountry
+        const helpersModule = require('../src/utils/helpers')
+        getCountry = helpersModule.getCountry
         ;(global.fetch as jest.Mock).mockClear()
     })
 
@@ -52,8 +52,8 @@ describe('country - getCountry', () => {
             for (const testCase of testCases) {
                 // Reset modules to clear the countryPromise cache
                 jest.resetModules()
-                const countryModule = require('../src/utils/country')
-                const getCountryFresh = countryModule.getCountry
+                const helpersModule = require('../src/utils/helpers')
+                const getCountryFresh = helpersModule.getCountry
 
                 ;(global.fetch as jest.Mock).mockResolvedValue({
                     text: jest.fn().mockResolvedValue(testCase.response),

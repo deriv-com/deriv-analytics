@@ -8,9 +8,7 @@ import {
     clearCachedEvents,
     clearCachedPageViews,
 } from '../utils/cookie'
-import { isLikelyBot } from '../utils/bot-detection'
-import { isUUID } from '../utils/helpers'
-import { getCountry } from '../utils/country'
+import { isUUID, getCountry } from '../utils/helpers'
 
 // Optional Growthbook types - only import if using Growthbook
 import type { Growthbook, GrowthbookConfigs } from '../providers/growthbook'
@@ -34,8 +32,6 @@ type Options = {
     rudderstackKey?: string
     /** Additional configuration options for GrowthBook */
     growthbookOptions?: TGrowthbookOptions
-    /** Enable automatic bot detection and filtering. When true, events from bots won't be tracked */
-    enableBotFiltering?: boolean
 }
 
 /**
@@ -45,7 +41,6 @@ type Options = {
  * - Event tracking across multiple analytics platforms
  * - A/B testing and feature flag management via GrowthBook
  * - Offline event caching with automatic replay
- * - Bot detection and filtering
  *
  * @param {Options} _options - Optional initialization configuration
  * @returns {Object} Analytics instance with methods for tracking, identification, and feature management
@@ -58,8 +53,7 @@ type Options = {
  * await analytics.initialise({
  *   rudderstackKey: 'YOUR_RS_KEY',
  *   growthbookKey: 'YOUR_GB_KEY',
- *   growthbookDecryptionKey: 'YOUR_GB_DECRYPT_KEY',
- *   enableBotFiltering: true
+ *   growthbookDecryptionKey: 'YOUR_GB_DECRYPT_KEY'
  * });
  *
  * // Set user attributes
@@ -79,7 +73,6 @@ type Options = {
 export function createAnalyticsInstance(_options?: Options) {
     let _growthbook: Growthbook | undefined,
         _rudderstack: RudderStack,
-        _enableBotFiltering = false,
         core_data: Partial<TCoreAttributes> = {},
         tracking_config: { [key: string]: boolean } = {},
         offline_event_cache: Array<{ event: keyof TAllEvents; payload: TAllEvents[keyof TAllEvents] }> = [],
@@ -142,8 +135,7 @@ export function createAnalyticsInstance(_options?: Options) {
      * await analytics.initialise({
      *   rudderstackKey: 'YOUR_RS_KEY',
      *   growthbookKey: 'YOUR_GB_KEY',
-     *   growthbookDecryptionKey: 'YOUR_GB_DECRYPT_KEY',
-     *   enableBotFiltering: true
+     *   growthbookDecryptionKey: 'YOUR_GB_DECRYPT_KEY'
      * });
      * ```
      */
@@ -152,10 +144,8 @@ export function createAnalyticsInstance(_options?: Options) {
         growthbookDecryptionKey,
         rudderstackKey,
         growthbookOptions,
-        enableBotFiltering = false,
     }: Options) => {
         try {
-            _enableBotFiltering = enableBotFiltering
             // Only fetch country if GrowthBook is enabled and country not provided
             const country = growthbookOptions?.attributes?.country || (growthbookKey ? await getCountry() : undefined)
 
@@ -333,7 +323,6 @@ export function createAnalyticsInstance(_options?: Options) {
      * Features:
      * - Automatically includes user ID if available
      * - Caches page views when offline or provider not initialized
-     * - Respects bot filtering settings
      *
      * @param {string} current_page - The current page URL or path
      * @param {string} [platform='Deriv App'] - The platform name
@@ -346,8 +335,6 @@ export function createAnalyticsInstance(_options?: Options) {
      * ```
      */
     const pageView = (current_page: string, platform = 'Deriv App', properties?: Record<string, unknown>) => {
-        if (_enableBotFiltering && isLikelyBot()) return
-
         if (!_rudderstack) {
             cachePageViewToCookie(current_page, { platform, ...properties })
             return
@@ -400,7 +387,7 @@ export function createAnalyticsInstance(_options?: Options) {
      * - Automatically enriches events with core attributes
      * - Supports both V1 and V2 event payload formats
      * - Caches events when offline or provider not initialized
-     * - Respects bot filtering and feature flag configurations
+     * - Respects feature flag configurations
      * - Sends to RudderStack
      *
      * @template T - The event name type from TAllEvents
@@ -420,8 +407,6 @@ export function createAnalyticsInstance(_options?: Options) {
      * ```
      */
     const trackEvent = <T extends keyof TAllEvents>(event: T, analytics_data: TAllEvents[T]) => {
-        if (_enableBotFiltering && isLikelyBot()) return
-
         const userId = getId()
         let final_payload: any = {}
 

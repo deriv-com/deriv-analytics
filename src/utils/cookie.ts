@@ -1,5 +1,5 @@
 import Cookies from 'js-cookie'
-import { allowedDomains, deriv } from './urls'
+import { getAllowedDomain } from './urls'
 
 export const CACHE_COOKIE_EVENTS = 'cached_analytics_events'
 export const CACHE_COOKIE_PAGES = 'cached_analytics_page_views'
@@ -14,16 +14,6 @@ export type CachedPageView = {
     name: string
     properties?: Record<string, unknown>
     timestamp: number
-}
-
-export const getAllowedDomain = (): string => {
-    if (typeof window === 'undefined') return `.${deriv}`
-    const hostname = window.location.hostname
-
-    if (hostname === 'localhost') return ''
-
-    const matched = allowedDomains.find(d => hostname.includes(d))
-    return matched ? `.${matched}` : `.${deriv}`
 }
 
 export const cacheEventToCookie = (eventName: string, properties: Record<string, unknown>): void => {

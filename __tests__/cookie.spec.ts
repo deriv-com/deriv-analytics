@@ -1,6 +1,5 @@
 import Cookies from 'js-cookie'
 import {
-    getAllowedDomain,
     cacheEventToCookie,
     cachePageViewToCookie,
     getCachedEvents,
@@ -10,6 +9,7 @@ import {
     CACHE_COOKIE_EVENTS,
     CACHE_COOKIE_PAGES,
 } from '../src/utils/cookie'
+import { getAllowedDomain } from '../src/utils/urls'
 
 jest.mock('js-cookie')
 

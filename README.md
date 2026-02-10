@@ -99,9 +99,6 @@ await Analytics.initialise({
             country: 'US',
         },
     },
-
-    // Optional bot filtering
-    enableBotFiltering: true,
 })
 
 // Track events

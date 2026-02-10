@@ -5,7 +5,7 @@ import { growthbookApi } from '../../utils/urls'
 
 export class Growthbook {
     analytics = new RudderAnalytics()
-    private GrowthBook: GrowthBook<GrowthbookConfigs>
+    GrowthBook: GrowthBook<GrowthbookConfigs>
     private static _instance: Growthbook
     isLoaded = false
     status: void | InitResponse = undefined
@@ -144,8 +144,8 @@ export class Growthbook {
     isOn = (key: string) => this.GrowthBook.isOn(key)
 
     init = async () => {
-        const status = await this.GrowthBook.init({ timeout: 2000, streaming: true }).catch(err => {
-            // console.error(err)
+        const status = await this.GrowthBook.init({ timeout: 2000, streaming: true }).catch(() => {
+            // Silently handle initialization errors
         })
 
         this.status = status
