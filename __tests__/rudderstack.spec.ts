@@ -70,9 +70,15 @@ describe('RudderStack Provider', () => {
         })
 
         test('should not initialize without key', () => {
+            // Suppress expected warning about missing key
+            const consoleWarnSpy = jest.spyOn(console, 'warn').mockImplementation()
+
             rudderstack = new RudderStack('')
 
             expect(rudderstack.analytics.load).not.toHaveBeenCalled()
+            expect(consoleWarnSpy).toHaveBeenCalledWith('RudderStack: Initialization skipped - no key provided')
+
+            consoleWarnSpy.mockRestore()
         })
     })
 

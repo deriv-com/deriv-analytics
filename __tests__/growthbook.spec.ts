@@ -10,6 +10,7 @@ jest.mock('@growthbook/growthbook', () => ({
         getFeatureValue: jest.fn(),
         setURL: jest.fn(),
         isOn: jest.fn().mockReturnValue(true),
+        destroy: jest.fn(),
     })),
 }))
 
@@ -18,6 +19,9 @@ describe('Growthbook Provider', () => {
 
     beforeEach(() => {
         jest.clearAllMocks()
+
+        // Reset singleton instance before each test
+        Growthbook.resetInstance()
 
         // window.location.hostname is already 'app.deriv.com' from jest.config testEnvironmentOptions
 
@@ -33,10 +37,18 @@ describe('Growthbook Provider', () => {
         })
 
         test('should create singleton instance', () => {
+            // Suppress expected warning about existing instance
+            const consoleWarnSpy = jest.spyOn(console, 'warn').mockImplementation()
+
             const instance1 = Growthbook.getGrowthBookInstance('key1', 'decrypt1')
             const instance2 = Growthbook.getGrowthBookInstance('key2', 'decrypt2')
 
             expect(instance1).toBe(instance2)
+            expect(consoleWarnSpy).toHaveBeenCalledWith(
+                'GrowthBook instance already exists. Ignoring new initialization parameters.'
+            )
+
+            consoleWarnSpy.mockRestore()
         })
 
         test('should initialize with custom options', () => {
@@ -51,11 +63,15 @@ describe('Growthbook Provider', () => {
         })
 
         test('should set isLoaded to true after initialization', async () => {
-            expect(growthbook.isLoaded).toBe(false)
+            // Create a fresh instance to test initialization state
+            const freshGrowthbook = new Growthbook('testKey', 'testDecrypt')
 
-            await growthbook.init()
+            // isLoaded should be false immediately after construction (before async init completes)
+            expect(freshGrowthbook.isLoaded).toBe(false)
 
-            expect(growthbook.isLoaded).toBe(true)
+            await freshGrowthbook.init()
+
+            expect(freshGrowthbook.isLoaded).toBe(true)
         })
     })
 
