@@ -17,7 +17,7 @@ export class Posthog {
         }
 
         this.api_key = options.apiKey
-        this.allowed_domains = options.allowedDomains || posthogAllowedDomains
+        this.allowed_domains = posthogAllowedDomains
     }
 
     public static getPosthogInstance(options: TPosthogOptions): Posthog {
@@ -63,8 +63,6 @@ export class Posthog {
     public init(options: Partial<TPosthogOptions> = {}): void {
         if (this.is_initialized || typeof window === 'undefined') return
 
-        const apiHost = options.apiHost || posthogApiHost
-        const uiHost = options.uiHost || posthogUiHost
         const enableSessionRecording = options.enableSessionRecording ?? true
         const enableAutocapture = options.enableAutocapture ?? true
         const debug = options.debug ?? false
@@ -73,8 +71,8 @@ export class Posthog {
         const shouldBootstrap = this.shouldBootstrapWithRudderstack()
 
         const config = {
-            api_host: apiHost,
-            ui_host: uiHost,
+            api_host: posthogApiHost,
+            ui_host: posthogUiHost,
             ...(shouldBootstrap ? { bootstrap: { distinctID: rudderAnonId } } : {}),
             before_send: (event: any) => {
                 return this.isAllowedDomain() ? event : null
@@ -82,6 +80,7 @@ export class Posthog {
             ...(enableSessionRecording && {
                 session_recording: {
                     recordCrossOriginIframes: true,
+                    minimumDurationMilliseconds: 30000,
                 },
             }),
             autocapture: enableAutocapture,
@@ -243,14 +242,39 @@ export class Posthog {
         return result
     }
 
-    private cleanObject(obj: Record<string, any>): Record<string, any> {
-        const cleaned: Record<string, any> = {}
-        for (const key in obj) {
-            if (obj[key] !== null && obj[key] !== undefined && obj[key] !== '') {
-                cleaned[key] = obj[key]
-            }
+    /**
+     * Recursively cleans an object by removing null, undefined, empty strings, empty objects, and empty arrays.
+     * This ensures only meaningful data is sent to PostHog.
+     *
+     * @param obj - The object to clean (can be nested)
+     * @returns A cleaned version of the object, or undefined if the result is empty
+     */
+    private cleanObject(obj: any): any {
+        if (obj == null || typeof obj !== 'object') return obj
+
+        if (Array.isArray(obj)) {
+            const cleanedArr = obj.map(item => this.cleanObject(item)).filter(v => v !== undefined && v !== null)
+            return cleanedArr.length ? cleanedArr : undefined
         }
-        return cleaned
+
+        const cleaned: Record<string, any> = {}
+        Object.entries(obj).forEach(([key, value]) => {
+            const v = this.cleanObject(value)
+            // Skip if value is null, undefined, empty string, empty object, or empty array
+            if (
+                v === undefined ||
+                v === null ||
+                v === '' ||
+                (typeof v === 'object' && !Array.isArray(v) && Object.keys(v).length === 0) ||
+                (Array.isArray(v) && v.length === 0)
+            ) {
+                return
+            }
+
+            cleaned[key] = v
+        })
+
+        return Object.keys(cleaned).length ? cleaned : undefined
     }
 
     public capture(eventName: string, properties?: TPosthogEvent): void {
@@ -289,10 +313,6 @@ export class Posthog {
     }
 
     public updateConfig(options: Partial<Omit<TPosthogOptions, 'apiKey'>>): void {
-        if (options.allowedDomains) {
-            this.allowed_domains = options.allowedDomains
-        }
-
         if (this.posthog_instance && this.is_initialized) {
             if (options.customConfig) {
                 Object.assign(this.posthog_instance.config, options.customConfig)

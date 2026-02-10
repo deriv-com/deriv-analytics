@@ -78,7 +78,6 @@ describe('Posthog Provider', () => {
         test('should initialize with custom options', () => {
             posthogInstance = Posthog.getPosthogInstance({ apiKey: mockApiKey })
             posthogInstance.init({
-                apiHost: 'https://custom.posthog.com',
                 enableAutocapture: false,
                 debug: true,
             })
@@ -86,7 +85,7 @@ describe('Posthog Provider', () => {
             expect(posthog.init).toHaveBeenCalledWith(
                 mockApiKey,
                 expect.objectContaining({
-                    api_host: 'https://custom.posthog.com',
+                    api_host: 'https://ph.deriv.com', // hardcoded, cannot be overridden
                     autocapture: false,
                     debug: true,
                 })
@@ -328,12 +327,15 @@ describe('Posthog Provider', () => {
             expect(instance).toBe(posthog)
         })
 
-        test('should update config', () => {
+        test('should update custom config', () => {
             posthogInstance.updateConfig({
-                allowedDomains: ['custom.com'],
+                customConfig: {
+                    // Note: allowedDomains, apiHost, and uiHost cannot be changed
+                    // They are hardcoded in the library for security
+                },
             })
 
-            // Domain should be updated - no error thrown
+            // Config should be updated - no error thrown
             expect(() => posthogInstance.capture('test_event')).not.toThrow()
         })
     })

@@ -95,10 +95,9 @@ await Analytics.initialise({
     rudderstackKey: 'YOUR_RUDDERSTACK_KEY',
 
     // Posthog for product analytics (optional - user must provide their own API key)
+    // Note: API host, UI host, and allowed domains are hardcoded in the library for security
     posthogKey: 'YOUR_POSTHOG_API_KEY',
     posthogOptions: {
-        apiHost: 'https://ph.deriv.com',
-        allowedDomains: ['deriv.com', 'deriv.team'],
         enableSessionRecording: true,
         enableAutocapture: true,
     },
@@ -139,8 +138,6 @@ import { Posthog } from '@deriv-com/analytics/posthog'
 
 const posthog = Posthog.getPosthogInstance({
     apiKey: 'YOUR_POSTHOG_API_KEY',
-    apiHost: 'https://ph.deriv.com',
-    allowedDomains: ['deriv.com'],
 })
 
 posthog.init()
@@ -269,8 +266,12 @@ Access raw provider instances for advanced use cases.
 Update Posthog configuration at runtime.
 
 ```typescript
+// Note: Allowed domains, API host, and UI host cannot be updated after initialization
+// They are hardcoded in the library for security reasons
 Analytics.updatePosthogConfig({
-    allowedDomains: ['newdomain.com'],
+    customConfig: {
+        // Any other PostHog config options
+    },
 })
 ```
 
@@ -304,9 +305,10 @@ The RudderStack integration includes performance optimizations:
 ```typescript
 posthogOptions: {
     apiKey: 'YOUR_API_KEY', // Required: User must provide their own
-    apiHost: 'https://ph.deriv.com',
-    uiHost: 'https://us.posthog.com',
-    allowedDomains: ['deriv.com', 'deriv.team', 'deriv.ae'],
+    // Note: apiHost, uiHost, and allowedDomains are hardcoded in the library for security
+    // apiHost: 'https://ph.deriv.com' (hardcoded)
+    // uiHost: 'https://us.posthog.com' (hardcoded)
+    // allowedDomains: ['deriv.com', 'deriv.team', 'deriv.ae'] (hardcoded)
     enableSessionRecording: true,
     enableAutocapture: true,
     debug: false,
@@ -429,7 +431,7 @@ export function AnalyticsProvider({ children }) {
 
 ### Posthog events not tracking
 
-- Verify your domain is in `allowedDomains`
+- Verify your domain is in the hardcoded allowed domains list (deriv.com, deriv.team, deriv.ae)
 - Check browser console for warnings
 - Ensure Posthog is loaded: `Analytics.getInstances().posthog?.isLoaded()`
 - Confirm API key is valid and provided

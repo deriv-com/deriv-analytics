@@ -17,9 +17,6 @@ export type TPosthogAttributes = Partial<
 
 export type TPosthogOptions = {
     apiKey: string // Required: User must provide their Posthog API key
-    apiHost?: string
-    uiHost?: string
-    allowedDomains?: string[]
     attributes?: TPosthogAttributes
     enableSessionRecording?: boolean
     enableAutocapture?: boolean
