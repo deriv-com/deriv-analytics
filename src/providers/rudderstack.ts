@@ -1,6 +1,6 @@
 import { RudderAnalytics } from '@rudderstack/analytics-js'
-import type { TCoreAttributes, TAllEvents } from '../../analytics/types'
-import { rudderstackDataplane } from '../../utils/urls'
+import type { TCoreAttributes, TAllEvents } from '../analytics/types'
+import { rudderstackDataplane } from '../utils/urls'
 
 // Constants
 const COOKIE_MAX_AGE_SECONDS = 2 * 365 * 24 * 60 * 60 // 2 years

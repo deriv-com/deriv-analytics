@@ -1,7 +1,12 @@
 import { GrowthBook, InitResponse } from '@growthbook/growthbook'
 import { RudderAnalytics } from '@rudderstack/analytics-js'
-import { TGrowthbookAttributes, TGrowthbookOptions, GrowthbookConfigs, TGrowthbookCoreAttributes } from './types'
-import { growthbookApi } from '../../utils/urls'
+import {
+    TGrowthbookAttributes,
+    TGrowthbookOptions,
+    GrowthbookConfigs,
+    TGrowthbookCoreAttributes,
+} from './growthbookTypes'
+import { growthbookApi } from '../utils/urls'
 
 export class Growthbook {
     analytics = new RudderAnalytics()

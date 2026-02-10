@@ -6,8 +6,8 @@ export default defineConfig([
         // Entry points - main bundle and optional Growthbook/Rudderstack/Cache modules
         entry: {
             index: 'src/index.ts',
-            'providers/growthbook/index': 'src/providers/growthbook/index.ts',
-            'providers/rudderstack/index': 'src/providers/rudderstack/index.ts',
+            'providers/growthbook': 'src/providers/growthbook.ts',
+            'providers/rudderstack': 'src/providers/rudderstack.ts',
             'utils/analytics-cache': 'src/utils/analytics-cache.ts',
         },
 

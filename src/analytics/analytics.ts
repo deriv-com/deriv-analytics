@@ -12,7 +12,7 @@ import { isUUID, getCountry } from '../utils/helpers'
 
 // Optional Growthbook types - only import if using Growthbook
 import type { Growthbook, GrowthbookConfigs } from '../providers/growthbook'
-import type { TGrowthbookAttributes, TGrowthbookOptions } from '../providers/growthbook/types'
+import type { TGrowthbookAttributes, TGrowthbookOptions } from '../providers/growthbookTypes'
 
 declare global {
     interface Window {

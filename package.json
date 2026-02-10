@@ -34,14 +34,14 @@
       "require": "./dist/index.js"
     },
     "./growthbook": {
-      "types": "./dist/providers/growthbook/index.d.ts",
-      "import": "./dist/providers/growthbook/index.mjs",
-      "require": "./dist/providers/growthbook/index.js"
+      "types": "./dist/providers/growthbook.d.ts",
+      "import": "./dist/providers/growthbook.mjs",
+      "require": "./dist/providers/growthbook.js"
     },
     "./rudderstack": {
-      "types": "./dist/providers/rudderstack/index.d.ts",
-      "import": "./dist/providers/rudderstack/index.mjs",
-      "require": "./dist/providers/rudderstack/index.js"
+      "types": "./dist/providers/rudderstack.d.ts",
+      "import": "./dist/providers/rudderstack.mjs",
+      "require": "./dist/providers/rudderstack.js"
     },
     "./cache": {
       "types": "./dist/utils/analytics-cache.d.ts",
