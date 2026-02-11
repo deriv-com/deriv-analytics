@@ -46,7 +46,7 @@ export class Posthog {
      */
     init = async (): Promise<void> => {
         try {
-            const { apiKey, api_host, ui_host, config = {} } = this.options
+            const { apiKey, api_host, config = {} } = this.options
 
             if (!apiKey) {
                 console.warn('Posthog: No API key provided')
@@ -55,7 +55,7 @@ export class Posthog {
 
             const posthogConfig: TPosthogConfig = {
                 api_host: api_host || posthogApiHost,
-                ui_host: ui_host || posthogUiHost,
+                ui_host: posthogUiHost,
                 autocapture: true,
                 session_recording: {
                     recordCrossOriginIframes: true,

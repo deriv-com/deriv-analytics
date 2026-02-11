@@ -58,8 +58,24 @@ export class RudderStack {
                 const is_external_domain = external_domains.some(domain => hostname.endsWith(domain))
                 const domain_name = is_external_domain ? hostname : hostname.split('.').slice(-2).join('.')
 
-                // Check if crypto.randomUUID is available
-                const uuid = crypto?.randomUUID ? crypto.randomUUID() : `${Date.now()}-${Math.random()}`
+                // Generate cryptographically secure UUID
+                let uuid: string
+                if (crypto?.randomUUID) {
+                    uuid = crypto.randomUUID()
+                } else if (crypto?.getRandomValues) {
+                    // Fallback: Generate UUID v4 using crypto.getRandomValues
+                    const bytes = new Uint8Array(16)
+                    crypto.getRandomValues(bytes)
+                    // Set version (4) and variant bits
+                    bytes[6] = (bytes[6]! & 0x0f) | 0x40
+                    bytes[8] = (bytes[8]! & 0x3f) | 0x80
+                    // Convert to UUID string format
+                    const hex = Array.from(bytes, byte => byte.toString(16).padStart(2, '0')).join('')
+                    uuid = `${hex.slice(0, 8)}-${hex.slice(8, 12)}-${hex.slice(12, 16)}-${hex.slice(16, 20)}-${hex.slice(20)}`
+                } else {
+                    // Crypto API not available - this should not happen in modern browsers
+                    throw new Error('Crypto API not available for secure random UUID generation')
+                }
 
                 const isSecure = window.location.protocol === 'https:'
                 const secureFlag = isSecure ? '; Secure' : ''
