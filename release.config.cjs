@@ -20,6 +20,10 @@ module.exports = {
                         release: 'minor',
                     },
                     {
+                        type: 'fix',
+                        release: 'patch',
+                    },
+                    {
                         type: 'build',
                         release: 'patch',
                     },
