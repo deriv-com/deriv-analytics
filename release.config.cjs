@@ -2,7 +2,8 @@ const transform = require('./release.utils.cjs')
 
 module.exports = {
     branches: [
-        '+([0-9])?(.{+([0-9]),x}).x',
+        '+([0-9]).+([0-9]).x',
+        '+([0-9]).x',
         'master',
         'next',
         'next-major',
