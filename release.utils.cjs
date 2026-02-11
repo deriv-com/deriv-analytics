@@ -161,9 +161,8 @@ const customTransform = (commit, context) => {
         (types.types[commit.type].changelog ||
             (commit.notes && commit.notes.length > 0))
     ) {
-        commitObject.type = `${
-            types.types[commit.type].emoji ? types.types[commit.type].emoji : ""
-        } \t ${types.types[commit.type].title}`;
+        commitObject.type = `${types.types[commit.type].emoji ? types.types[commit.type].emoji : ""
+            } \t ${types.types[commit.type].title}`;
     } else {
         return null;
     }
