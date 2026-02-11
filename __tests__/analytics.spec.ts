@@ -3,7 +3,11 @@ import { createAnalyticsInstance } from '../src/analytics'
 // Mock dependencies
 jest.mock('../src/providers/rudderstack')
 jest.mock('../src/utils/cookie')
-jest.mock('../src/utils/helpers')
+jest.mock('../src/utils/helpers', () => ({
+    ...jest.requireActual('../src/utils/helpers'),
+    getCountry: jest.fn(),
+    isUUID: jest.fn(),
+}))
 
 import { RudderStack } from '../src/providers/rudderstack'
 import * as cookieUtils from '../src/utils/cookie'
@@ -39,6 +43,8 @@ describe('Analytics - createAnalyticsInstance', () => {
         ;(cookieUtils.getCachedPageViews as jest.Mock).mockReturnValue([])
         ;(cookieUtils.cacheEventToCookie as jest.Mock).mockImplementation(() => {})
         ;(cookieUtils.cachePageViewToCookie as jest.Mock).mockImplementation(() => {})
+        ;(cookieUtils.clearCachedEvents as jest.Mock).mockImplementation(() => {})
+        ;(cookieUtils.clearCachedPageViews as jest.Mock).mockImplementation(() => {})
     })
 
     describe('Initialization', () => {
@@ -100,6 +106,8 @@ describe('Analytics - createAnalyticsInstance', () => {
         beforeEach(async () => {
             analytics = createAnalyticsInstance()
             await analytics.initialise({ rudderstackKey: 'test_key' })
+            // Wait for async initialization callback
+            await new Promise(resolve => setTimeout(resolve, 10))
         })
 
         test('should set core attributes', () => {
@@ -253,6 +261,8 @@ describe('Analytics - createAnalyticsInstance', () => {
         beforeEach(async () => {
             analytics = createAnalyticsInstance()
             await analytics.initialise({ rudderstackKey: 'test_key' })
+            // Wait for async initialization callback
+            await new Promise(resolve => setTimeout(resolve, 10))
         })
 
         test('should track page view', () => {
@@ -273,12 +283,19 @@ describe('Analytics - createAnalyticsInstance', () => {
             expect(mockRudderstack.pageView).toHaveBeenCalledWith('/home', 'Deriv App', 'CR123', { section: 'hero' })
         })
 
-        test('should cache page view when RudderStack not initialized', () => {
+        test('should cache page view when RudderStack not initialized', async () => {
             const newAnalytics = createAnalyticsInstance()
+            // Initialize but mock RudderStack as not yet initialized
+            mockRudderstack.has_initialized = false
+            await newAnalytics.initialise({ rudderstackKey: 'test_key' })
+            await new Promise(resolve => setTimeout(resolve, 10))
 
             newAnalytics.pageView('/dashboard')
 
             expect(cookieUtils.cachePageViewToCookie).toHaveBeenCalled()
+
+            // Restore
+            mockRudderstack.has_initialized = true
         })
     })
 
@@ -291,9 +308,15 @@ describe('Analytics - createAnalyticsInstance', () => {
         test('should identify user with user ID', () => {
             analytics.identifyEvent('CR123')
 
+            expect(mockRudderstack.identifyEvent).toHaveBeenCalledWith('CR123', undefined)
+        })
+
+        test('should identify user with user ID and traits', () => {
+            analytics.identifyEvent('CR123', { language: 'en', country_of_residence: 'US' })
+
             expect(mockRudderstack.identifyEvent).toHaveBeenCalledWith(
                 'CR123',
-                expect.objectContaining({ language: 'en' })
+                expect.objectContaining({ language: 'en', country_of_residence: 'US' })
             )
         })
 
@@ -302,7 +325,7 @@ describe('Analytics - createAnalyticsInstance', () => {
 
             analytics.identifyEvent()
 
-            expect(mockRudderstack.identifyEvent).toHaveBeenCalledWith('CR456', expect.any(Object))
+            expect(mockRudderstack.identifyEvent).toHaveBeenCalledWith('CR456', undefined)
         })
 
         test('should not identify if no user ID available', () => {
@@ -313,13 +336,15 @@ describe('Analytics - createAnalyticsInstance', () => {
             expect(mockRudderstack.identifyEvent).not.toHaveBeenCalled()
         })
 
-        test('should include user language in identify call', () => {
-            analytics.setAttributes({ user_language: 'es' })
-            analytics.identifyEvent('CR789')
+        test('should identify with provider-specific traits', () => {
+            analytics.identifyEvent('CR789', {
+                rudderstack: { language: 'es', custom_field: 'value' },
+                posthog: { language: 'es', country_of_residence: 'ES' },
+            })
 
             expect(mockRudderstack.identifyEvent).toHaveBeenCalledWith(
                 'CR789',
-                expect.objectContaining({ language: 'es' })
+                expect.objectContaining({ language: 'es', custom_field: 'value' })
             )
         })
     })

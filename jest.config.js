@@ -6,4 +6,7 @@ module.exports = {
     testEnvironmentOptions: {
         url: 'http://app.deriv.com/',
     },
+    collectCoverageFrom: ['src/**/*.{ts,tsx}', '!src/**/*.d.ts', '!src/**/*.spec.ts', '!src/**/*.test.ts'],
+    coverageDirectory: 'coverage',
+    coverageReporters: ['text', 'lcov', 'html', 'clover'],
 }

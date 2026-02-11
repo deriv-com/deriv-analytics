@@ -46,3 +46,70 @@ export const getCountry = async (): Promise<string> => {
 
     return countryPromise
 }
+
+/**
+ * Recursively cleans an object by removing undefined, null, empty strings, empty objects, and empty arrays
+ * Used to sanitize event properties before sending to analytics providers
+ *
+ * @param obj - The object to clean
+ * @returns The cleaned object, or undefined if the result would be empty
+ */
+export const cleanObject = (obj: any): any => {
+    if (obj == null || typeof obj !== 'object') return obj
+
+    if (Array.isArray(obj)) {
+        const cleanedArr = obj.map(cleanObject).filter(v => v !== undefined && v !== null)
+        return cleanedArr.length ? cleanedArr : undefined
+    }
+
+    const cleaned: Record<string, any> = {}
+    Object.entries(obj).forEach(([key, value]) => {
+        const v = cleanObject(value)
+        if (
+            v === undefined ||
+            v === null ||
+            v === '' ||
+            (typeof v === 'object' && !Array.isArray(v) && Object.keys(v).length === 0) ||
+            (Array.isArray(v) && v.length === 0)
+        ) {
+            return
+        }
+
+        cleaned[key] = v
+    })
+
+    return Object.keys(cleaned).length ? cleaned : undefined
+}
+
+/**
+ * Flattens a nested object structure into a single-level object
+ * Lifts all nested properties to the top level without prefixing
+ *
+ * @param obj - The object to flatten
+ * @returns A flattened object with all nested properties at the top level
+ *
+ * @example
+ * flattenObject({ action: 'click', event_metadata: { version: 2, user_language: 'en' } })
+ * // Returns: { action: 'click', version: 2, user_language: 'en' }
+ *
+ * flattenObject({ form_name: 'signup', cta_information: { cta_name: 'signup', section_name: 'header' } })
+ * // Returns: { form_name: 'signup', cta_name: 'signup', section_name: 'header' }
+ */
+export const flattenObject = (obj: any): Record<string, any> => {
+    if (obj == null || typeof obj !== 'object' || Array.isArray(obj)) {
+        return obj
+    }
+
+    const flattened: Record<string, any> = {}
+
+    Object.entries(obj).forEach(([key, value]) => {
+        if (value && typeof value === 'object' && !Array.isArray(value)) {
+            // Recursively flatten nested objects and merge them at the top level
+            Object.assign(flattened, flattenObject(value))
+        } else {
+            flattened[key] = value
+        }
+    })
+
+    return flattened
+}

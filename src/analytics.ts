@@ -8,11 +8,15 @@ import {
     clearCachedEvents,
     clearCachedPageViews,
 } from './utils/cookie'
-import { isUUID, getCountry } from './utils/helpers'
+import { isUUID, getCountry, cleanObject, flattenObject } from './utils/helpers'
 
 // Optional Growthbook types - only import if using Growthbook
 import type { Growthbook, GrowthbookConfigs } from './providers/growthbook'
 import type { TGrowthbookAttributes, TGrowthbookOptions } from './providers/growthbookTypes'
+
+// Optional Posthog types - only import if using Posthog
+import type { Posthog } from './providers/posthog'
+import type { TPosthogOptions } from './providers/posthogTypes'
 
 declare global {
     interface Window {
@@ -32,6 +36,8 @@ type Options = {
     rudderstackKey?: string
     /** Additional configuration options for GrowthBook */
     growthbookOptions?: TGrowthbookOptions
+    /** PostHog configuration options including API keys and settings */
+    posthogOptions?: TPosthogOptions
 }
 
 /**
@@ -73,10 +79,11 @@ type Options = {
 export function createAnalyticsInstance(_options?: Options) {
     let _growthbook: Growthbook | undefined,
         _rudderstack: RudderStack,
+        _posthog: Posthog | undefined,
         core_data: Partial<TCoreAttributes> = {},
         tracking_config: { [key: string]: boolean } = {},
         offline_event_cache: Array<{ event: keyof TAllEvents; payload: TAllEvents[keyof TAllEvents] }> = [],
-        _pending_identify_calls: Array<string> = [],
+        _pending_identify_calls: Array<{ userId: string; traits?: Record<string, any> }> = [],
         _cookie_cache_processed = false
 
     const processCookieCache = () => {
@@ -109,9 +116,9 @@ export function createAnalyticsInstance(_options?: Options) {
     const onSdkLoaded = () => {
         processCookieCache()
 
-        _pending_identify_calls.forEach(userId => {
+        _pending_identify_calls.forEach(({ userId, traits }) => {
             if (userId) {
-                _rudderstack?.identifyEvent(userId, { language: core_data?.user_language || 'en' })
+                _rudderstack?.identifyEvent(userId, traits)
             }
         })
         _pending_identify_calls = []
@@ -122,7 +129,7 @@ export function createAnalyticsInstance(_options?: Options) {
      * This method should be called before tracking any events.
      *
      * Features:
-     * - Lazy-loads providers (GrowthBook) only when configured
+     * - Lazy-loads providers (GrowthBook, PostHog) only when configured
      * - Automatically fetches user's country for GrowthBook targeting
      * - Processes any cached events from previous sessions
      * - Sets up event tracking callback for GrowthBook experiments
@@ -135,7 +142,16 @@ export function createAnalyticsInstance(_options?: Options) {
      * await analytics.initialise({
      *   rudderstackKey: 'YOUR_RS_KEY',
      *   growthbookKey: 'YOUR_GB_KEY',
-     *   growthbookDecryptionKey: 'YOUR_GB_DECRYPT_KEY'
+     *   growthbookDecryptionKey: 'YOUR_GB_DECRYPT_KEY',
+     *   posthogOptions: {
+     *     apiKey: 'YOUR_POSTHOG_API_KEY',
+     *     config: {
+     *       session_recording: {
+     *         recordCrossOriginIframes: true,
+     *         minimumDurationMilliseconds: 30000
+     *       }
+     *     }
+     *   }
      * });
      * ```
      */
@@ -144,6 +160,7 @@ export function createAnalyticsInstance(_options?: Options) {
         growthbookDecryptionKey,
         rudderstackKey,
         growthbookOptions,
+        posthogOptions,
     }: Options) => {
         try {
             // Only fetch country if GrowthBook is enabled and country not provided
@@ -198,6 +215,12 @@ export function createAnalyticsInstance(_options?: Options) {
                     else tracking_config = getFeatureValue('tracking-buttons-config', {}) as { [key: string]: boolean }
                 }, 1000)
             }
+
+            if (posthogOptions) {
+                // Dynamically import Posthog only when needed
+                const { Posthog } = await import('./providers/posthog')
+                _posthog = Posthog.getPosthogInstance(posthogOptions)
+            }
         } catch (err) {
             console.warn('Analytics: Failed to initialize', err)
         }
@@ -250,8 +273,6 @@ export function createAnalyticsInstance(_options?: Options) {
         account_currency,
         account_mode,
     }: TCoreAttributes) => {
-        if (!_rudderstack) return
-
         const user_identity = user_id ?? getId()
 
         if (_growthbook) {
@@ -335,13 +356,19 @@ export function createAnalyticsInstance(_options?: Options) {
      * ```
      */
     const pageView = (current_page: string, platform = 'Deriv App', properties?: Record<string, unknown>) => {
-        if (!_rudderstack) {
-            cachePageViewToCookie(current_page, { platform, ...properties })
-            return
+        const userId = getId()
+
+        // Handle RudderStack pageView independently
+        if (_rudderstack) {
+            if (_rudderstack.has_initialized) {
+                _rudderstack.pageView(current_page, platform, userId, properties)
+            } else {
+                cachePageViewToCookie(current_page, { platform, ...properties })
+            }
         }
 
-        const userId = getId()
-        _rudderstack?.pageView(current_page, platform, userId, properties)
+        // PostHog handles page views automatically via autocapture
+        // No need to manually send page views to PostHog
     }
 
     /**
@@ -350,30 +377,64 @@ export function createAnalyticsInstance(_options?: Options) {
      *
      * Features:
      * - Queues identify calls if provider not yet initialized
-     * - Automatically includes user language from core attributes
+     * - Allows custom traits for each provider or shared traits for both
+     * - Identifies user in PostHog if configured
      *
      * @param {string} [user_id] - The user ID to identify. If not provided, uses stored user ID
+     * @param {Record<string, any>} [traits] - Optional traits to send to both providers, or provider-specific traits
      *
      * @example
      * ```typescript
+     * // Simple identify
      * analytics.identifyEvent('CR123456');
+     *
+     * // Identify with same traits for both providers
+     * analytics.identifyEvent('CR123456', {
+     *   language: 'en',
+     *   country_of_residence: 'US'
+     * });
+     *
+     * // Identify with provider-specific traits
+     * analytics.identifyEvent('CR123456', {
+     *   rudderstack: { language: 'en', custom_field: 'value' },
+     *   posthog: { language: 'en', country_of_residence: 'US' }
+     * });
      * ```
      */
-    const identifyEvent = (user_id?: string) => {
+    const identifyEvent = (user_id?: string, traits?: Record<string, any>) => {
         const stored_user_id = user_id || getId()
         if (!stored_user_id) return
 
-        if (_rudderstack?.has_initialized) {
-            _rudderstack?.identifyEvent(stored_user_id, { language: core_data?.user_language || 'en' })
-        } else {
-            if (!_pending_identify_calls.includes(stored_user_id)) {
-                _pending_identify_calls.push(stored_user_id)
+        // Check if traits has provider-specific structure
+        const hasProviderStructure = traits?.rudderstack !== undefined || traits?.posthog !== undefined
+        const rudderstackTraits = hasProviderStructure ? traits?.rudderstack : traits
+        const posthogTraits = hasProviderStructure ? traits?.posthog : traits
+
+        // Handle RudderStack identification independently
+        if (_rudderstack) {
+            if (_rudderstack.has_initialized) {
+                _rudderstack.identifyEvent(stored_user_id, rudderstackTraits)
+            } else {
+                if (!_pending_identify_calls.some(call => call.userId === stored_user_id)) {
+                    _pending_identify_calls.push({ userId: stored_user_id, traits: rudderstackTraits })
+                }
             }
+        }
+
+        // Handle PostHog identification independently
+        if (_posthog?.has_initialized) {
+            _posthog.identifyEvent(stored_user_id, posthogTraits)
         }
     }
 
     const reset = () => {
-        _rudderstack?.reset()
+        // Reset each provider independently
+        if (_rudderstack?.has_initialized) {
+            _rudderstack.reset()
+        }
+        if (_posthog?.has_initialized) {
+            _posthog.reset()
+        }
     }
 
     const isV2Payload = (payload: any): payload is TV2EventPayload => {
@@ -386,9 +447,10 @@ export function createAnalyticsInstance(_options?: Options) {
      * Features:
      * - Automatically enriches events with core attributes
      * - Supports both V1 and V2 event payload formats
-     * - Caches events when offline or provider not initialized
+     * - RudderStack: Caches events when offline or not initialized
+     * - PostHog: Sends immediately if initialized (has built-in caching)
      * - Respects feature flag configurations
-     * - Sends to RudderStack
+     * - Each provider works independently - one failing won't affect the other
      *
      * @template T - The event name type from TAllEvents
      * @param {T} event - The event name to track
@@ -428,31 +490,41 @@ export function createAnalyticsInstance(_options?: Options) {
             }
         }
 
-        const hasInitializedProvider = _rudderstack?.has_initialized
+        const shouldTrack = !(event in tracking_config) || tracking_config[event as string]
+        if (!shouldTrack) return
 
-        if (!navigator.onLine || !hasInitializedProvider) {
-            if (!hasInitializedProvider) {
+        // Handle RudderStack independently
+        const hasRudderstackInitialized = _rudderstack?.has_initialized
+        if (!navigator.onLine || !hasRudderstackInitialized) {
+            if (!hasRudderstackInitialized) {
                 cacheEventToCookie(event as string, final_payload)
             } else {
                 offline_event_cache.push({ event, payload: final_payload })
             }
-            return
+        } else {
+            // Send cached events to RudderStack
+            if (offline_event_cache.length > 0) {
+                offline_event_cache.forEach(cache => {
+                    const cleaned_cache_payload = cleanObject(cache.payload)
+                    _rudderstack?.track(cache.event, cleaned_cache_payload)
+                })
+                offline_event_cache = []
+            }
+
+            // Send current event to RudderStack
+            const cleaned_payload = cleanObject(final_payload)
+            _rudderstack?.track(event, cleaned_payload)
         }
 
-        if (offline_event_cache.length > 0) {
-            offline_event_cache.forEach(cache => {
-                _rudderstack?.track(cache.event, cache.payload)
-            })
-            offline_event_cache = []
-        }
-
-        const shouldTrack = !(event in tracking_config) || tracking_config[event as string]
-        if (shouldTrack) {
-            _rudderstack?.track(event, final_payload)
+        // Handle PostHog independently - send immediately if initialized
+        if (_posthog?.has_initialized) {
+            const flattened_payload = flattenObject(final_payload)
+            const cleaned_posthog_payload = cleanObject(flattened_payload)
+            _posthog.capture(event as string, cleaned_posthog_payload)
         }
     }
 
-    const getInstances = () => ({ ab: _growthbook, tracking: _rudderstack })
+    const getInstances = () => ({ ab: _growthbook, tracking: _rudderstack, posthog: _posthog })
 
     const AnalyticsInstance = {
         initialise,

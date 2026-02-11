@@ -110,9 +110,9 @@ export class RudderStack {
      * Identify a user with RudderStack
      * Only identifies if user hasn't been identified yet
      * @param user_id - The user ID to identify
-     * @param payload - Additional user traits (e.g., language)
+     * @param payload - Optional user traits (e.g., language, custom properties)
      */
-    identifyEvent = (user_id: string, payload: { language: string }): void => {
+    identifyEvent = (user_id: string, payload?: Record<string, any>): void => {
         if (!this.has_initialized) {
             console.warn('RudderStack: Cannot identify - not initialized')
             return
@@ -121,7 +121,7 @@ export class RudderStack {
         const currentUserId = this.getUserId()
         if (!currentUserId) {
             try {
-                this.analytics.identify(user_id, payload)
+                this.analytics.identify(user_id, payload || {})
                 this.has_identified = true
             } catch (error) {
                 console.error('RudderStack: Failed to identify user', error)
@@ -177,7 +177,7 @@ export class RudderStack {
 
     /**
      * Track a custom event with payload
-     * Filters out undefined values before sending
+     * Payload is pre-cleaned by analytics.ts using cleanObject before being passed here
      * @param event - The event name
      * @param payload - The event payload with core attributes
      */
@@ -185,14 +185,9 @@ export class RudderStack {
         if (!this.has_initialized) return
 
         try {
-            // Remove undefined values from payload
-            const clean_payload = Object.fromEntries(
-                Object.entries(payload).filter(([_, value]) => value !== undefined)
-            )
-
             // Type assertion needed to match RudderStack's ApiObject type
             // eslint-disable-next-line @typescript-eslint/no-explicit-any
-            this.analytics.track(event as string, clean_payload as any)
+            this.analytics.track(event as string, payload as any)
         } catch (err) {
             console.warn('RudderStack: Failed to track event', err)
         }

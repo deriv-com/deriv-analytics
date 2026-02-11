@@ -4,7 +4,10 @@
     "description": "Comprehensive analytics package for Deriv applications. Provides unified event tracking, A/B testing, and user analytics through RudderStack, PostHog and GrowthBook integrations with built-in caching and offline support.",
     "keywords": [
         "rudderstack",
-        "growthbook"
+        "growthbook",
+        "posthog",
+        "analytics",
+        "event-tracking"
     ],
     "private": false,
     "publishConfig": {
@@ -22,19 +25,24 @@
             "require": "./dist/index.js"
         },
         "./growthbook": {
-            "types": "./dist/providers/growthbook.d.ts",
-            "import": "./dist/providers/growthbook.mjs",
-            "require": "./dist/providers/growthbook.js"
+            "types": "./dist/providers/growthbook/index.d.ts",
+            "import": "./dist/providers/growthbook/index.mjs",
+            "require": "./dist/providers/growthbook/index.js"
         },
         "./rudderstack": {
-            "types": "./dist/providers/rudderstack.d.ts",
-            "import": "./dist/providers/rudderstack.mjs",
-            "require": "./dist/providers/rudderstack.js"
+            "types": "./dist/providers/rudderstack/index.d.ts",
+            "import": "./dist/providers/rudderstack/index.mjs",
+            "require": "./dist/providers/rudderstack/index.js"
+        },
+        "./posthog": {
+            "types": "./dist/providers/posthog/index.d.ts",
+            "import": "./dist/providers/posthog/index.mjs",
+            "require": "./dist/providers/posthog/index.js"
         },
         "./cache": {
-            "types": "./dist/utils/analytics-cache.d.ts",
-            "import": "./dist/utils/analytics-cache.mjs",
-            "require": "./dist/utils/analytics-cache.js"
+            "types": "./dist/utils/analytics-cache/index.d.ts",
+            "import": "./dist/utils/analytics-cache/index.mjs",
+            "require": "./dist/utils/analytics-cache/index.js"
         }
     },
     "scripts": {
@@ -74,7 +82,8 @@
     },
     "dependencies": {
         "@rudderstack/analytics-js": "^3.14.0",
-        "js-cookie": "^3.0.5"
+        "js-cookie": "^3.0.5",
+        "posthog-js": "^1.204.2"
     },
     "optionalDependencies": {
         "@growthbook/growthbook": "^1.4.1"

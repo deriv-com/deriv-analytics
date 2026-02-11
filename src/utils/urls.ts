@@ -1,6 +1,8 @@
 export const cloudflareTrace = 'https://deriv.com/cdn-cgi/trace'
 export const growthbookApi = 'https://cdn.growthbook.io'
 export const rudderstackDataplane = 'https://deriv-dataplane.rudderstack.com'
+export const posthogApiHost = 'https://ph.deriv.com'
+export const posthogUiHost = 'https://us.posthog.com'
 
 export const allowedDomains = ['deriv.com', 'deriv.be', 'deriv.me', 'deriv.team', 'deriv.ae'] as const
 
