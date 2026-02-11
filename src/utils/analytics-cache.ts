@@ -48,6 +48,7 @@ class AnalyticsCacheManager {
     private interval: NodeJS.Timeout | null = null
     private responses: ResponseData[] = []
     private isTrackingResponses = false
+    private delegatedSelectors: Set<string> = new Set()
 
     /**
      * FNV-1a hash algorithm for creating consistent hashes
@@ -363,29 +364,51 @@ class AnalyticsCacheManager {
     addEventHandler(items: EventListenerConfig[]): this {
         if (typeof window === 'undefined') return this
 
-        this.interval = setInterval(() => {
-            let allListenersApplied = true
+        items.forEach(({ element, event = { name: '', properties: {} }, cache = false, callback = null }) => {
+            // If a selector string is provided, use event delegation on document
+            if (typeof element === 'string') {
+                const selector = element
 
-            items.forEach(({ element, event = { name: '', properties: {} }, cache = false, callback = null }) => {
-                const elem = element instanceof Element ? element : document.querySelectorAll(element as string)
-                const elements = elem instanceof NodeList ? Array.from(elem) : [elem]
+                if (!this.delegatedSelectors.has(selector)) {
+                    const delegatedHandler = (e: Event) => {
+                        const target = e.target as Element | null
+                        if (!target) return
 
-                if (!elements.length) {
-                    allListenersApplied = false
+                        const matched = target.closest(selector)
+                        if (matched && !(matched as any).dataset?.clickEventTracking) {
+                            let evt: any = {
+                                name: event.name,
+                                properties: event.properties,
+                                cache,
+                            }
+
+                            if (typeof callback === 'function') {
+                                const callbackResult = callback(e)
+                                evt = {
+                                    ...callbackResult,
+                                    cache: callbackResult.cache ?? cache,
+                                }
+                            }
+
+                            ;(matched as any).dataset.clickEventTracking = 'true'
+                            this.track(evt, evt.cache ?? false)
+                        }
+                    }
+
+                    document.addEventListener('click', delegatedHandler)
+                    this.delegatedSelectors.add(selector)
                 }
+            } else {
+                // Element or NodeList: attach directly to existing elements
+                const elements = element instanceof NodeList ? Array.from(element) : [element]
 
                 elements.forEach(el => {
-                    if (!(el as any).dataset?.clickEventTracking) {
-                        this.listen(el, event, cache, callback)
-                        allListenersApplied = false
+                    if (el && !(el as any).dataset?.clickEventTracking) {
+                        this.listen(el as Element, event, cache, callback)
                     }
                 })
-            })
-
-            if (allListenersApplied) {
-                if (this.interval) clearInterval(this.interval)
             }
-        }, 1)
+        })
 
         return this
     }
