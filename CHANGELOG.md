@@ -1,3 +1,10 @@
+## [1.38.3](https://github.com/deriv-com/deriv-analytics/compare/v1.38.2...v1.38.3) (2026-02-11)
+
+### Bug Fixes
+
+- prevent semantic-release branch conflict issue ([f26f897](https://github.com/deriv-com/deriv-analytics/commit/f26f897b71d80f928d38c49a0c4adbbcabcbebb0))
+- security issue ([4f85d85](https://github.com/deriv-com/deriv-analytics/commit/4f85d85f2e62346ea9c9e7cd68cd547dbe47f97e))
+
 # [1.38.0](https://github.com/deriv-com/deriv-analytics/compare/v1.37.0...v1.38.0) (2026-02-11)
 
 ### Bug Fixes
