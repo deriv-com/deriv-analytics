@@ -3,6 +3,10 @@ on:
     push:
         branches: [master, beta]
 
+concurrency:
+    group: release-${{ github.ref }}
+    cancel-in-progress: false
+
 jobs:
     release:
         name: Release
@@ -17,6 +21,7 @@ jobs:
               uses: actions/checkout@b4ffde65f46336ab88eb53be808477a3936bae11
               with:
                   fetch-depth: 0
+                  token: ${{ secrets.GITHUB_TOKEN }}
             - name: Setup Node.js
               uses: actions/setup-node@b39b52d1213e96004bfcb1c61a8a6fa8ab84f3e8
               with:
@@ -33,6 +38,14 @@ jobs:
               run: npm run prepare
             - name: Run tests and generate coverage report
               run: npm run test
+            - name: Configure Git
+              run: |
+                  git config user.name "github-actions[bot]"
+                  git config user.email "github-actions[bot]@users.noreply.github.com"
+            - name: Sync with remote before release
+              run: |
+                  git fetch origin
+                  git pull origin ${{ github.ref_name }} --rebase
             - name: Release
               if: success()
               env:
