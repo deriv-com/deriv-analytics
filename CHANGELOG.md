@@ -1,3 +1,9 @@
+# [1.38.0](https://github.com/deriv-com/deriv-analytics/compare/v1.37.0...v1.38.0) (2026-02-11)
+
+### Features
+
+- add configurable PostHog api_host and enhance security ([8d58821](https://github.com/deriv-com/deriv-analytics/commit/8d58821a6adb84c54f04a4fb9b2c202d9f3e1deb))
+
 # [1.37.0](https://github.com/deriv-com/deriv-analytics/compare/v1.36.0...v1.37.0) (2026-02-11)
 
 ### Bug Fixes
