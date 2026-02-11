@@ -50,13 +50,7 @@ jobs:
                   echo "Only organization members and repository collaborators can trigger Claude actions."
                   exit 1
 
-            # Checkout PR code for review
-            # SECURITY NOTE: This workflow uses pull_request_target which runs with elevated privileges.
-            # Checking out PR code is safe here because:
-            # 1. User access is validated BEFORE checkout (only org members/collaborators)
-            # 2. No code from the PR is executed directly
-            # 3. Only trusted, pinned actions (claude-code-action) process the code
-            # 4. Permissions are restricted (read-only for contents)
+            # Ensure we have a real git repo at the PR HEAD (works for forks)
             - name: Checkout PR head
               uses: actions/checkout@v4
               with:
@@ -64,7 +58,6 @@ jobs:
                   ref: ${{ github.event.pull_request.head.ref }}
                   fetch-depth: 20
                   token: ${{ secrets.GITHUB_TOKEN }}
-                  persist-credentials: false # Don't persist credentials in checked out code
 
             # Sanity check (helps diagnose if anything goes wrong)
             - name: Verify git workspace
