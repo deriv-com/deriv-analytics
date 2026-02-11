@@ -6,6 +6,10 @@ on:
     push:
         branches:
             - master
+
+permissions:
+    contents: read
+
 jobs:
     build_and_publish:
         name: Install Dependencies and Test
