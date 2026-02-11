@@ -1,4 +1,5 @@
 name: Deriv Analytics Test Workflow
+
 on:
   pull_request:
     branches:
@@ -6,20 +7,50 @@ on:
   push:
     branches:
       - master
+
+# Add concurrency to cancel in-progress runs for the same PR
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
 jobs:
-  build_and_publish:
+  test:
     name: Install Dependencies and Test
     runs-on: ubuntu-latest
+    timeout-minutes: 10
+
+    strategy:
+      matrix:
+        node-version: ['20.x', '22.x', '24.x']
+
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
-      - name: Setup Node
-        uses: ./.github/actions/setup_node
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+
+      - name: Setup Node.js ${{ matrix.node-version }}
+        uses: actions/setup-node@39370e3970a6d050c480ffad4ff0ed4d3fdee5af # v4.1.0
+        with:
+          node-version: ${{ matrix.node-version }}
+          cache: 'npm'
+
       - name: Install dependencies
-        uses: ./.github/actions/npm_install_from_cache
-      - name: Invalidate NPM Cache
-        if: github.event_name == 'push' && github.ref == 'refs/heads/master'
-        uses: "./.github/actions/invalidate_master_cache"
-      - name: Test
-        run: npm run prepublishOnly
-        shell: bash
+        run: npm clean-install --prefer-offline --no-audit
+
+      - name: Run linter
+        run: npx prettier --check "src/**/*.{ts,js}"
+        continue-on-error: true
+
+      - name: Run tests
+        run: npm test
+
+      - name: Build package
+        run: npm run build
+
+      - name: Check bundle size
+        run: |
+          echo "Bundle sizes:"
+          ls -lh dist/
+          du -sh dist/

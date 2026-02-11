@@ -1,9 +1,22 @@
-import { Growthbook, GrowthbookConfigs } from './growthbook'
-import { RudderStack } from './rudderstack'
-import { PostHogAnalytics, PostHogConfig } from './posthog'
-import Cookies from 'js-cookie'
-import { TCoreAttributes, TGrowthbookAttributes, TGrowthbookOptions, TAllEvents, TV2EventPayload } from './types'
-import { CountryUtils } from '@deriv-com/utils'
+import { RudderStack } from './providers/rudderstack'
+import type { TCoreAttributes, TAllEvents, TV2EventPayload } from './types'
+import {
+    cacheEventToCookie,
+    cachePageViewToCookie,
+    getCachedEvents,
+    getCachedPageViews,
+    clearCachedEvents,
+    clearCachedPageViews,
+} from './utils/cookie'
+import { isUUID, getCountry, cleanObject, flattenObject } from './utils/helpers'
+
+// Optional Growthbook types - only import if using Growthbook
+import type { Growthbook, GrowthbookConfigs } from './providers/growthbook'
+import type { TGrowthbookAttributes, TGrowthbookOptions } from './providers/growthbookTypes'
+
+// Optional Posthog types - only import if using Posthog
+import type { Posthog } from './providers/posthog'
+import type { TPosthogOptions } from './providers/posthogTypes'
 
 declare global {
     interface Window {
@@ -11,272 +24,186 @@ declare global {
     }
 }
 
+/**
+ * Configuration options for initializing the analytics instance
+ */
 type Options = {
+    /** GrowthBook client API key for A/B testing and feature flags */
     growthbookKey?: string
+    /** GrowthBook decryption key for encrypted feature payloads */
     growthbookDecryptionKey?: string
+    /** RudderStack write key for event tracking */
     rudderstackKey?: string
-    posthogKey?: string
-    posthogHost?: string
-    posthogConfig?: PostHogConfig
+    /** Additional configuration options for GrowthBook */
     growthbookOptions?: TGrowthbookOptions
-    enableBotFiltering?: boolean
+    /** PostHog configuration options including API keys and settings */
+    posthogOptions?: TPosthogOptions
 }
 
-type CachedEvent = {
-    name: string
-    properties: Record<string, unknown>
-    timestamp: number
-}
-
-type CachedPageView = {
-    name: string
-    properties?: Record<string, unknown>
-    timestamp: number
-}
-
-const CACHE_COOKIE_EVENTS = 'cached_analytics_events'
-const CACHE_COOKIE_PAGES = 'cached_analytics_page_views'
-
-const isLikelyBot = (): boolean => {
-    if (typeof window === 'undefined' || typeof navigator === 'undefined') return false
-
-    const ua = navigator.userAgent?.toLowerCase()?.trim() || ''
-
-    const botPatterns = [
-        'bot',
-        'crawler',
-        'spider',
-        'scraper',
-        'headless',
-        'phantom',
-        'selenium',
-        'puppeteer',
-        'playwright',
-        'wget',
-        'curl',
-        'python-requests',
-        'python-urllib',
-        'java/',
-        'apache-http',
-        'node-fetch',
-        'axios',
-        'googlebot',
-        'bingbot',
-        'yandex',
-        'baiduspider',
-        'facebookexternalhit',
-        'twitterbot',
-        'linkedinbot',
-        'slackbot',
-        'telegrambot',
-        'whatsapp',
-        'discordbot',
-    ]
-
-    if (botPatterns.some(pattern => ua.includes(pattern))) return true
-    if ((navigator as any).webdriver === true) return true
-    if (!navigator.languages || navigator.languages.length === 0) return true
-    if (ua.includes('chrome') && !(window as any).chrome) return true
-
-    return false
-}
-
-export function createAnalyticsInstance(options?: Options) {
-    let _growthbook: Growthbook,
+/**
+ * Creates a unified analytics instance that integrates RudderStack and GrowthBook.
+ *
+ * This function provides a centralized interface for:
+ * - Event tracking across multiple analytics platforms
+ * - A/B testing and feature flag management via GrowthBook
+ * - Offline event caching with automatic replay
+ *
+ * @param {Options} _options - Optional initialization configuration
+ * @returns {Object} Analytics instance with methods for tracking, identification, and feature management
+ *
+ * @example
+ * ```typescript
+ * const analytics = createAnalyticsInstance();
+ *
+ * // Initialize with providers
+ * await analytics.initialise({
+ *   rudderstackKey: 'YOUR_RS_KEY',
+ *   growthbookKey: 'YOUR_GB_KEY',
+ *   growthbookDecryptionKey: 'YOUR_GB_DECRYPT_KEY'
+ * });
+ *
+ * // Set user attributes
+ * analytics.setAttributes({
+ *   user_id: 'user123',
+ *   country: 'US',
+ *   user_language: 'en'
+ * });
+ *
+ * // Track events
+ * analytics.trackEvent('button_clicked', { button_name: 'signup' });
+ *
+ * // Track page views
+ * analytics.pageView('/dashboard', 'Deriv App');
+ * ```
+ */
+export function createAnalyticsInstance(_options?: Options) {
+    let _growthbook: Growthbook | undefined,
         _rudderstack: RudderStack,
-        _posthog: PostHogAnalytics,
-        _enableBotFiltering = false,
+        _posthog: Posthog | undefined,
         core_data: Partial<TCoreAttributes> = {},
         tracking_config: { [key: string]: boolean } = {},
         offline_event_cache: Array<{ event: keyof TAllEvents; payload: TAllEvents[keyof TAllEvents] }> = [],
-        _pending_identify_calls: Array<string> = [],
+        _pending_identify_calls: Array<{ userId: string; traits?: Record<string, any> }> = [],
         _cookie_cache_processed = false
-
-    const getAllowedDomain = (): string => {
-        if (typeof window === 'undefined') return '.deriv.com'
-        const allowedDomains = ['deriv.com', 'deriv.team', 'deriv.ae']
-        const hostname = window.location.hostname
-
-        if (hostname === 'localhost') return ''
-
-        const matched = allowedDomains.find(d => hostname.includes(d))
-        return matched ? `.${matched}` : `.${allowedDomains[0]}`
-    }
 
     const processCookieCache = () => {
         if (_cookie_cache_processed) return
-        if (!_rudderstack?.has_initialized && !_posthog?.has_initialized) return
+        if (!_rudderstack?.has_initialized) return
 
         _cookie_cache_processed = true
-        const domain = getAllowedDomain()
-        const cookieOptions = domain ? { domain } : {}
 
         try {
-            const storedEventsString = Cookies.get(CACHE_COOKIE_EVENTS)
-            if (storedEventsString) {
-                const storedEvents: CachedEvent[] = JSON.parse(storedEventsString)
-                if (Array.isArray(storedEvents) && storedEvents.length > 0) {
-                    storedEvents.forEach(event => {
-                        _rudderstack?.track(event.name as keyof TAllEvents, event.properties as any)
-                        _posthog?.track(event.name as keyof TAllEvents, event.properties as any)
-                    })
-                    Cookies.remove(CACHE_COOKIE_EVENTS, cookieOptions)
-                }
+            const storedEvents = getCachedEvents()
+            if (storedEvents.length > 0) {
+                storedEvents.forEach(event => {
+                    _rudderstack?.track(event.name as keyof TAllEvents, event.properties as any)
+                })
+                clearCachedEvents()
             }
 
-            const storedPagesString = Cookies.get(CACHE_COOKIE_PAGES)
-            if (storedPagesString) {
-                const storedPages: CachedPageView[] = JSON.parse(storedPagesString)
-                if (Array.isArray(storedPages) && storedPages.length > 0) {
-                    storedPages.forEach(page => {
-                        _rudderstack?.pageView(page.name, 'Deriv App', getId(), page.properties)
-                        _posthog?.pageView(page.name, 'Deriv App', getId(), page.properties)
-                    })
-                    Cookies.remove(CACHE_COOKIE_PAGES, cookieOptions)
-                }
+            const storedPages = getCachedPageViews()
+            if (storedPages.length > 0) {
+                storedPages.forEach(page => {
+                    _rudderstack?.pageView(page.name, 'Deriv App', getId(), page.properties)
+                })
+                clearCachedPageViews()
             }
         } catch (err) {
             console.warn('Analytics: Failed to process cookie cache', err)
         }
     }
 
-    const cacheEventToCookie = (eventName: string, properties: Record<string, unknown>) => {
-        try {
-            const domain = getAllowedDomain()
-            const existingCache = Cookies.get(CACHE_COOKIE_EVENTS)
-            const events: CachedEvent[] = existingCache ? JSON.parse(existingCache) : []
-            events.push({ name: eventName, properties, timestamp: Date.now() })
-            const cookieOptions: Cookies.CookieAttributes = { expires: 1 }
-            if (domain) cookieOptions.domain = domain
-            Cookies.set(CACHE_COOKIE_EVENTS, JSON.stringify(events), cookieOptions)
-        } catch (err) {
-            console.warn('Analytics: Failed to cache event', err)
-        }
-    }
-
-    const cachePageViewToCookie = (pageName: string, properties?: Record<string, unknown>) => {
-        try {
-            const domain = getAllowedDomain()
-            const existingCache = Cookies.get(CACHE_COOKIE_PAGES)
-            const pages: CachedPageView[] = existingCache ? JSON.parse(existingCache) : []
-            pages.push({ name: pageName, properties, timestamp: Date.now() })
-            const cookieOptions: Cookies.CookieAttributes = { expires: 1 }
-            if (domain) cookieOptions.domain = domain
-            Cookies.set(CACHE_COOKIE_PAGES, JSON.stringify(pages), cookieOptions)
-        } catch (err) {
-            console.warn('Analytics: Failed to cache page view', err)
-        }
-    }
-
-    const getClientCountry = async () => {
-        const countryFromCloudflare = await CountryUtils.getCountry()
-        const countryFromCookie = Cookies.get('clients_country')
-        const websiteStatus = Cookies.get('website_status')
-        let countryFromWebsiteStatus = ''
-
-        if (websiteStatus) {
-            try {
-                countryFromWebsiteStatus = JSON.parse(websiteStatus)?.clients_country || ''
-            } catch (err) {
-                console.warn('Analytics: Failed to parse website_status cookie', err)
-            }
-        }
-
-        return countryFromCookie || countryFromWebsiteStatus || countryFromCloudflare
-    }
-
     const onSdkLoaded = () => {
         processCookieCache()
 
-        _pending_identify_calls.forEach(userId => {
+        _pending_identify_calls.forEach(({ userId, traits }) => {
             if (userId) {
-                _rudderstack?.identifyEvent(userId, { language: core_data?.user_language || 'en' })
-                _posthog?.identifyEvent(userId, { language: core_data?.user_language || 'en' })
+                _rudderstack?.identifyEvent(userId, traits)
             }
         })
         _pending_identify_calls = []
     }
 
+    /**
+     * Initializes the analytics instance with specified provider configurations.
+     * This method should be called before tracking any events.
+     *
+     * Features:
+     * - Lazy-loads providers (GrowthBook, PostHog) only when configured
+     * - Automatically fetches user's country for GrowthBook targeting
+     * - Processes any cached events from previous sessions
+     * - Sets up event tracking callback for GrowthBook experiments
+     *
+     * @param {Options} options - Configuration options for analytics providers
+     * @returns {Promise<void>} Resolves when initialization is complete
+     *
+     * @example
+     * ```typescript
+     * await analytics.initialise({
+     *   rudderstackKey: 'YOUR_RS_KEY',
+     *   growthbookKey: 'YOUR_GB_KEY',
+     *   growthbookDecryptionKey: 'YOUR_GB_DECRYPT_KEY',
+     *   posthogOptions: {
+     *     apiKey: 'YOUR_POSTHOG_API_KEY',
+     *     config: {
+     *       session_recording: {
+     *         recordCrossOriginIframes: true,
+     *         minimumDurationMilliseconds: 30000
+     *       }
+     *     }
+     *   }
+     * });
+     * ```
+     */
     const initialise = async ({
         growthbookKey,
         growthbookDecryptionKey,
         rudderstackKey,
-        posthogKey,
-        posthogHost,
-        posthogConfig,
         growthbookOptions,
-        enableBotFiltering = false,
+        posthogOptions,
     }: Options) => {
         try {
-            _enableBotFiltering = enableBotFiltering
-            const country = growthbookOptions?.attributes?.country || (await getClientCountry())
+            // Only fetch country if GrowthBook is enabled and country not provided
+            const country = growthbookOptions?.attributes?.country || (growthbookKey ? await getCountry() : undefined)
 
             if (rudderstackKey) {
                 _rudderstack = RudderStack.getRudderStackInstance(rudderstackKey, onSdkLoaded)
             }
 
-            if (posthogKey) {
-                _posthog = PostHogAnalytics.getPostHogInstance(
-                    posthogKey,
-                    posthogHost || 'https://ph.deriv.com',
-                    onSdkLoaded,
-                    posthogConfig
-                )
-            }
-
             if (growthbookOptions?.attributes && Object.keys(growthbookOptions.attributes).length > 0) {
-                const anonymousId = _rudderstack?.getAnonymousId() || _posthog?.getAnonymousId()
+                const attrs = growthbookOptions.attributes
+                const anonymousId = _rudderstack?.getAnonymousId()
+
                 core_data = {
                     ...core_data,
                     country,
-                    ...(growthbookOptions?.attributes?.user_language && {
-                        user_language: growthbookOptions?.attributes.user_language,
-                    }),
-                    ...(growthbookOptions?.attributes?.account_type && {
-                        account_type: growthbookOptions?.attributes.account_type,
-                    }),
-                    ...(growthbookOptions?.attributes?.app_id && { app_id: growthbookOptions?.attributes.app_id }),
-                    ...(growthbookOptions?.attributes?.residence_country && {
-                        residence_country: growthbookOptions?.attributes?.residence_country,
-                    }),
-                    ...(growthbookOptions?.attributes?.device_type && {
-                        device_type: growthbookOptions?.attributes.device_type,
-                    }),
-                    ...(growthbookOptions?.attributes?.url && { url: growthbookOptions?.attributes.url }),
-                    ...(growthbookOptions?.attributes && { loggedIn: !!growthbookOptions?.attributes?.loggedIn }),
-                    ...(growthbookOptions?.attributes?.email_hash && {
-                        email_hash: growthbookOptions?.attributes.email_hash,
-                    }),
-                    ...(growthbookOptions?.attributes?.network_type && {
-                        network_type: growthbookOptions?.attributes.network_type,
-                    }),
-                    ...(growthbookOptions?.attributes?.network_rtt && {
-                        network_rtt: growthbookOptions?.attributes.network_rtt,
-                    }),
-                    ...(growthbookOptions?.attributes?.network_downlink && {
-                        network_downlink: growthbookOptions?.attributes.network_downlink,
-                    }),
-                    ...(growthbookOptions?.attributes?.user_id &&
-                        !isUUID(growthbookOptions?.attributes?.user_id) && {
-                            user_id: growthbookOptions?.attributes?.user_id,
-                        }),
+                    ...(attrs.user_language && { user_language: attrs.user_language }),
+                    ...(attrs.account_type && { account_type: attrs.account_type }),
+                    ...(attrs.app_id && { app_id: attrs.app_id }),
+                    ...(attrs.residence_country && { residence_country: attrs.residence_country }),
+                    ...(attrs.device_type && { device_type: attrs.device_type }),
+                    ...(attrs.url && { url: attrs.url }),
+                    ...(attrs.email_hash && { email_hash: attrs.email_hash }),
+                    ...(attrs.network_type && { network_type: attrs.network_type }),
+                    ...(attrs.network_rtt && { network_rtt: attrs.network_rtt }),
+                    ...(attrs.network_downlink && { network_downlink: attrs.network_downlink }),
+                    ...(attrs.account_currency && { account_currency: attrs.account_currency }),
+                    ...(attrs.account_mode && { account_mode: attrs.account_mode }),
+                    loggedIn: !!attrs.loggedIn,
+                    ...(attrs.user_id && !isUUID(attrs.user_id) && { user_id: attrs.user_id }),
                     ...(anonymousId && { anonymous_id: anonymousId }),
-                    ...(growthbookOptions?.attributes?.account_currency && {
-                        account_currency: growthbookOptions?.attributes.account_currency,
-                    }),
-                    ...(growthbookOptions?.attributes?.account_mode && {
-                        account_mode: growthbookOptions?.attributes.account_mode,
-                    }),
                 }
             }
 
             growthbookOptions ??= {}
             growthbookOptions.attributes ??= {}
-            const anonId = _rudderstack?.getAnonymousId() || _posthog?.getAnonymousId()
+            const anonId = _rudderstack?.getAnonymousId()
             growthbookOptions.attributes.id ??= anonId
             growthbookOptions.attributes.country ??= country
 
             if (growthbookKey) {
+                // Dynamically import Growthbook only when needed
+                const { Growthbook } = await import('./providers/growthbook')
                 _growthbook = Growthbook.getGrowthBookInstance(
                     growthbookKey,
                     growthbookDecryptionKey,
@@ -288,11 +215,40 @@ export function createAnalyticsInstance(options?: Options) {
                     else tracking_config = getFeatureValue('tracking-buttons-config', {}) as { [key: string]: boolean }
                 }, 1000)
             }
+
+            if (posthogOptions) {
+                // Dynamically import Posthog only when needed
+                const { Posthog } = await import('./providers/posthog')
+                _posthog = Posthog.getPosthogInstance(posthogOptions)
+            }
         } catch (err) {
             console.warn('Analytics: Failed to initialize', err)
         }
     }
 
+    /**
+     * Sets user and context attributes for analytics tracking and targeting.
+     * These attributes are automatically included in all subsequent events.
+     *
+     * Attributes are used for:
+     * - Event enrichment (added to all tracked events)
+     * - GrowthBook targeting (feature flags and A/B tests)
+     * - User segmentation across analytics platforms
+     *
+     * @param {TCoreAttributes} attributes - User and context attributes
+     *
+     * @example
+     * ```typescript
+     * analytics.setAttributes({
+     *   user_id: 'CR123456',
+     *   country: 'US',
+     *   user_language: 'en',
+     *   device_type: 'desktop',
+     *   account_type: 'real',
+     *   loggedIn: true
+     * });
+     * ```
+     */
     const setAttributes = ({
         country,
         user_language,
@@ -317,8 +273,6 @@ export function createAnalyticsInstance(options?: Options) {
         account_currency,
         account_mode,
     }: TCoreAttributes) => {
-        if (!_rudderstack && !_posthog) return
-
         const user_identity = user_id ?? getId()
 
         if (_growthbook) {
@@ -378,52 +332,143 @@ export function createAnalyticsInstance(options?: Options) {
     const setUrl = (href: string) => _growthbook?.setUrl(href)
 
     const getId = () => {
-        const userId = _rudderstack?.getUserId() || _posthog?.getUserId() || ''
+        const userId = _rudderstack?.getUserId() || ''
         return userId && !isUUID(userId) ? userId : ''
     }
 
-    const getAnonymousId = () => _rudderstack?.getAnonymousId() || _posthog?.getAnonymousId() || ''
+    const getAnonymousId = () => _rudderstack?.getAnonymousId() || ''
 
+    /**
+     * Tracks a page view event.
+     *
+     * Features:
+     * - Automatically includes user ID if available
+     * - Caches page views when offline or provider not initialized
+     *
+     * @param {string} current_page - The current page URL or path
+     * @param {string} [platform='Deriv App'] - The platform name
+     * @param {Record<string, unknown>} [properties] - Additional page properties
+     *
+     * @example
+     * ```typescript
+     * analytics.pageView('/dashboard');
+     * analytics.pageView('/trade', 'Deriv Trader', { section: 'multipliers' });
+     * ```
+     */
     const pageView = (current_page: string, platform = 'Deriv App', properties?: Record<string, unknown>) => {
-        if (_enableBotFiltering && isLikelyBot()) return
+        const userId = getId()
 
-        if (!_rudderstack && !_posthog) {
-            cachePageViewToCookie(current_page, { platform, ...properties })
-            return
+        // Handle RudderStack pageView independently
+        if (_rudderstack) {
+            if (_rudderstack.has_initialized) {
+                _rudderstack.pageView(current_page, platform, userId, properties)
+            } else {
+                cachePageViewToCookie(current_page, { platform, ...properties })
+            }
         }
 
-        const userId = getId()
-        _rudderstack?.pageView(current_page, platform, userId, properties)
-        _posthog?.pageView(current_page, platform, userId, properties)
+        // PostHog handles page views automatically via autocapture
+        // No need to manually send page views to PostHog
     }
 
-    const identifyEvent = (user_id?: string) => {
+    /**
+     * Identifies a user across analytics platforms.
+     * This method should be called after user login or when user identity is known.
+     *
+     * Features:
+     * - Queues identify calls if provider not yet initialized
+     * - Allows custom traits for each provider or shared traits for both
+     * - Identifies user in PostHog if configured
+     *
+     * @param {string} [user_id] - The user ID to identify. If not provided, uses stored user ID
+     * @param {Record<string, any>} [traits] - Optional traits to send to both providers, or provider-specific traits
+     *
+     * @example
+     * ```typescript
+     * // Simple identify
+     * analytics.identifyEvent('CR123456');
+     *
+     * // Identify with same traits for both providers
+     * analytics.identifyEvent('CR123456', {
+     *   language: 'en',
+     *   country_of_residence: 'US'
+     * });
+     *
+     * // Identify with provider-specific traits
+     * analytics.identifyEvent('CR123456', {
+     *   rudderstack: { language: 'en', custom_field: 'value' },
+     *   posthog: { language: 'en', country_of_residence: 'US' }
+     * });
+     * ```
+     */
+    const identifyEvent = (user_id?: string, traits?: Record<string, any>) => {
         const stored_user_id = user_id || getId()
         if (!stored_user_id) return
 
-        if (_rudderstack?.has_initialized || _posthog?.has_initialized) {
-            _rudderstack?.identifyEvent(stored_user_id, { language: core_data?.user_language || 'en' })
-            _posthog?.identifyEvent(stored_user_id, { language: core_data?.user_language || 'en' })
-            return
+        // Check if traits has provider-specific structure
+        const hasProviderStructure = traits?.rudderstack !== undefined || traits?.posthog !== undefined
+        const rudderstackTraits = hasProviderStructure ? traits?.rudderstack : traits
+        const posthogTraits = hasProviderStructure ? traits?.posthog : traits
+
+        // Handle RudderStack identification independently
+        if (_rudderstack) {
+            if (_rudderstack.has_initialized) {
+                _rudderstack.identifyEvent(stored_user_id, rudderstackTraits)
+            } else {
+                if (!_pending_identify_calls.some(call => call.userId === stored_user_id)) {
+                    _pending_identify_calls.push({ userId: stored_user_id, traits: rudderstackTraits })
+                }
+            }
         }
 
-        if (!_pending_identify_calls.includes(stored_user_id)) {
-            _pending_identify_calls.push(stored_user_id)
+        // Handle PostHog identification independently
+        if (_posthog?.has_initialized) {
+            _posthog.identifyEvent(stored_user_id, posthogTraits)
         }
     }
 
     const reset = () => {
-        _rudderstack?.reset()
-        _posthog?.reset()
+        // Reset each provider independently
+        if (_rudderstack?.has_initialized) {
+            _rudderstack.reset()
+        }
+        if (_posthog?.has_initialized) {
+            _posthog.reset()
+        }
     }
 
     const isV2Payload = (payload: any): payload is TV2EventPayload => {
         return 'event_metadata' in payload || 'cta_information' in payload || 'error' in payload
     }
 
+    /**
+     * Tracks a custom event with associated data.
+     *
+     * Features:
+     * - Automatically enriches events with core attributes
+     * - Supports both V1 and V2 event payload formats
+     * - RudderStack: Caches events when offline or not initialized
+     * - PostHog: Sends immediately if initialized (has built-in caching)
+     * - Respects feature flag configurations
+     * - Each provider works independently - one failing won't affect the other
+     *
+     * @template T - The event name type from TAllEvents
+     * @param {T} event - The event name to track
+     * @param {TAllEvents[T]} analytics_data - The event data payload
+     *
+     * @example
+     * ```typescript
+     * // Simple event
+     * analytics.trackEvent('button_clicked', { button_name: 'signup' });
+     *
+     * // V2 event with metadata
+     * analytics.trackEvent('form_submitted', {
+     *   event_metadata: { form_name: 'registration' },
+     *   cta_information: { button_text: 'Create Account' }
+     * });
+     * ```
+     */
     const trackEvent = <T extends keyof TAllEvents>(event: T, analytics_data: TAllEvents[T]) => {
-        if (_enableBotFiltering && isLikelyBot()) return
-
         const userId = getId()
         let final_payload: any = {}
 
@@ -433,7 +478,7 @@ export function createAnalyticsInstance(options?: Options) {
                 ...v2_data,
                 event_metadata: {
                     ...core_data,
-                    ...(userId && { user_id: userId }),
+                    ...(userId && !core_data.user_id && { user_id: userId }),
                     ...v2_data.event_metadata,
                 },
             }
@@ -441,33 +486,41 @@ export function createAnalyticsInstance(options?: Options) {
             final_payload = {
                 ...core_data,
                 ...analytics_data,
-                ...(userId && { user_id: userId }),
+                ...(userId && !core_data.user_id && { user_id: userId }),
             }
         }
 
-        const hasInitializedProvider = _rudderstack?.has_initialized || _posthog?.has_initialized
+        const shouldTrack = !(event in tracking_config) || tracking_config[event as string]
+        if (!shouldTrack) return
 
-        if (!navigator.onLine || !hasInitializedProvider) {
-            if (!hasInitializedProvider) {
+        // Handle RudderStack independently
+        const hasRudderstackInitialized = _rudderstack?.has_initialized
+        if (!navigator.onLine || !hasRudderstackInitialized) {
+            if (!hasRudderstackInitialized) {
                 cacheEventToCookie(event as string, final_payload)
             } else {
                 offline_event_cache.push({ event, payload: final_payload })
             }
-            return
+        } else {
+            // Send cached events to RudderStack
+            if (offline_event_cache.length > 0) {
+                offline_event_cache.forEach(cache => {
+                    const cleaned_cache_payload = cleanObject(cache.payload)
+                    _rudderstack?.track(cache.event, cleaned_cache_payload)
+                })
+                offline_event_cache = []
+            }
+
+            // Send current event to RudderStack
+            const cleaned_payload = cleanObject(final_payload)
+            _rudderstack?.track(event, cleaned_payload)
         }
 
-        if (offline_event_cache.length > 0) {
-            offline_event_cache.forEach(cache => {
-                _rudderstack?.track(cache.event, cache.payload)
-                _posthog?.track(cache.event, cache.payload)
-            })
-            offline_event_cache = []
-        }
-
-        const shouldTrack = !(event in tracking_config) || tracking_config[event as string]
-        if (shouldTrack) {
-            _rudderstack?.track(event, final_payload)
-            _posthog?.track(event, final_payload)
+        // Handle PostHog independently - send immediately if initialized
+        if (_posthog?.has_initialized) {
+            const flattened_payload = flattenObject(final_payload)
+            const cleaned_posthog_payload = cleanObject(flattened_payload)
+            _posthog.capture(event as string, cleaned_posthog_payload)
         }
     }
 
@@ -498,8 +551,3 @@ export function createAnalyticsInstance(options?: Options) {
 }
 
 export const Analytics = createAnalyticsInstance()
-
-const isUUID = (str: string): boolean => {
-    const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
-    return uuidRegex.test(str)
-}

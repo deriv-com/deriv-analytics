@@ -1,35 +1,35 @@
-import { Context, GrowthBook, InitResponse } from '@growthbook/growthbook'
+import { GrowthBook, InitResponse } from '@growthbook/growthbook'
 import { RudderAnalytics } from '@rudderstack/analytics-js'
-import { TCoreAttributes, TGrowthbookAttributes, TGrowthbookOptions } from './types'
-
-export type GrowthbookConfigs = {
-    // feature flags for framework needs
-    'tracking-buttons-config': Record<string, boolean>
-} & {
-    // any feature flags from growthbook
-    [key: string]: Record<string, boolean> | string | boolean | []
-}
+import {
+    TGrowthbookAttributes,
+    TGrowthbookOptions,
+    GrowthbookConfigs,
+    TGrowthbookCoreAttributes,
+} from './growthbookTypes'
+import { growthbookApi } from '../utils/urls'
 
 export class Growthbook {
     analytics = new RudderAnalytics()
-    GrowthBook
+    GrowthBook: GrowthBook<GrowthbookConfigs>
     private static _instance: Growthbook
     isLoaded = false
     status: void | InitResponse = undefined
 
     // we have to pass settings due the specific framework implementation
     constructor(clientKey: string, decryptionKey: string, growthbookOptions: TGrowthbookOptions = {}) {
+        const isLocalhost = typeof window !== 'undefined' ? window.location.hostname.includes('localhost') : false
+
         this.GrowthBook = new GrowthBook<GrowthbookConfigs>({
-            apiHost: 'https://cdn.growthbook.io',
+            apiHost: growthbookApi,
             clientKey,
             decryptionKey,
             antiFlicker: false,
             navigateDelay: 0,
             antiFlickerTimeout: 3500,
             subscribeToChanges: true,
-            enableDevMode: window?.location.hostname.includes('localhost'),
+            enableDevMode: isLocalhost,
             trackingCallback: (experiment, result) => {
-                if (window.dataLayer) {
+                if (typeof window !== 'undefined' && window.dataLayer) {
                     window.dataLayer.push({
                         event: 'experiment_viewed',
                         event_category: 'experiment',
@@ -58,22 +58,31 @@ export class Growthbook {
             Growthbook._instance = new Growthbook(clientKey, decryptionKey ?? '', growthbookOptions)
             return Growthbook._instance
         }
+
+        // Warn if trying to reinitialize with different parameters
+        if (typeof window !== 'undefined' && console.warn) {
+            console.warn('GrowthBook instance already exists. Ignoring new initialization parameters.')
+        }
+
         return Growthbook._instance
     }
 
     reapplyExperiment(url?: string) {
-        const currentUrl = url ?? window.location.href
+        const currentUrl = url ?? (typeof window !== 'undefined' ? window.location.href : '')
         this.GrowthBook.setURL(currentUrl)
-        // console.log('Route changed, new URL:', currentUrl)
     }
 
     // Utility function to wait for isLoaded to become true
-    private waitForIsLoaded(): Promise<void> {
-        return new Promise(resolve => {
+    private waitForIsLoaded(timeout = 10000): Promise<void> {
+        return new Promise((resolve, reject) => {
+            const startTime = Date.now()
             const checkInterval = setInterval(() => {
                 if (this.isLoaded) {
                     clearInterval(checkInterval)
                     resolve()
+                } else if (Date.now() - startTime >= timeout) {
+                    clearInterval(checkInterval)
+                    reject(new Error('GrowthBook initialization timeout'))
                 }
             }, 100)
         })
@@ -100,9 +109,9 @@ export class Growthbook {
         anonymous_id,
         account_mode,
     }: TGrowthbookAttributes) => {
-        const CURRENT_ATTRIBUTES = this.GrowthBook.getAttributes()
+        const currentAttributes = this.GrowthBook.getAttributes()
         this.GrowthBook.setAttributes({
-            ...CURRENT_ATTRIBUTES,
+            ...currentAttributes,
             id,
             ...(user_id !== undefined && { user_id }),
             ...(anonymous_id !== undefined && { anonymous_id }),
@@ -140,11 +149,28 @@ export class Growthbook {
     isOn = (key: string) => this.GrowthBook.isOn(key)
 
     init = async () => {
-        const status = await this.GrowthBook.init({ timeout: 2000, streaming: true }).catch(err => {
-            // console.error(err)
+        const status = await this.GrowthBook.init({ timeout: 2000, streaming: true }).catch(() => {
+            // Silently handle initialization errors
         })
 
         this.status = status
         this.isLoaded = true
     }
+
+    // Destroy the GrowthBook instance and reset singleton
+    destroy = () => {
+        this.GrowthBook.destroy()
+        this.isLoaded = false
+        this.status = undefined
+    }
+
+    // Reset the singleton instance (useful for testing)
+    public static resetInstance = () => {
+        if (Growthbook._instance) {
+            Growthbook._instance.destroy()
+            Growthbook._instance = undefined as any
+        }
+    }
 }
+
+export type { GrowthbookConfigs, TGrowthbookAttributes, TGrowthbookOptions, TGrowthbookCoreAttributes }

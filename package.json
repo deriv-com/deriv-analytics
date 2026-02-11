@@ -1,70 +1,99 @@
 {
-  "name": "@deriv-com/analytics",
-  "version": "0.0.0-development",
-  "description": "The analytics package contains all the utility functions used for tracking user events and sending them to the respective platform such as Rudderstack.",
-  "keywords": [
-    "rudderstack",
-    "growthbook",
-    "react"
-  ],
-  "private": false,
-  "publishConfig": {
-    "access": "public"
-  },
-  "author": "Amir Ali, Addriene, Nikita,Aswathy",
-  "main": "lib/index.js",
-  "types": "lib/index.d.ts",
-  "scripts": {
-    "test": "./node_modules/.bin/jest",
-    "build": "tsc && npm run build:webpack",
-    "prepare": "npm run build && husky install",
-    "prepublishOnly": "npm test",
-    "build:webpack": "webpack"
-  },
-  "files": [
-    "lib/**/*",
-    "dist/**/*"
-  ],
-  "repository": {
-    "type": "git",
-    "url": "https://github.com/binary-com/deriv-analytics"
-  },
-  "homepage": "https://github.com/binary-com/deriv-analytics",
-  "devDependencies": {
-    "@deriv-com/utils": "^0.0.58",
-    "@semantic-release/changelog": "^6.0.3",
-    "@semantic-release/github": "^10.0.6",
-    "@semantic-release/npm": "^13.0.0",
-    "@semantic-release/release-notes-generator": "^14.0.0",
-    "@types/jest": "^29.5.3",
-    "@types/js-cookie": "^3.0.6",
-    "@types/node": "^20.4.1",
-    "@types/uuid": "^10.0.0",
-    "husky": "^8.0.3",
-    "jest": "^29.6.1",
-    "jest-environment-jsdom": "^29.6.1",
-    "lint-staged": "^15.0.1",
-    "prettier": "^3.0.3",
-    "semantic-release": "^25.0.0",
-    "ts-jest": "^29.1.1",
-    "ts-loader": "^9.5.1",
-    "typescript": "^4.9.5",
-    "webpack": "^5.91.0",
-    "webpack-cli": "^5.1.4"
-  },
-  "dependencies": {
-    "@growthbook/growthbook": "^1.1.0",
-    "@rudderstack/analytics-js": "^3.5.1",
-    "js-cookie": "^3.0.5",
-    "posthog-js": "^1.313.0",
-    "uuid": "^10.0.0"
-  },
-  "engines": {
-    "node": "18.x",
-    "npm": "9.x"
-  },
-  "license": "MIT",
-  "lint-staged": {
-    "*.{js,md,ts}": "prettier --write"
-  }
+    "name": "@deriv-com/analytics",
+    "version": "1.36.0",
+    "description": "Comprehensive analytics package for Deriv applications. Provides unified event tracking, A/B testing, and user analytics through RudderStack, PostHog and GrowthBook integrations with built-in caching and offline support.",
+    "keywords": [
+        "rudderstack",
+        "growthbook",
+        "posthog",
+        "analytics",
+        "event-tracking"
+    ],
+    "private": false,
+    "publishConfig": {
+        "access": "public"
+    },
+    "author": "Amir Ali, Addriene, Nikita,Aswathy",
+    "main": "./dist/index.js",
+    "module": "./dist/index.mjs",
+    "types": "./dist/index.d.ts",
+    "browser": "./dist/browser/analytics.bundle.global.js",
+    "exports": {
+        ".": {
+            "types": "./dist/index.d.ts",
+            "import": "./dist/index.mjs",
+            "require": "./dist/index.js"
+        },
+        "./growthbook": {
+            "types": "./dist/providers/growthbook/index.d.ts",
+            "import": "./dist/providers/growthbook/index.mjs",
+            "require": "./dist/providers/growthbook/index.js"
+        },
+        "./rudderstack": {
+            "types": "./dist/providers/rudderstack/index.d.ts",
+            "import": "./dist/providers/rudderstack/index.mjs",
+            "require": "./dist/providers/rudderstack/index.js"
+        },
+        "./posthog": {
+            "types": "./dist/providers/posthog/index.d.ts",
+            "import": "./dist/providers/posthog/index.mjs",
+            "require": "./dist/providers/posthog/index.js"
+        },
+        "./cache": {
+            "types": "./dist/utils/analytics-cache/index.d.ts",
+            "import": "./dist/utils/analytics-cache/index.mjs",
+            "require": "./dist/utils/analytics-cache/index.js"
+        }
+    },
+    "scripts": {
+        "test": "./node_modules/.bin/jest",
+        "build": "tsup",
+        "prepare": "npm run build && husky install",
+        "prepublishOnly": "npm test"
+    },
+    "files": [
+        "dist/**/*"
+    ],
+    "repository": {
+        "type": "git",
+        "url": "https://github.com/binary-com/deriv-analytics"
+    },
+    "homepage": "https://github.com/binary-com/deriv-analytics",
+    "devDependencies": {
+        "@semantic-release/changelog": "^6.0.3",
+        "@semantic-release/git": "^10.0.1",
+        "@semantic-release/github": "^12.0.2",
+        "@semantic-release/npm": "^13.1.3",
+        "@semantic-release/release-notes-generator": "^14.1.0",
+        "@types/jest": "^30.0.0",
+        "@types/js-cookie": "^3.0.6",
+        "@types/node": "^25.0.10",
+        "husky": "^9.1.7",
+        "jest": "^30.2.0",
+        "jest-environment-jsdom": "^30.2.0",
+        "jest-location-mock": "^2.0.0",
+        "lint-staged": "^16.2.7",
+        "prettier": "^3.8.1",
+        "semantic-release": "^25.0.2",
+        "ts-jest": "^29.4.6",
+        "tslib": "^2.8.1",
+        "tsup": "^8.5.1",
+        "typescript": "^5.9.3"
+    },
+    "dependencies": {
+        "@rudderstack/analytics-js": "^3.14.0",
+        "js-cookie": "^3.0.5",
+        "posthog-js": "^1.204.2"
+    },
+    "optionalDependencies": {
+        "@growthbook/growthbook": "^1.4.1"
+    },
+    "engines": {
+        "node": ">=24.13.0",
+        "npm": ">=11.7.0"
+    },
+    "license": "MIT",
+    "lint-staged": {
+        "*.{js,md,ts}": "prettier --write"
+    }
 }

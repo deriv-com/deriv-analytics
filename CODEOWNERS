@@ -1,8 +1,6 @@
-# This is a comment.
+# CODEOWNERS file for deriv-analytics
 # Each line is a file pattern followed by one or more owners.
 
-# These owners will be the default owners for everything in
-# the repo. Unless a later match takes precedence,
-# @shayan-deriv-deriv @habib-deriv and @prince-deriv will be requested for
-# review when someone opens a pull request.
-*  @shayan-deriv @habib-deriv @prince-deriv
+# These owners will be the default owners for everything in the repo.
+# They will be automatically requested for review when someone opens a pull request.
+* @Nuzhy-Deriv @niloofar-deriv
