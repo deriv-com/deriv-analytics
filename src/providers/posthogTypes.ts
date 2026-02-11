@@ -29,6 +29,11 @@ export type TPosthogOptions = {
      */
     apiKey: string
     /**
+     * Optional PostHog API host URL
+     * If not provided, uses the default from utils/urls
+     */
+    api_host?: string
+    /**
      * PostHog configuration options
      * Allows customization of PostHog behavior, session recording, etc.
      */
