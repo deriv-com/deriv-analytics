@@ -20,6 +20,10 @@ module.exports = {
                         release: 'minor',
                     },
                     {
+                        type: 'fix',
+                        release: 'patch',
+                    },
+                    {
                         type: 'build',
                         release: 'patch',
                     },
@@ -65,6 +69,13 @@ module.exports = {
             '@semantic-release/npm',
             {
                 npmPublish: true,
+            },
+        ],
+        [
+            '@semantic-release/git',
+            {
+                assets: ['package.json', 'package-lock.json', 'CHANGELOG.md'],
+                message: 'chore(release): ${nextRelease.version} [skip ci]\n\n${nextRelease.notes}',
             },
         ],
         '@semantic-release/github',
