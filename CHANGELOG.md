@@ -1,3 +1,10 @@
+## [1.38.1](https://github.com/deriv-com/deriv-analytics/compare/v1.38.0...v1.38.1) (2026-02-11)
+
+### Bug Fixes
+
+- release issue ([d32cfd6](https://github.com/deriv-com/deriv-analytics/commit/d32cfd6611385158112341428500167a7326733a))
+- release issue ([9638994](https://github.com/deriv-com/deriv-analytics/commit/96389941aa4dc9e56df02aa25e4cc67bea004738))
+
 # [1.38.0](https://github.com/deriv-com/deriv-analytics/compare/v1.37.0...v1.38.0) (2026-02-11)
 
 ### Features
