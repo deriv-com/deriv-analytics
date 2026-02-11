@@ -4,6 +4,22 @@
 
 - add maintenance branch pattern to .releaserc.json ([32def4e](https://github.com/deriv-com/deriv-analytics/commit/32def4e5937d5c6fadebf25656c791bc5d7620ac))
 - correct maintenance branch pattern for semantic-release ([8e3eeea](https://github.com/deriv-com/deriv-analytics/commit/8e3eeea12ca73ca6f6576e8376236c8e41650ad2))
+- release issue ([005449b](https://github.com/deriv-com/deriv-analytics/commit/005449bcc6025545f1044a05a01f03319f6716f0))
+- release issue ([1c3ba0c](https://github.com/deriv-com/deriv-analytics/commit/1c3ba0cca583d61b6c10eaaa0eeb9804a37564fc))
+- release issue ([361b92f](https://github.com/deriv-com/deriv-analytics/commit/361b92f68fca7bb8b95465af0e7ee808a0d0ef5b))
+- release issue ([d32cfd6](https://github.com/deriv-com/deriv-analytics/commit/d32cfd6611385158112341428500167a7326733a))
+- release issue ([9638994](https://github.com/deriv-com/deriv-analytics/commit/96389941aa4dc9e56df02aa25e4cc67bea004738))
+
+### Features
+
+- add configurable PostHog api_host and enhance security ([8d58821](https://github.com/deriv-com/deriv-analytics/commit/8d58821a6adb84c54f04a4fb9b2c202d9f3e1deb))
+
+# [1.38.0](https://github.com/deriv-com/deriv-analytics/compare/v1.37.0...v1.38.0) (2026-02-11)
+
+### Bug Fixes
+
+- add maintenance branch pattern to .releaserc.json ([32def4e](https://github.com/deriv-com/deriv-analytics/commit/32def4e5937d5c6fadebf25656c791bc5d7620ac))
+- correct maintenance branch pattern for semantic-release ([8e3eeea](https://github.com/deriv-com/deriv-analytics/commit/8e3eeea12ca73ca6f6576e8376236c8e41650ad2))
 - release issue ([1c3ba0c](https://github.com/deriv-com/deriv-analytics/commit/1c3ba0cca583d61b6c10eaaa0eeb9804a37564fc))
 - release issue ([361b92f](https://github.com/deriv-com/deriv-analytics/commit/361b92f68fca7bb8b95465af0e7ee808a0d0ef5b))
 - release issue ([d32cfd6](https://github.com/deriv-com/deriv-analytics/commit/d32cfd6611385158112341428500167a7326733a))
