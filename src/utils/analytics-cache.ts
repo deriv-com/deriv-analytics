@@ -302,9 +302,7 @@ class AnalyticsCacheManager {
             this.trackPageUnload()
         }
 
-        let pageViewInterval: NodeJS.Timeout | null = null
-
-        pageViewInterval = setInterval(() => {
+        this.interval = setInterval(() => {
             const Analytics = (window as any).Analytics
 
             if (
@@ -316,7 +314,7 @@ class AnalyticsCacheManager {
             }
 
             if (this.isPageViewSent()) {
-                if (pageViewInterval) clearInterval(pageViewInterval)
+                if (this.interval) clearInterval(this.interval)
             }
         }, 1000)
     }

@@ -446,13 +446,8 @@ describe('analytics-cache - AnalyticsCacheManager', () => {
         test('should clear the interval', () => {
             const mockClearInterval = jest.spyOn(global, 'clearInterval')
 
-            // Set up an interval first by calling addEventHandler
-            cacheTrackEvents.addEventHandler([
-                {
-                    element: '.test-element',
-                    event: { name: 'test_event', properties: {} },
-                },
-            ])
+            // Set up an interval first by calling pageView
+            cacheTrackEvents.pageView()
 
             cacheTrackEvents.clearInterval()
 
