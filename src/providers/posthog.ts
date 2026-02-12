@@ -99,8 +99,8 @@ export class Posthog {
 
         try {
             // Only alias if not already identified
-            const isIdentifiedFn = posthog._isIdentified
-            const isIdentified = typeof isIdentifiedFn === 'function' ? isIdentifiedFn() : this.has_identified
+            const isIdentified =
+                typeof posthog._isIdentified === 'function' ? posthog._isIdentified() : this.has_identified
 
             if (user_id && !isIdentified) {
                 const anonId = posthog.get_distinct_id()
