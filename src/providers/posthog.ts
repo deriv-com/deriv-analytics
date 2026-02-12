@@ -44,7 +44,7 @@ export class Posthog {
      * Initialize PostHog with configuration
      * Configures PostHog instance with provided options
      */
-    init = async (): Promise<void> => {
+    init = (): void => {
         try {
             const { apiKey, api_host, config = {} } = this.options
 
@@ -65,7 +65,9 @@ export class Posthog {
                 before_send: event => {
                     if (typeof window === 'undefined') return null
 
-                    const currentHost = window.location.host
+                    const currentHost = window.location.hostname
+                    if (currentHost === 'localhost' || currentHost === '127.0.0.1') return event
+
                     const isAllowed = allowedDomains.some(
                         domain => currentHost.endsWith(`.${domain}`) || currentHost === domain
                     )
