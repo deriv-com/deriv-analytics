@@ -1,3 +1,9 @@
+## [1.38.5](https://github.com/deriv-com/deriv-analytics/compare/v1.38.4...v1.38.5) (2026-02-12)
+
+### Bug Fixes
+
+- fix error when calling identify ([24fa837](https://github.com/deriv-com/deriv-analytics/commit/24fa837e14f921fbfdb3df6e2f2e0a8f2e304c5b))
+
 ## [1.38.4](https://github.com/deriv-com/deriv-analytics/compare/v1.38.3...v1.38.4) (2026-02-12)
 
 ### Bug Fixes
