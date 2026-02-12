@@ -1,3 +1,9 @@
+## [1.38.4](https://github.com/deriv-com/deriv-analytics/compare/v1.38.3...v1.38.4) (2026-02-12)
+
+### Bug Fixes
+
+- fix the domain for localhost ([4a078d5](https://github.com/deriv-com/deriv-analytics/commit/4a078d51499126613241f2aecfb58a0b64cceac1))
+
 ## [1.38.3](https://github.com/deriv-com/deriv-analytics/compare/v1.38.2...v1.38.3) (2026-02-11)
 
 ### Bug Fixes
