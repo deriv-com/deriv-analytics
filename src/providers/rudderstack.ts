@@ -127,7 +127,6 @@ export class RudderStack {
      * @param user_id - The user ID to identify
      * @param payload - Optional user traits (e.g., language, custom properties)
      */
-    // [AI]
     identifyEvent = (user_id: string, payload?: Record<string, any>): void => {
         if (!this.has_initialized) {
             console.warn('RudderStack: Cannot identify - not initialized')
@@ -146,7 +145,6 @@ export class RudderStack {
             this.has_identified = true
         }
     }
-    // [/AI]
 
     /**
      * Track a page view event
