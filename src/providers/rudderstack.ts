@@ -109,7 +109,6 @@ export class RudderStack {
             this.analytics.load(RUDDERSTACK_KEY, rudderstackDataplane, {
                 externalAnonymousIdCookieName: this.rudderstack_anonymous_cookie_key,
                 // Performance optimizations
-                useBeacon: true,
                 lockIntegrationsVersion: true,
                 onLoaded: () => {
                     this.has_initialized = true
@@ -135,7 +134,7 @@ export class RudderStack {
         }
 
         const currentUserId = this.getUserId()
-        if (!currentUserId) {
+        if (!currentUserId || currentUserId !== user_id) {
             try {
                 this.analytics.identify(user_id, payload || {})
                 this.has_identified = true
