@@ -1,3 +1,10 @@
+## [1.38.6](https://github.com/deriv-com/deriv-analytics/compare/v1.38.5...v1.38.6) (2026-02-13)
+
+### Bug Fixes
+
+- fix rudderstack userId and remove batching ([993e83b](https://github.com/deriv-com/deriv-analytics/commit/993e83bd117c1b7bcc9812a8c59a8e76685f9713))
+- removed AI marker ([7c8eb9a](https://github.com/deriv-com/deriv-analytics/commit/7c8eb9aa429225486d4c97a3dd6d4d0eb69a9746))
+
 ## [1.38.5](https://github.com/deriv-com/deriv-analytics/compare/v1.38.4...v1.38.5) (2026-02-12)
 
 ### Bug Fixes
