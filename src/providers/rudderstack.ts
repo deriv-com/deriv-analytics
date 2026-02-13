@@ -109,7 +109,6 @@ export class RudderStack {
             this.analytics.load(RUDDERSTACK_KEY, rudderstackDataplane, {
                 externalAnonymousIdCookieName: this.rudderstack_anonymous_cookie_key,
                 // Performance optimizations
-                useBeacon: true,
                 lockIntegrationsVersion: true,
                 onLoaded: () => {
                     this.has_initialized = true
@@ -128,6 +127,7 @@ export class RudderStack {
      * @param user_id - The user ID to identify
      * @param payload - Optional user traits (e.g., language, custom properties)
      */
+    // [AI]
     identifyEvent = (user_id: string, payload?: Record<string, any>): void => {
         if (!this.has_initialized) {
             console.warn('RudderStack: Cannot identify - not initialized')
@@ -135,7 +135,7 @@ export class RudderStack {
         }
 
         const currentUserId = this.getUserId()
-        if (!currentUserId) {
+        if (!currentUserId || currentUserId !== user_id) {
             try {
                 this.analytics.identify(user_id, payload || {})
                 this.has_identified = true
@@ -146,6 +146,7 @@ export class RudderStack {
             this.has_identified = true
         }
     }
+    // [/AI]
 
     /**
      * Track a page view event
