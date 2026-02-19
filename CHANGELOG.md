@@ -1,3 +1,15 @@
+## [1.38.7](https://github.com/deriv-com/deriv-analytics/compare/v1.38.6...v1.38.7) (2026-02-19)
+
+### ♻️ Chores
+
+- added pageview config for posthog ([193d6d3](https://github.com/deriv-com/deriv-analytics/commit/193d6d3faea369d3a4a0b3fa22f6fe384d6a489e))
+- added pageview config for posthog ([3a44d04](https://github.com/deriv-com/deriv-analytics/commit/3a44d04829f8852a4a73a58b62a176e2a3b3dbfe))
+
+### 🐛 Bug Fixes
+
+- semantic release issue ([03b6876](https://github.com/deriv-com/deriv-analytics/commit/03b68761a94ab66d33bb4d0940c2a8d2923b3171))
+- semantic release issue ([1c7b74a](https://github.com/deriv-com/deriv-analytics/commit/1c7b74aea9dec590278561fb829d8b251db5d459))
+
 ## [1.38.6](https://github.com/deriv-com/deriv-analytics/compare/v1.38.5...v1.38.6) (2026-02-13)
 
 ### Bug Fixes
