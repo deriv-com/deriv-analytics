@@ -188,7 +188,7 @@ describe('PostHog Provider', () => {
         test('should identify user with user ID only', () => {
             instance.identifyEvent('CR123')
 
-            expect(posthog.identify).toHaveBeenCalledWith('CR123', undefined)
+            expect(posthog.identify).toHaveBeenCalledWith('CR123', { client_id: 'CR123' })
             expect(instance.has_identified).toBe(true)
         })
 
@@ -201,50 +201,47 @@ describe('PostHog Provider', () => {
 
             instance.identifyEvent('CR123', traits)
 
-            expect(posthog.identify).toHaveBeenCalledWith('CR123', traits)
+            expect(posthog.identify).toHaveBeenCalledWith('CR123', { ...traits, client_id: 'CR123' })
             expect(instance.has_identified).toBe(true)
         })
 
-        test('should alias new user when not previously identified', () => {
+        test('should identify user when not previously identified', () => {
             ;(posthog._isIdentified as jest.Mock).mockReturnValue(false)
-            ;(posthog.get_distinct_id as jest.Mock).mockReturnValue('anon-123')
 
             instance.identifyEvent('CR123')
 
-            expect(posthog.alias).toHaveBeenCalledWith('CR123', 'anon-123')
-            expect(posthog.identify).toHaveBeenCalledWith('CR123', undefined)
+            expect(posthog.alias).not.toHaveBeenCalled()
+            expect(posthog.identify).toHaveBeenCalledWith('CR123', { client_id: 'CR123' })
         })
 
-        test('should not alias when user is already identified', () => {
+        test('should not identify when user is already identified', () => {
             ;(posthog._isIdentified as jest.Mock).mockReturnValue(true)
 
             instance.identifyEvent('CR123')
 
             expect(posthog.alias).not.toHaveBeenCalled()
-            expect(posthog.identify).toHaveBeenCalledWith('CR123', undefined)
+            expect(posthog.identify).not.toHaveBeenCalled()
         })
 
-        test('should not alias when anonymous ID matches user ID', () => {
+        test('should identify user and include client_id in traits', () => {
             ;(posthog._isIdentified as jest.Mock).mockReturnValue(false)
-            ;(posthog.get_distinct_id as jest.Mock).mockReturnValue('CR123')
 
             instance.identifyEvent('CR123')
 
             expect(posthog.alias).not.toHaveBeenCalled()
-            expect(posthog.identify).toHaveBeenCalledWith('CR123', undefined)
+            expect(posthog.identify).toHaveBeenCalledWith('CR123', { client_id: 'CR123' })
         })
 
         test('should handle missing _isIdentified function gracefully', () => {
             const original_isIdentified = posthog._isIdentified
             // @ts-ignore - testing runtime scenario
             posthog._isIdentified = undefined
-            ;(posthog.get_distinct_id as jest.Mock).mockReturnValue('anon-456')
 
             instance.identifyEvent('CR789')
 
-            // Should use instance has_identified flag
-            expect(posthog.alias).toHaveBeenCalledWith('CR789', 'anon-456')
-            expect(posthog.identify).toHaveBeenCalledWith('CR789', undefined)
+            // Should use instance has_identified flag (false by default)
+            expect(posthog.alias).not.toHaveBeenCalled()
+            expect(posthog.identify).toHaveBeenCalledWith('CR789', { client_id: 'CR789' })
 
             // Restore
             posthog._isIdentified = original_isIdentified
@@ -385,7 +382,6 @@ describe('PostHog Provider', () => {
             ;(posthog.capture as jest.Mock).mockClear()
             ;(posthog.reset as jest.Mock).mockClear()
             ;(posthog._isIdentified as jest.Mock) = jest.fn().mockReturnValue(false)
-            ;(posthog.get_distinct_id as jest.Mock) = jest.fn().mockReturnValue('anon-789')
 
             const instance = new Posthog({ apiKey: 'test-key' })
             await instance.init()
@@ -397,8 +393,8 @@ describe('PostHog Provider', () => {
             // Identify user
             instance.identifyEvent('CR456', { language: 'en' })
 
-            expect(posthog.alias).toHaveBeenCalledWith('CR456', 'anon-789')
-            expect(posthog.identify).toHaveBeenCalledWith('CR456', { language: 'en' })
+            expect(posthog.alias).not.toHaveBeenCalled()
+            expect(posthog.identify).toHaveBeenCalledWith('CR456', { language: 'en', client_id: 'CR456' })
             expect(instance.has_identified).toBe(true)
 
             // Capture events
@@ -418,24 +414,24 @@ describe('PostHog Provider', () => {
             ;(posthog.identify as jest.Mock).mockClear()
             ;(posthog.alias as jest.Mock).mockClear()
             ;(posthog._isIdentified as jest.Mock) = jest.fn().mockReturnValue(false)
-            ;(posthog.get_distinct_id as jest.Mock) = jest.fn().mockReturnValue('anon-1')
 
             const instance = new Posthog({ apiKey: 'test-key' })
             await instance.init()
 
-            // First identify - should alias
+            // First identify - should identify without alias
             instance.identifyEvent('CR100')
 
-            expect(posthog.alias).toHaveBeenCalledTimes(1)
+            expect(posthog.alias).not.toHaveBeenCalled()
+            expect(posthog.identify).toHaveBeenCalledTimes(1)
             expect(instance.has_identified).toBe(true)
 
-            // Second identify - should not alias
+            // Second identify - should not call identify again
             ;(posthog._isIdentified as jest.Mock).mockReturnValue(true)
 
             instance.identifyEvent('CR100', { language: 'es' })
 
-            expect(posthog.alias).toHaveBeenCalledTimes(1) // Still only 1 call
-            expect(posthog.identify).toHaveBeenCalledTimes(2)
+            expect(posthog.alias).not.toHaveBeenCalled()
+            expect(posthog.identify).toHaveBeenCalledTimes(1) // Still only 1 call
         })
     })
 })
