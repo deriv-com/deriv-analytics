@@ -1,3 +1,14 @@
+## [1.38.8](https://github.com/deriv-com/deriv-analytics/compare/v1.38.7...v1.38.8) (2026-02-20)
+
+### ♻️ Chores
+
+- update PostHog config with pageview capture and identity fix ([da38f52](https://github.com/deriv-com/deriv-analytics/commit/da38f5221e9caa2508dfa946c7d768284acb6389))
+- updated posthog config ([bf688dc](https://github.com/deriv-com/deriv-analytics/commit/bf688dcd4d3696aa5873b6b6dd05a7deac496393))
+
+### 🐛 Bug Fixes
+
+- failed tests ([926f67b](https://github.com/deriv-com/deriv-analytics/commit/926f67baa1d0e06279d97fd64b86f0fa54dc57ab))
+
 ## [1.38.7](https://github.com/deriv-com/deriv-analytics/compare/v1.38.6...v1.38.7) (2026-02-19)
 
 ### ♻️ Chores
