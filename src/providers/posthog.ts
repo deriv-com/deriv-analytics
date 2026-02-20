@@ -99,20 +99,13 @@ export class Posthog {
         }
 
         try {
-            // Only alias if not already identified
             const isIdentified =
                 typeof posthog._isIdentified === 'function' ? posthog._isIdentified() : this.has_identified
 
             if (user_id && !isIdentified) {
-                const anonId = posthog.get_distinct_id()
-                if (anonId && anonId !== user_id) {
-                    posthog.alias(user_id, anonId)
-                }
+                posthog.identify(user_id, { ...traits, client_id: user_id })
+                this.has_identified = true
             }
-
-            // Identify with traits
-            posthog.identify(user_id, traits)
-            this.has_identified = true
         } catch (error) {
             console.error('Posthog: Failed to identify user', error)
         }
