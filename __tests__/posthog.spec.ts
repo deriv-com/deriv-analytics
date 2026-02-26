@@ -12,6 +12,8 @@ jest.mock('posthog-js', () => ({
         reset: jest.fn(),
         get_distinct_id: jest.fn(),
         _isIdentified: jest.fn(),
+        get_property: jest.fn(),
+        setPersonProperties: jest.fn(),
     },
 }))
 
@@ -34,6 +36,8 @@ describe('PostHog Provider', () => {
         ;(posthog.capture as jest.Mock).mockClear()
         ;(posthog.reset as jest.Mock).mockClear()
         ;(posthog.get_distinct_id as jest.Mock).mockClear()
+        ;(posthog.get_property as jest.Mock).mockClear()
+        ;(posthog.setPersonProperties as jest.Mock).mockClear()
 
         // Ensure _isIdentified is properly mocked
         if (typeof posthog._isIdentified !== 'function') {
@@ -210,7 +214,6 @@ describe('PostHog Provider', () => {
 
             instance.identifyEvent('CR123')
 
-            expect(posthog.alias).not.toHaveBeenCalled()
             expect(posthog.identify).toHaveBeenCalledWith('CR123', { client_id: 'CR123' })
         })
 
@@ -219,8 +222,9 @@ describe('PostHog Provider', () => {
 
             instance.identifyEvent('CR123')
 
-            expect(posthog.alias).not.toHaveBeenCalled()
             expect(posthog.identify).not.toHaveBeenCalled()
+            // setPersonProperties is not called here — use setClientId for backfilling
+            expect(posthog.setPersonProperties).not.toHaveBeenCalled()
         })
 
         test('should identify user and include client_id in traits', () => {
@@ -228,7 +232,6 @@ describe('PostHog Provider', () => {
 
             instance.identifyEvent('CR123')
 
-            expect(posthog.alias).not.toHaveBeenCalled()
             expect(posthog.identify).toHaveBeenCalledWith('CR123', { client_id: 'CR123' })
         })
 
@@ -374,11 +377,71 @@ describe('PostHog Provider', () => {
         })
     })
 
+    describe('setClientId', () => {
+        let instance: Posthog
+
+        beforeEach(async () => {
+            ;(posthog.get_property as jest.Mock).mockClear()
+            ;(posthog.setPersonProperties as jest.Mock).mockClear()
+            instance = new Posthog({ apiKey: 'test-key' })
+            await instance.init()
+        })
+
+        test('should set client_id when missing from stored person properties', () => {
+            ;(posthog.get_property as jest.Mock).mockReturnValue({})
+
+            instance.setClientId('CR123')
+
+            expect(posthog.setPersonProperties).toHaveBeenCalledWith({ client_id: 'CR123' })
+        })
+
+        test('should set client_id when stored person properties is null', () => {
+            ;(posthog.get_property as jest.Mock).mockReturnValue(null)
+
+            instance.setClientId('CR123')
+
+            expect(posthog.setPersonProperties).toHaveBeenCalledWith({ client_id: 'CR123' })
+        })
+
+        test('should not set client_id when already present in stored person properties', () => {
+            ;(posthog.get_property as jest.Mock).mockReturnValue({ client_id: 'CR123' })
+
+            instance.setClientId('CR123')
+
+            expect(posthog.setPersonProperties).not.toHaveBeenCalled()
+        })
+
+        test('should be a no-op when not initialized', () => {
+            const uninitializedInstance = new Posthog({ apiKey: '' })
+
+            uninitializedInstance.setClientId('CR123')
+
+            expect(posthog.get_property).not.toHaveBeenCalled()
+            expect(posthog.setPersonProperties).not.toHaveBeenCalled()
+        })
+
+        test('should be a no-op when user_id is empty', () => {
+            instance.setClientId('')
+
+            expect(posthog.get_property).not.toHaveBeenCalled()
+            expect(posthog.setPersonProperties).not.toHaveBeenCalled()
+        })
+
+        test('should handle errors gracefully', () => {
+            ;(posthog.get_property as jest.Mock).mockImplementationOnce(() => {
+                throw new Error('get_property failed')
+            })
+
+            instance.setClientId('CR123')
+
+            expect(consoleErrorSpy).toHaveBeenCalledWith('Posthog: Failed to set client_id', expect.any(Error))
+        })
+    })
+
     describe('Integration Tests', () => {
         test('should handle full user lifecycle', async () => {
             ;(posthog.init as jest.Mock).mockClear()
             ;(posthog.identify as jest.Mock).mockClear()
-            ;(posthog.alias as jest.Mock).mockClear()
             ;(posthog.capture as jest.Mock).mockClear()
             ;(posthog.reset as jest.Mock).mockClear()
             ;(posthog._isIdentified as jest.Mock) = jest.fn().mockReturnValue(false)
@@ -393,7 +456,6 @@ describe('PostHog Provider', () => {
             // Identify user
             instance.identifyEvent('CR456', { language: 'en' })
 
-            expect(posthog.alias).not.toHaveBeenCalled()
             expect(posthog.identify).toHaveBeenCalledWith('CR456', { language: 'en', client_id: 'CR456' })
             expect(instance.has_identified).toBe(true)
 
@@ -412,16 +474,14 @@ describe('PostHog Provider', () => {
 
         test('should handle multiple identify calls correctly', async () => {
             ;(posthog.identify as jest.Mock).mockClear()
-            ;(posthog.alias as jest.Mock).mockClear()
             ;(posthog._isIdentified as jest.Mock) = jest.fn().mockReturnValue(false)
 
             const instance = new Posthog({ apiKey: 'test-key' })
             await instance.init()
 
-            // First identify - should identify without alias
+            // First identify call
             instance.identifyEvent('CR100')
 
-            expect(posthog.alias).not.toHaveBeenCalled()
             expect(posthog.identify).toHaveBeenCalledTimes(1)
             expect(instance.has_identified).toBe(true)
 

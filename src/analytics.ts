@@ -524,12 +524,34 @@ export function createAnalyticsInstance(_options?: Options) {
         }
     }
 
+    /**
+     * Ensures client_id is set in PostHog stored person properties.
+     * Call this when the user ID is available and PostHog is loaded.
+     * Useful for backfilling client_id for users identified in previous sessions.
+     * No-op if client_id is already present or PostHog is not initialized.
+     *
+     * @param user_id - The user ID to use as client_id
+     *
+     * @example
+     * ```typescript
+     * if (window.posthog?.__loaded && userId) {
+     *     analytics.setClientId(userId)
+     * }
+     * ```
+     */
+    const setClientId = (user_id: string): void => {
+        if (_posthog?.has_initialized) {
+            _posthog.setClientId(user_id)
+        }
+    }
+
     const getInstances = () => ({ ab: _growthbook, tracking: _rudderstack, posthog: _posthog })
 
     const AnalyticsInstance = {
         initialise,
         setAttributes,
         identifyEvent,
+        setClientId,
         getFeatureState,
         getFeatureValue,
         getGrowthbookStatus,

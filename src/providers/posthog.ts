@@ -10,7 +10,8 @@ import { allowedDomains, posthogApiHost, posthogUiHost } from '../utils/urls'
  * Features:
  * - Dynamically loads PostHog SDK on demand
  * - Domain allowlisting for security
- * - Automatic user identification and aliasing
+ * - Automatic user identification with client_id enforcement
+ * - client_id backfill for previously identified users via setClientId
  * - Custom event tracking with property sanitization
  * - Built-in caching and retry mechanisms (handled by posthog-js library)
  *
@@ -86,8 +87,9 @@ export class Posthog {
     }
 
     /**
-     * Identify a user with PostHog
-     * Creates an alias between anonymous ID and user ID, then identifies with traits
+     * Identify a user with PostHog.
+     * Skipped if the user is already identified — use setClientId to backfill
+     * client_id for users identified in previous sessions.
      *
      * @param user_id - The user ID to identify
      * @param traits - User properties (language, country_of_residence, etc.)
@@ -123,6 +125,26 @@ export class Posthog {
             this.has_identified = false
         } catch (error) {
             console.error('Posthog: Failed to reset', error)
+        }
+    }
+
+    /**
+     * Ensure client_id is set in PostHog stored person properties.
+     * Call this when the user ID is available and PostHog is loaded.
+     * No-op if client_id is already present.
+     *
+     * @param user_id - The user ID to use as client_id
+     */
+    setClientId = (user_id: string): void => {
+        if (!this.has_initialized || !user_id) return
+
+        try {
+            const storedProperties = posthog.get_property('$stored_person_properties')
+            if (!storedProperties?.client_id) {
+                posthog.setPersonProperties({ client_id: user_id })
+            }
+        } catch (error) {
+            console.error('Posthog: Failed to set client_id', error)
         }
     }
 
