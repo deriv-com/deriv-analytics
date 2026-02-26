@@ -1,6 +1,7 @@
 import { RudderAnalytics } from '@rudderstack/analytics-js'
 import type { TCoreAttributes, TAllEvents } from '../types'
 import { rudderstackDataplane } from '../utils/urls'
+import { createLogger } from '../utils/helpers'
 
 // Constants
 const COOKIE_MAX_AGE_SECONDS = 2 * 365 * 24 * 60 * 60 // 2 years
@@ -17,9 +18,12 @@ export class RudderStack {
     rudderstack_anonymous_cookie_key = 'rudder_anonymous_id'
     private static _instance: RudderStack
     private onLoadedCallback?: () => void
+    private debug = false
+    private log = createLogger('[RudderStack]', () => this.debug)
 
-    constructor(RUDDERSTACK_KEY: string, onLoaded?: () => void) {
+    constructor(RUDDERSTACK_KEY: string, onLoaded?: () => void, debug = false) {
         this.onLoadedCallback = onLoaded
+        this.debug = debug
         this.init(RUDDERSTACK_KEY)
     }
 
@@ -27,11 +31,16 @@ export class RudderStack {
      * Get or create the singleton instance of RudderStack
      * @param RUDDERSTACK_KEY - RudderStack write key
      * @param onLoaded - Optional callback when RudderStack is loaded
+     * @param debug - Enable debug logging
      * @returns The RudderStack singleton instance
      */
-    public static getRudderStackInstance = (RUDDERSTACK_KEY: string, onLoaded?: () => void): RudderStack => {
+    public static getRudderStackInstance = (
+        RUDDERSTACK_KEY: string,
+        onLoaded?: () => void,
+        debug = false
+    ): RudderStack => {
         if (!RudderStack._instance) {
-            RudderStack._instance = new RudderStack(RUDDERSTACK_KEY, onLoaded)
+            RudderStack._instance = new RudderStack(RUDDERSTACK_KEY, onLoaded, debug)
         }
         return RudderStack._instance
     }
@@ -103,6 +112,8 @@ export class RudderStack {
             return
         }
 
+        this.log('init | loading SDK', { dataplane: rudderstackDataplane })
+
         try {
             this.setCookieIfNotExists()
 
@@ -113,6 +124,10 @@ export class RudderStack {
                 onLoaded: () => {
                     this.has_initialized = true
                     this.has_identified = !!this.getUserId()
+                    this.log('init | SDK loaded successfully', {
+                        userId: this.getUserId(),
+                        anonymousId: this.getAnonymousId(),
+                    })
                     this.onLoadedCallback?.()
                 },
             })
@@ -136,12 +151,14 @@ export class RudderStack {
         const currentUserId = this.getUserId()
         if (!currentUserId || currentUserId !== user_id) {
             try {
+                this.log('identifyEvent | identifying user', { user_id, traits: payload })
                 this.analytics.identify(user_id, payload || {})
                 this.has_identified = true
             } catch (error) {
                 console.error('RudderStack: Failed to identify user', error)
             }
         } else {
+            this.log('identifyEvent | user already identified', { user_id })
             this.has_identified = true
         }
     }
@@ -167,6 +184,7 @@ export class RudderStack {
                 ...properties,
             }
 
+            this.log('pageView | tracking page view', { platform, current_page, properties: pageProperties })
             // Type assertion needed due to RudderStack's type definitions
             this.analytics.page(platform, current_page, pageProperties as any)
             this.current_page = current_page
@@ -183,6 +201,7 @@ export class RudderStack {
         if (!this.has_initialized) return
 
         try {
+            this.log('reset | resetting RudderStack session')
             this.analytics.reset()
             this.has_identified = false
         } catch (error) {
@@ -200,6 +219,7 @@ export class RudderStack {
         if (!this.has_initialized) return
 
         try {
+            this.log('track | sending event to RudderStack', { event, payload })
             // Type assertion needed to match RudderStack's ApiObject type
             // eslint-disable-next-line @typescript-eslint/no-explicit-any
             this.analytics.track(event as string, payload as any)

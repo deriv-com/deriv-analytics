@@ -2,6 +2,7 @@
  * Analytics Cache Manager - Version 1.1.0
  * Enhanced TypeScript implementation with better type safety and SSR support
  */
+import { createLogger } from './helpers'
 
 type CachedEvent = {
     name: string
@@ -49,6 +50,12 @@ class AnalyticsCacheManager {
     private responses: ResponseData[] = []
     private isTrackingResponses = false
     private delegatedSelectors: Set<string> = new Set()
+    private debug = false
+    private log = createLogger('[CacheManager]', () => this.debug)
+
+    setDebug(debug: boolean): void {
+        this.debug = debug
+    }
 
     /**
      * FNV-1a hash algorithm for creating consistent hashes
@@ -202,6 +209,7 @@ class AnalyticsCacheManager {
      * Set a cached event
      */
     set(event: CachedEvent): void {
+        this.log('set | caching event to cookie', event)
         this.push('cached_analytics_events', event)
     }
 
@@ -285,8 +293,13 @@ class AnalyticsCacheManager {
         const Analytics = (window as any).Analytics
 
         if (this.isReady() && !cache) {
+            this.log('track | analytics ready — calling trackEvent', {
+                event: event.name,
+                properties: event.properties,
+            })
             Analytics.Analytics.trackEvent(event.name, event.properties)
         } else {
+            this.log('track | analytics not ready or cache=true — storing event', { event: event.name, cache })
             this.set(event)
         }
     }
@@ -296,6 +309,8 @@ class AnalyticsCacheManager {
      */
     pageView(): void {
         if (typeof window === 'undefined') return
+
+        this.log('pageView | starting page view polling')
 
         if (!this.isTrackingResponses) {
             this.trackResponses()
@@ -310,10 +325,12 @@ class AnalyticsCacheManager {
                 typeof Analytics.Analytics?.pageView === 'function' &&
                 this.isReady()
             ) {
+                this.log('pageView | analytics ready — sending page view', { href: window.location.href })
                 Analytics.Analytics.pageView(window.location.href, "Trader's hub")
             }
 
             if (this.isPageViewSent()) {
+                this.log('pageView | page view confirmed sent — clearing interval')
                 if (this.interval) clearInterval(this.interval)
             }
         }, 1000)
@@ -420,6 +437,10 @@ class AnalyticsCacheManager {
      * Load events immediately
      */
     loadEvent(items: LoadEventConfig[]): this {
+        this.log(
+            'loadEvent | firing load events',
+            items.map(i => i.event.name)
+        )
         items.forEach(({ event }) => {
             const { name, properties } = event
             this.track({
@@ -438,6 +459,8 @@ class AnalyticsCacheManager {
         if (typeof window === 'undefined') return this
 
         const pathname = window.location.pathname.slice(1)
+        this.log('pageLoadEvent | checking page load events', { pathname })
+
         items.forEach(({ pages = [], excludedPages = [], event, callback = null }) => {
             let dispatch = false
             if (pages.length) {
@@ -454,7 +477,15 @@ class AnalyticsCacheManager {
 
             if (dispatch) {
                 const eventData = callback ? callback() : event
+                this.log('pageLoadEvent | dispatching event for page', { pathname, event: eventData.name })
                 this.loadEvent([{ event: eventData }])
+            } else {
+                this.log('pageLoadEvent | skipped event for page', {
+                    pathname,
+                    event: event.name,
+                    pages,
+                    excludedPages,
+                })
             }
         })
 

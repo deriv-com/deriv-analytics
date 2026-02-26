@@ -1,6 +1,27 @@
 import Cookies from 'js-cookie'
 import { cloudflareTrace } from './urls'
 
+/**
+ * Creates a prefixed logger that only outputs when debug mode is enabled.
+ * Pass a getter function so the logger always reads the latest debug state.
+ *
+ * @param prefix - Optional provider name appended after [ANALYTIC], e.g. '[RudderStack]'
+ * @param isDebugEnabled - A function that returns the current debug flag value
+ * @returns A log function with the same signature as console.log
+ *
+ * @example
+ * // In a class
+ * private log = createLogger('[RudderStack]', () => this.debug)
+ *
+ * // In a closure
+ * const log = createLogger('', () => _debug)
+ */
+export const createLogger =
+    (prefix: string, isDebugEnabled: () => boolean) =>
+    (...args: any[]): void => {
+        if (isDebugEnabled()) console.log(`[ANALYTIC]${prefix}`, ...args)
+    }
+
 export const isUUID = (str: string): boolean => {
     const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
     return uuidRegex.test(str)

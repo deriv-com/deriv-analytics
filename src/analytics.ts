@@ -8,7 +8,8 @@ import {
     clearCachedEvents,
     clearCachedPageViews,
 } from './utils/cookie'
-import { isUUID, getCountry, cleanObject, flattenObject } from './utils/helpers'
+import { isUUID, getCountry, cleanObject, flattenObject, createLogger } from './utils/helpers'
+import { cacheTrackEvents } from './utils/analytics-cache'
 
 // Optional Growthbook types - only import if using Growthbook
 import type { Growthbook, GrowthbookConfigs } from './providers/growthbook'
@@ -38,6 +39,8 @@ type Options = {
     growthbookOptions?: TGrowthbookOptions
     /** PostHog configuration options including API keys and settings */
     posthogOptions?: TPosthogOptions
+    /** Enable debug logging — logs all analytics calls prefixed with [ANALYTIC] */
+    debug?: boolean
 }
 
 /**
@@ -77,6 +80,10 @@ type Options = {
  * ```
  */
 export function createAnalyticsInstance(_options?: Options) {
+    let _debug = _options?.debug ?? false
+
+    const log = createLogger('', () => _debug)
+
     let _growthbook: Growthbook | undefined,
         _rudderstack: RudderStack,
         _posthog: Posthog | undefined,
@@ -95,6 +102,7 @@ export function createAnalyticsInstance(_options?: Options) {
         try {
             const storedEvents = getCachedEvents()
             if (storedEvents.length > 0) {
+                log(`processCookieCache | replaying ${storedEvents.length} cached event(s)`, storedEvents)
                 storedEvents.forEach(event => {
                     _rudderstack?.track(event.name as keyof TAllEvents, event.properties as any)
                 })
@@ -103,6 +111,7 @@ export function createAnalyticsInstance(_options?: Options) {
 
             const storedPages = getCachedPageViews()
             if (storedPages.length > 0) {
+                log(`processCookieCache | replaying ${storedPages.length} cached page view(s)`, storedPages)
                 storedPages.forEach(page => {
                     _rudderstack?.pageView(page.name, 'Deriv App', getId(), page.properties)
                 })
@@ -114,8 +123,12 @@ export function createAnalyticsInstance(_options?: Options) {
     }
 
     const onSdkLoaded = () => {
+        log('onSdkLoaded | RudderStack SDK loaded')
         processCookieCache()
 
+        if (_pending_identify_calls.length > 0) {
+            log(`onSdkLoaded | flushing ${_pending_identify_calls.length} pending identify call(s)`)
+        }
         _pending_identify_calls.forEach(({ userId, traits }) => {
             if (userId) {
                 _rudderstack?.identifyEvent(userId, traits)
@@ -161,13 +174,24 @@ export function createAnalyticsInstance(_options?: Options) {
         rudderstackKey,
         growthbookOptions,
         posthogOptions,
+        debug,
     }: Options) => {
+        if (debug !== undefined) _debug = debug
+        cacheTrackEvents.setDebug(_debug)
+
+        log('initialise | starting analytics initialization', {
+            rudderstack: !!rudderstackKey,
+            growthbook: !!growthbookKey,
+            posthog: !!posthogOptions,
+        })
+
         try {
             // Only fetch country if GrowthBook is enabled and country not provided
             const country = growthbookOptions?.attributes?.country || (growthbookKey ? await getCountry() : undefined)
 
             if (rudderstackKey) {
-                _rudderstack = RudderStack.getRudderStackInstance(rudderstackKey, onSdkLoaded)
+                log('initialise | initializing RudderStack')
+                _rudderstack = RudderStack.getRudderStackInstance(rudderstackKey, onSdkLoaded, _debug)
             }
 
             if (growthbookOptions?.attributes && Object.keys(growthbookOptions.attributes).length > 0) {
@@ -202,13 +226,16 @@ export function createAnalyticsInstance(_options?: Options) {
             growthbookOptions.attributes.country ??= country
 
             if (growthbookKey) {
+                log('initialise | initializing GrowthBook')
                 // Dynamically import Growthbook only when needed
                 const { Growthbook } = await import('./providers/growthbook')
                 _growthbook = Growthbook.getGrowthBookInstance(
                     growthbookKey,
                     growthbookDecryptionKey,
-                    growthbookOptions
+                    growthbookOptions,
+                    _debug
                 )
+                log('initialise | GrowthBook initialized')
 
                 const interval = setInterval(() => {
                     if (Object.keys(tracking_config).length > 0) clearInterval(interval)
@@ -217,10 +244,14 @@ export function createAnalyticsInstance(_options?: Options) {
             }
 
             if (posthogOptions) {
+                log('initialise | initializing PostHog')
                 // Dynamically import Posthog only when needed
                 const { Posthog } = await import('./providers/posthog')
-                _posthog = Posthog.getPosthogInstance(posthogOptions)
+                _posthog = Posthog.getPosthogInstance(posthogOptions, _debug)
+                log('initialise | PostHog initialized')
             }
+
+            log('initialise | analytics initialization complete')
         } catch (err) {
             console.warn('Analytics: Failed to initialize', err)
         }
@@ -275,6 +306,31 @@ export function createAnalyticsInstance(_options?: Options) {
     }: TCoreAttributes) => {
         const user_identity = user_id ?? getId()
 
+        log('setAttributes | received attributes', {
+            country,
+            user_language,
+            device_language,
+            device_type,
+            account_type,
+            user_id,
+            anonymous_id,
+            app_id,
+            utm_source,
+            utm_medium,
+            utm_campaign,
+            is_authorised,
+            residence_country,
+            url,
+            domain,
+            geo_location,
+            loggedIn,
+            network_downlink,
+            network_rtt,
+            network_type,
+            account_currency,
+            account_mode,
+        })
+
         if (_growthbook) {
             const config: TGrowthbookAttributes = {
                 country,
@@ -296,6 +352,7 @@ export function createAnalyticsInstance(_options?: Options) {
                 config.id = user_identity
                 config.user_id = user_identity
             }
+            log('setAttributes | called GrowthBook setAttributes', config)
             _growthbook.setAttributes(config)
         }
 
@@ -318,6 +375,8 @@ export function createAnalyticsInstance(_options?: Options) {
             ...(account_currency !== undefined && { account_currency }),
             ...(account_mode !== undefined && { account_mode }),
         }
+
+        log('setAttributes | updated core_data', core_data)
     }
 
     const getFeatureState = (id: string) => _growthbook?.getFeatureState(id)?.experimentResult?.name
@@ -358,11 +417,15 @@ export function createAnalyticsInstance(_options?: Options) {
     const pageView = (current_page: string, platform = 'Deriv App', properties?: Record<string, unknown>) => {
         const userId = getId()
 
+        log('pageView | called', { current_page, platform, properties, userId })
+
         // Handle RudderStack pageView independently
         if (_rudderstack) {
             if (_rudderstack.has_initialized) {
+                log('pageView | sending page view to RudderStack', { current_page, platform })
                 _rudderstack.pageView(current_page, platform, userId, properties)
             } else {
+                log('pageView | RudderStack not initialized — caching page view to cookie', { current_page })
                 cachePageViewToCookie(current_page, { platform, ...properties })
             }
         }
@@ -403,7 +466,12 @@ export function createAnalyticsInstance(_options?: Options) {
      */
     const identifyEvent = (user_id?: string, traits?: Record<string, any>) => {
         const stored_user_id = user_id || getId()
-        if (!stored_user_id) return
+        if (!stored_user_id) {
+            log('identifyEvent | skipped — no user_id available')
+            return
+        }
+
+        log('identifyEvent | called', { user_id: stored_user_id, traits })
 
         // Check if traits has provider-specific structure
         const hasProviderStructure = traits?.rudderstack !== undefined || traits?.posthog !== undefined
@@ -413,9 +481,16 @@ export function createAnalyticsInstance(_options?: Options) {
         // Handle RudderStack identification independently
         if (_rudderstack) {
             if (_rudderstack.has_initialized) {
+                log('identifyEvent | calling RudderStack identify', {
+                    user_id: stored_user_id,
+                    traits: rudderstackTraits,
+                })
                 _rudderstack.identifyEvent(stored_user_id, rudderstackTraits)
             } else {
                 if (!_pending_identify_calls.some(call => call.userId === stored_user_id)) {
+                    log('identifyEvent | RudderStack not initialized — queuing identify call', {
+                        user_id: stored_user_id,
+                    })
                     _pending_identify_calls.push({ userId: stored_user_id, traits: rudderstackTraits })
                 }
             }
@@ -423,16 +498,20 @@ export function createAnalyticsInstance(_options?: Options) {
 
         // Handle PostHog identification independently
         if (_posthog?.has_initialized) {
+            log('identifyEvent | calling PostHog identify', { user_id: stored_user_id, traits: posthogTraits })
             _posthog.identifyEvent(stored_user_id, posthogTraits)
         }
     }
 
     const reset = () => {
+        log('reset | resetting all providers')
         // Reset each provider independently
         if (_rudderstack?.has_initialized) {
+            log('reset | resetting RudderStack')
             _rudderstack.reset()
         }
         if (_posthog?.has_initialized) {
+            log('reset | resetting PostHog')
             _posthog.reset()
         }
     }
@@ -472,6 +551,8 @@ export function createAnalyticsInstance(_options?: Options) {
         const userId = getId()
         let final_payload: any = {}
 
+        log('trackEvent | called', { event, analytics_data, userId, core_data })
+
         if (isV2Payload(analytics_data)) {
             const v2_data = analytics_data as TV2EventPayload
             final_payload = {
@@ -482,28 +563,36 @@ export function createAnalyticsInstance(_options?: Options) {
                     ...v2_data.event_metadata,
                 },
             }
+            log('trackEvent | built V2 payload', { event, final_payload })
         } else {
             final_payload = {
                 ...core_data,
                 ...analytics_data,
                 ...(userId && !core_data.user_id && { user_id: userId }),
             }
+            log('trackEvent | built V1 payload', { event, final_payload })
         }
 
         const shouldTrack = !(event in tracking_config) || tracking_config[event as string]
-        if (!shouldTrack) return
+        if (!shouldTrack) {
+            log('trackEvent | skipped — event disabled by tracking_config', { event })
+            return
+        }
 
         // Handle RudderStack independently
         const hasRudderstackInitialized = _rudderstack?.has_initialized
         if (!navigator.onLine || !hasRudderstackInitialized) {
             if (!hasRudderstackInitialized) {
+                log('trackEvent | RudderStack not initialized — caching event to cookie', { event })
                 cacheEventToCookie(event as string, final_payload)
             } else {
+                log('trackEvent | offline — caching event to memory', { event })
                 offline_event_cache.push({ event, payload: final_payload })
             }
         } else {
             // Send cached events to RudderStack
             if (offline_event_cache.length > 0) {
+                log(`trackEvent | flushing ${offline_event_cache.length} offline cached event(s) to RudderStack`)
                 offline_event_cache.forEach(cache => {
                     const cleaned_cache_payload = cleanObject(cache.payload)
                     _rudderstack?.track(cache.event, cleaned_cache_payload)
@@ -513,6 +602,7 @@ export function createAnalyticsInstance(_options?: Options) {
 
             // Send current event to RudderStack
             const cleaned_payload = cleanObject(final_payload)
+            log('trackEvent | sending event to RudderStack', { event, payload: cleaned_payload })
             _rudderstack?.track(event, cleaned_payload)
         }
 
@@ -520,6 +610,7 @@ export function createAnalyticsInstance(_options?: Options) {
         if (_posthog?.has_initialized) {
             const flattened_payload = flattenObject(final_payload)
             const cleaned_posthog_payload = cleanObject(flattened_payload)
+            log('trackEvent | sending event to PostHog', { event, payload: cleaned_posthog_payload })
             _posthog.capture(event as string, cleaned_posthog_payload)
         }
     }
@@ -540,8 +631,12 @@ export function createAnalyticsInstance(_options?: Options) {
      * ```
      */
     const setClientId = (user_id: string): void => {
+        log('setClientId | called', { user_id })
         if (_posthog?.has_initialized) {
+            log('setClientId | setting client_id in PostHog', { user_id })
             _posthog.setClientId(user_id)
+        } else {
+            log('setClientId | skipped — PostHog not initialized')
         }
     }
 

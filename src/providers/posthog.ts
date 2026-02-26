@@ -2,6 +2,7 @@ import posthog from 'posthog-js'
 import type { TPosthogConfig, TPosthogIdentifyTraits, TPosthogOptions } from './posthogTypes'
 import type { TCoreAttributes } from '../types'
 import { allowedDomains, posthogApiHost, posthogUiHost } from '../utils/urls'
+import { createLogger } from '../utils/helpers'
 
 /**
  * PostHog analytics wrapper with singleton pattern.
@@ -23,20 +24,24 @@ export class Posthog {
     has_identified = false
     private static _instance: Posthog
     private options: TPosthogOptions
+    private debug = false
+    private log = createLogger('[PostHog]', () => this.debug)
 
-    constructor(options: TPosthogOptions) {
+    constructor(options: TPosthogOptions, debug = false) {
         this.options = options
+        this.debug = debug
         this.init()
     }
 
     /**
      * Get or create the singleton instance of Posthog
      * @param options - PostHog configuration options including API key
+     * @param debug - Enable debug logging
      * @returns The Posthog singleton instance
      */
-    public static getPosthogInstance = (options: TPosthogOptions): Posthog => {
+    public static getPosthogInstance = (options: TPosthogOptions, debug = false): Posthog => {
         if (!Posthog._instance) {
-            Posthog._instance = new Posthog(options)
+            Posthog._instance = new Posthog(options, debug)
         }
         return Posthog._instance
     }
@@ -53,6 +58,8 @@ export class Posthog {
                 console.warn('Posthog: No API key provided')
                 return
             }
+
+            this.log('init | loading PostHog SDK', { api_host: api_host || posthogApiHost })
 
             const posthogConfig: TPosthogConfig = {
                 api_host: api_host || posthogApiHost,
@@ -73,6 +80,7 @@ export class Posthog {
                     const isAllowed = allowedDomains.some(
                         domain => currentHost.endsWith(`.${domain}`) || currentHost === domain
                     )
+                    if (!isAllowed) this.log('init | before_send blocked event from disallowed host', { currentHost })
                     return isAllowed ? event : null
                 },
                 ...config,
@@ -81,6 +89,7 @@ export class Posthog {
             // Initialize PostHog
             posthog.init(apiKey, posthogConfig)
             this.has_initialized = true
+            this.log('init | PostHog SDK loaded successfully')
         } catch (error) {
             console.error('Posthog: Failed to initialize', error)
         }
@@ -105,8 +114,11 @@ export class Posthog {
                 typeof posthog._isIdentified === 'function' ? posthog._isIdentified() : this.has_identified
 
             if (user_id && !isIdentified) {
+                this.log('identifyEvent | identifying user', { user_id, traits })
                 posthog.identify(user_id, { ...traits, client_id: user_id })
                 this.has_identified = true
+            } else {
+                this.log('identifyEvent | skipped — user already identified', { user_id })
             }
         } catch (error) {
             console.error('Posthog: Failed to identify user', error)
@@ -121,6 +133,7 @@ export class Posthog {
         if (!this.has_initialized) return
 
         try {
+            this.log('reset | resetting PostHog session')
             posthog.reset()
             this.has_identified = false
         } catch (error) {
@@ -141,7 +154,10 @@ export class Posthog {
         try {
             const storedProperties = posthog.get_property('$stored_person_properties')
             if (!storedProperties?.client_id) {
+                this.log('setClientId | backfilling client_id in PostHog person properties', { user_id })
                 posthog.setPersonProperties({ client_id: user_id })
+            } else {
+                this.log('setClientId | skipped — client_id already present', { user_id })
             }
         } catch (error) {
             console.error('Posthog: Failed to set client_id', error)
@@ -159,6 +175,7 @@ export class Posthog {
         if (!this.has_initialized) return
 
         try {
+            this.log('capture | sending event to PostHog', { event_name, properties })
             posthog.capture(event_name, properties)
         } catch (error) {
             console.error('Posthog: Failed to capture event', error)
