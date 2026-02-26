@@ -153,6 +153,7 @@ export class Posthog {
      * No-op if client_id is already present.
      *
      * @param user_id - The user ID to use as client_id
+     * @param email - The user's email, used to determine is_internal
      */
     setClientId = (user_id: string, email: string): void => {
         if (!this.has_initialized || !user_id) return

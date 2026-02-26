@@ -62,7 +62,7 @@ describe('Analytics - createAnalyticsInstance', () => {
             analytics = createAnalyticsInstance()
             await analytics.initialise({ rudderstackKey: 'test_key' })
 
-            expect(RudderStack.getRudderStackInstance).toHaveBeenCalledWith('test_key', expect.any(Function))
+            expect(RudderStack.getRudderStackInstance).toHaveBeenCalledWith('test_key', expect.any(Function), false)
         })
 
         test('should initialize with Growthbook options', async () => {
