@@ -18,9 +18,9 @@ export type TPosthogConfig = Partial<Omit<PostHogConfig, 'session_recording'>> &
 }
 
 export type TPosthogIdentifyTraits = {
+    email: string
     language?: string
     country_of_residence?: string
-    client_id?: string
     [key: string]: any // Allow additional user properties
 }
 

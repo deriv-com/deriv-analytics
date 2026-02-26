@@ -163,18 +163,29 @@ class AnalyticsCacheManager {
     }
 
     /**
+     * Resolve the analytics instance from the window object.
+     * Supports three usage patterns:
+     * - NPM import: analytics.ts sets window.AnalyticsInstance directly
+     * - IIFE bundle: tsup sets window.DerivAnalytics = { Analytics, cacheTrackEvents }
+     * - Legacy: consumers that explicitly set window.Analytics = window.DerivAnalytics
+     */
+    private getAnalyticsInstance(): any {
+        if (typeof window === 'undefined') return null
+        return (
+            (window as any).AnalyticsInstance ??
+            (window as any).DerivAnalytics?.Analytics ??
+            (window as any).Analytics?.Analytics
+        )
+    }
+
+    /**
      * Check if Analytics instance is ready
      */
     isReady(): boolean {
         if (typeof window === 'undefined') return false
-
-        const Analytics = (window as any).Analytics
-        if (typeof Analytics === 'undefined' || Analytics === null) {
-            return false
-        }
-
-        const instances = Analytics.Analytics?.getInstances?.()
-        return !!instances?.tracking
+        const instance = this.getAnalyticsInstance()
+        if (!instance) return false
+        return !!instance.getInstances?.()?.tracking
     }
 
     /**
@@ -290,14 +301,14 @@ class AnalyticsCacheManager {
         if (typeof window === 'undefined') return
 
         const event = this.processEvent(originalEvent)
-        const Analytics = (window as any).Analytics
+        const instance = this.getAnalyticsInstance()
 
         if (this.isReady() && !cache) {
             this.log('track | analytics ready — calling trackEvent', {
                 event: event.name,
                 properties: event.properties,
             })
-            Analytics.Analytics.trackEvent(event.name, event.properties)
+            instance.trackEvent(event.name, event.properties)
         } else {
             this.log('track | analytics not ready or cache=true — storing event', { event: event.name, cache })
             this.set(event)

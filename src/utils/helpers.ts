@@ -1,5 +1,5 @@
 import Cookies from 'js-cookie'
-import { cloudflareTrace } from './urls'
+import { cloudflareTrace, internalEmailDomains } from './urls'
 
 /**
  * Creates a prefixed logger that only outputs when debug mode is enabled.
@@ -21,6 +21,12 @@ export const createLogger =
     (...args: any[]): void => {
         if (isDebugEnabled()) console.log(`[ANALYTIC]${prefix}`, ...args)
     }
+
+export const isInternalEmail = (email: string): boolean => {
+    const domain = email.split('@')[1]?.toLowerCase()
+    if (!domain) return false
+    return (internalEmailDomains as readonly string[]).includes(domain)
+}
 
 export const isUUID = (str: string): boolean => {
     const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i

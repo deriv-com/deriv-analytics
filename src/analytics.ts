@@ -17,7 +17,7 @@ import type { TGrowthbookAttributes, TGrowthbookOptions } from './providers/grow
 
 // Optional Posthog types - only import if using Posthog
 import type { Posthog } from './providers/posthog'
-import type { TPosthogOptions } from './providers/posthogTypes'
+import type { TPosthogIdentifyTraits, TPosthogOptions } from './providers/posthogTypes'
 
 declare global {
     interface Window {
@@ -497,9 +497,9 @@ export function createAnalyticsInstance(_options?: Options) {
         }
 
         // Handle PostHog identification independently
-        if (_posthog?.has_initialized) {
+        if (_posthog?.has_initialized && posthogTraits) {
             log('identifyEvent | calling PostHog identify', { user_id: stored_user_id, traits: posthogTraits })
-            _posthog.identifyEvent(stored_user_id, posthogTraits)
+            _posthog.identifyEvent(stored_user_id, posthogTraits as TPosthogIdentifyTraits)
         }
     }
 
@@ -630,11 +630,11 @@ export function createAnalyticsInstance(_options?: Options) {
      * }
      * ```
      */
-    const setClientId = (user_id: string): void => {
+    const setClientId = (user_id: string, email: string): void => {
         log('setClientId | called', { user_id })
         if (_posthog?.has_initialized) {
             log('setClientId | setting client_id in PostHog', { user_id })
-            _posthog.setClientId(user_id)
+            _posthog.setClientId(user_id, email)
         } else {
             log('setClientId | skipped — PostHog not initialized')
         }
