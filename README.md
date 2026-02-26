@@ -779,13 +779,13 @@ Track page navigation.
 
 Link anonymous session to a user ID with optional traits. When PostHog is active and traits include an `email` field (via provider-specific `posthog` key), `is_internal` is automatically computed and set as a person property — the email itself is not stored in PostHog.
 
-### `setClientId(user_id: string, email: string): void`
+### `backfillPersonProperties(user_id: string, email: string): void`
 
 Backfills PostHog person properties for users identified in previous sessions. Sets `client_id` and `is_internal` if they are not already present. No-op if PostHog is not initialized or `user_id` is empty.
 
 ```typescript
 // Call after PostHog has loaded and user ID is available
-Analytics.setClientId('CR123456', 'user@example.com')
+Analytics.backfillPersonProperties('CR123456', 'user@example.com')
 ```
 
 ### `setAttributes(attributes: TCoreAttributes): void`

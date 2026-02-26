@@ -12,7 +12,7 @@ import { createLogger, isInternalEmail } from '../utils/helpers'
  * - Dynamically loads PostHog SDK on demand
  * - Domain allowlisting for security
  * - Automatic user identification with client_id enforcement
- * - client_id backfill for previously identified users via setClientId
+ * - client_id backfill for previously identified users via backfillPersonProperties
  * - Custom event tracking with property sanitization
  * - Built-in caching and retry mechanisms (handled by posthog-js library)
  *
@@ -97,7 +97,7 @@ export class Posthog {
 
     /**
      * Identify a user with PostHog.
-     * Skipped if the user is already identified — use setClientId to backfill
+     * Skipped if the user is already identified — use backfillPersonProperties to backfill
      * client_id for users identified in previous sessions.
      *
      * @param user_id - The user ID to identify
@@ -155,7 +155,7 @@ export class Posthog {
      * @param user_id - The user ID to use as client_id
      * @param email - The user's email, used to determine is_internal
      */
-    setClientId = (user_id: string, email: string): void => {
+    backfillPersonProperties = (user_id: string, email: string): void => {
         if (!this.has_initialized || !user_id) return
 
         try {
@@ -170,13 +170,13 @@ export class Posthog {
             }
 
             if (Object.keys(updates).length > 0) {
-                this.log('setClientId | backfilling person properties', { user_id, updates })
+                this.log('backfillPersonProperties | backfilling person properties', { user_id, updates })
                 posthog.setPersonProperties(updates)
             } else {
-                this.log('setClientId | skipped — all properties already present', { user_id })
+                this.log('backfillPersonProperties | skipped — all properties already present', { user_id })
             }
         } catch (error) {
-            console.error('Posthog: Failed to set client_id', error)
+            console.error('Posthog: Failed to backfill person properties', error)
         }
     }
 

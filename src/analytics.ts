@@ -626,17 +626,17 @@ export function createAnalyticsInstance(_options?: Options) {
      * @example
      * ```typescript
      * if (window.posthog?.__loaded && userId) {
-     *     analytics.setClientId(userId)
+     *     analytics.backfillPersonProperties(userId, email)
      * }
      * ```
      */
-    const setClientId = (user_id: string, email: string): void => {
-        log('setClientId | called', { user_id })
+    const backfillPersonProperties = (user_id: string, email: string): void => {
+        log('backfillPersonProperties | called', { user_id })
         if (_posthog?.has_initialized) {
-            log('setClientId | setting client_id in PostHog', { user_id })
-            _posthog.setClientId(user_id, email)
+            log('backfillPersonProperties | backfilling person properties in PostHog', { user_id })
+            _posthog.backfillPersonProperties(user_id, email)
         } else {
-            log('setClientId | skipped — PostHog not initialized')
+            log('backfillPersonProperties | skipped — PostHog not initialized')
         }
     }
 
@@ -646,7 +646,7 @@ export function createAnalyticsInstance(_options?: Options) {
         initialise,
         setAttributes,
         identifyEvent,
-        setClientId,
+        backfillPersonProperties,
         getFeatureState,
         getFeatureValue,
         getGrowthbookStatus,

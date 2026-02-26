@@ -231,7 +231,7 @@ describe('PostHog Provider', () => {
             instance.identifyEvent('CR123', { email: 'user@example.com' })
 
             expect(posthog.identify).not.toHaveBeenCalled()
-            // setPersonProperties is not called here — use setClientId for backfilling
+            // setPersonProperties is not called here — use backfillPersonProperties for backfilling
             expect(posthog.setPersonProperties).not.toHaveBeenCalled()
         })
 
@@ -385,7 +385,7 @@ describe('PostHog Provider', () => {
         })
     })
 
-    describe('setClientId', () => {
+    describe('backfillPersonProperties', () => {
         let instance: Posthog
 
         beforeEach(async () => {
@@ -398,7 +398,7 @@ describe('PostHog Provider', () => {
         test('should set client_id when missing from stored person properties', () => {
             ;(posthog.get_property as jest.Mock).mockReturnValue({})
 
-            instance.setClientId('CR123', 'user@example.com')
+            instance.backfillPersonProperties('CR123', 'user@example.com')
 
             expect(posthog.setPersonProperties).toHaveBeenCalledWith({ client_id: 'CR123', is_internal: false })
         })
@@ -406,7 +406,7 @@ describe('PostHog Provider', () => {
         test('should set client_id when stored person properties is null', () => {
             ;(posthog.get_property as jest.Mock).mockReturnValue(null)
 
-            instance.setClientId('CR123', 'user@example.com')
+            instance.backfillPersonProperties('CR123', 'user@example.com')
 
             expect(posthog.setPersonProperties).toHaveBeenCalledWith({ client_id: 'CR123', is_internal: false })
         })
@@ -414,7 +414,7 @@ describe('PostHog Provider', () => {
         test('should not set client_id when already present in stored person properties', () => {
             ;(posthog.get_property as jest.Mock).mockReturnValue({ client_id: 'CR123', is_internal: false })
 
-            instance.setClientId('CR123', 'user@example.com')
+            instance.backfillPersonProperties('CR123', 'user@example.com')
 
             expect(posthog.setPersonProperties).not.toHaveBeenCalled()
         })
@@ -422,14 +422,14 @@ describe('PostHog Provider', () => {
         test('should be a no-op when not initialized', () => {
             const uninitializedInstance = new Posthog({ apiKey: '' })
 
-            uninitializedInstance.setClientId('CR123', 'user@example.com')
+            uninitializedInstance.backfillPersonProperties('CR123', 'user@example.com')
 
             expect(posthog.get_property).not.toHaveBeenCalled()
             expect(posthog.setPersonProperties).not.toHaveBeenCalled()
         })
 
         test('should be a no-op when user_id is empty', () => {
-            instance.setClientId('', 'user@example.com')
+            instance.backfillPersonProperties('', 'user@example.com')
 
             expect(posthog.get_property).not.toHaveBeenCalled()
             expect(posthog.setPersonProperties).not.toHaveBeenCalled()
@@ -440,9 +440,12 @@ describe('PostHog Provider', () => {
                 throw new Error('get_property failed')
             })
 
-            instance.setClientId('CR123', 'user@example.com')
+            instance.backfillPersonProperties('CR123', 'user@example.com')
 
-            expect(consoleErrorSpy).toHaveBeenCalledWith('Posthog: Failed to set client_id', expect.any(Error))
+            expect(consoleErrorSpy).toHaveBeenCalledWith(
+                'Posthog: Failed to backfill person properties',
+                expect.any(Error)
+            )
         })
     })
 
