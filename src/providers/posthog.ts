@@ -115,12 +115,11 @@ export class Posthog {
 
             if (user_id && !isIdentified) {
                 const { email, ...safeTraits } = traits
-                const is_internal = isInternalEmail(email)
-                this.log('identifyEvent | identifying user', { user_id, safeTraits, is_internal })
+                this.log('identifyEvent | identifying user', { user_id, safeTraits })
                 posthog.identify(user_id, {
                     ...safeTraits,
                     client_id: user_id,
-                    is_internal,
+                    ...(email && { is_internal: isInternalEmail(email) }),
                 })
                 this.has_identified = true
             } else {
@@ -155,7 +154,7 @@ export class Posthog {
      * @param user_id - The user ID to use as client_id
      * @param email - The user's email, used to determine is_internal
      */
-    backfillPersonProperties = (user_id: string, email: string): void => {
+    backfillPersonProperties = (user_id: string, email?: string): void => {
         if (!this.has_initialized || !user_id) return
 
         try {
@@ -165,7 +164,7 @@ export class Posthog {
             if (!storedProperties?.client_id) {
                 updates.client_id = user_id
             }
-            if (storedProperties?.is_internal === undefined) {
+            if (email && storedProperties?.is_internal === undefined) {
                 updates.is_internal = isInternalEmail(email)
             }
 

@@ -630,7 +630,7 @@ export function createAnalyticsInstance(_options?: Options) {
      * }
      * ```
      */
-    const backfillPersonProperties = (user_id: string, email: string): void => {
+    const backfillPersonProperties = (user_id: string, email?: string): void => {
         log('backfillPersonProperties | called', { user_id })
         if (_posthog?.has_initialized) {
             log('backfillPersonProperties | backfilling person properties in PostHog', { user_id })
