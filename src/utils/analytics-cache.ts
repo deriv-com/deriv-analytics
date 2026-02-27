@@ -189,24 +189,27 @@ class AnalyticsCacheManager {
     }
 
     /**
-     * Parse cookies into an object
+     * Parse cookies to find a specific cookie by name.
+     * Uses an early-exit linear scan instead of building a full map,
+     * which is significantly faster when there are many cookies.
      */
     private parseCookies(cookieName: string): any {
         if (typeof document === 'undefined') return null
 
-        const cookies = document.cookie.split('; ').reduce((acc: Record<string, string>, cookie) => {
-            const [key, value] = cookie.split('=')
-            if (key && value) {
-                acc[decodeURIComponent(key)] = decodeURIComponent(value)
+        const cookies = document.cookie.split('; ')
+        for (const cookie of cookies) {
+            const eqIdx = cookie.indexOf('=')
+            if (eqIdx === -1) continue
+            if (decodeURIComponent(cookie.slice(0, eqIdx)) === cookieName) {
+                const raw = cookie.slice(eqIdx + 1)
+                try {
+                    return JSON.parse(decodeURIComponent(raw))
+                } catch {
+                    return decodeURIComponent(raw)
+                }
             }
-            return acc
-        }, {})
-
-        try {
-            return cookies[cookieName] ? JSON.parse(cookies[cookieName]) : null
-        } catch (error) {
-            return null
         }
+        return null
     }
 
     /**
