@@ -1,3 +1,30 @@
+## [1.38.9](https://github.com/deriv-com/deriv-analytics/compare/v1.38.8...v1.38.9) (2026-02-27)
+
+### ♻️ Chores
+
+- add is_internal flag to PostHog identification based on email domain ([22912b7](https://github.com/deriv-com/deriv-analytics/commit/22912b79fdbfd2c0bff450ad7261c9d7ad2aa2c1))
+- added debug feature to the analytics package ([11e4f9f](https://github.com/deriv-com/deriv-analytics/commit/11e4f9fbf5f5190ca3411ccb8dd98982288e1cef))
+- added setClientId fn for posthog ([0f9d1cb](https://github.com/deriv-com/deriv-analytics/commit/0f9d1cb961c352d1597c5af9b91d4dd457af3cd9))
+- enhance Analytics configs with debug logging, setClientId, and is_internal flag ([65b626b](https://github.com/deriv-com/deriv-analytics/commit/65b626b257ecfa376caa107dcb7fe1b9ec2f6969))
+- made email field optional ([42c960c](https://github.com/deriv-com/deriv-analytics/commit/42c960cecb8387fe16dba3b83c84002f3d329cfc))
+- renamed backfil fn ([69642cb](https://github.com/deriv-com/deriv-analytics/commit/69642cb1ff23d3e816572251ca144c4834f49e10))
+
+### ⚙️ Continuous Integrations
+
+- added claude pr review github action ([7a5cd97](https://github.com/deriv-com/deriv-analytics/commit/7a5cd97319edd4d71d70969eb0b5a6a1e9203c94))
+
+### 🐛 Bug Fixes
+
+- failed tests ([d1d25aa](https://github.com/deriv-com/deriv-analytics/commit/d1d25aa539ad356c1c9f46de7c385ffc191c562b))
+
+### 📚 Documentation
+
+- updated the docs based on the latest changes ([d9b8e4c](https://github.com/deriv-com/deriv-analytics/commit/d9b8e4cce1170710255bec13b8a1ba038f18a750))
+
+### 📦 Code Refactoring
+
+- improved my helpers functions ([ed65bad](https://github.com/deriv-com/deriv-analytics/commit/ed65bad5465107f8bb349482b89bf1fec14f4dc5))
+
 ## [1.38.8](https://github.com/deriv-com/deriv-analytics/compare/v1.38.7...v1.38.8) (2026-02-20)
 
 ### ♻️ Chores
