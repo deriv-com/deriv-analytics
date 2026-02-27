@@ -2,6 +2,7 @@
  * Analytics Cache Manager - Version 1.1.0
  * Enhanced TypeScript implementation with better type safety and SSR support
  */
+import { createLogger } from './helpers'
 
 type CachedEvent = {
     name: string
@@ -49,6 +50,12 @@ class AnalyticsCacheManager {
     private responses: ResponseData[] = []
     private isTrackingResponses = false
     private delegatedSelectors: Set<string> = new Set()
+    private debug = false
+    private log = createLogger('[CacheManager]', () => this.debug)
+
+    setDebug(debug: boolean): void {
+        this.debug = debug
+    }
 
     /**
      * FNV-1a hash algorithm for creating consistent hashes
@@ -156,39 +163,53 @@ class AnalyticsCacheManager {
     }
 
     /**
+     * Resolve the analytics instance from the window object.
+     * Supports three usage patterns:
+     * - NPM import: analytics.ts sets window.AnalyticsInstance directly
+     * - IIFE bundle: tsup sets window.DerivAnalytics = { Analytics, cacheTrackEvents }
+     * - Legacy: consumers that explicitly set window.Analytics = window.DerivAnalytics
+     */
+    private getAnalyticsInstance(): any {
+        if (typeof window === 'undefined') return null
+        return (
+            (window as any).AnalyticsInstance ??
+            (window as any).DerivAnalytics?.Analytics ??
+            (window as any).Analytics?.Analytics
+        )
+    }
+
+    /**
      * Check if Analytics instance is ready
      */
     isReady(): boolean {
         if (typeof window === 'undefined') return false
-
-        const Analytics = (window as any).Analytics
-        if (typeof Analytics === 'undefined' || Analytics === null) {
-            return false
-        }
-
-        const instances = Analytics.Analytics?.getInstances?.()
-        return !!instances?.tracking
+        const instance = this.getAnalyticsInstance()
+        if (!instance) return false
+        return !!instance.getInstances?.()?.tracking
     }
 
     /**
-     * Parse cookies into an object
+     * Parse cookies to find a specific cookie by name.
+     * Uses an early-exit linear scan instead of building a full map,
+     * which is significantly faster when there are many cookies.
      */
     private parseCookies(cookieName: string): any {
         if (typeof document === 'undefined') return null
 
-        const cookies = document.cookie.split('; ').reduce((acc: Record<string, string>, cookie) => {
-            const [key, value] = cookie.split('=')
-            if (key && value) {
-                acc[decodeURIComponent(key)] = decodeURIComponent(value)
+        const cookies = document.cookie.split('; ')
+        for (const cookie of cookies) {
+            const eqIdx = cookie.indexOf('=')
+            if (eqIdx === -1) continue
+            if (decodeURIComponent(cookie.slice(0, eqIdx)) === cookieName) {
+                const raw = cookie.slice(eqIdx + 1)
+                try {
+                    return JSON.parse(decodeURIComponent(raw))
+                } catch {
+                    return decodeURIComponent(raw)
+                }
             }
-            return acc
-        }, {})
-
-        try {
-            return cookies[cookieName] ? JSON.parse(cookies[cookieName]) : null
-        } catch (error) {
-            return null
         }
+        return null
     }
 
     /**
@@ -202,6 +223,7 @@ class AnalyticsCacheManager {
      * Set a cached event
      */
     set(event: CachedEvent): void {
+        this.log('set | caching event to cookie', event)
         this.push('cached_analytics_events', event)
     }
 
@@ -282,11 +304,16 @@ class AnalyticsCacheManager {
         if (typeof window === 'undefined') return
 
         const event = this.processEvent(originalEvent)
-        const Analytics = (window as any).Analytics
+        const instance = this.getAnalyticsInstance()
 
         if (this.isReady() && !cache) {
-            Analytics.Analytics.trackEvent(event.name, event.properties)
+            this.log('track | analytics ready — calling trackEvent', {
+                event: event.name,
+                properties: event.properties,
+            })
+            instance.trackEvent(event.name, event.properties)
         } else {
+            this.log('track | analytics not ready or cache=true — storing event', { event: event.name, cache })
             this.set(event)
         }
     }
@@ -296,6 +323,8 @@ class AnalyticsCacheManager {
      */
     pageView(): void {
         if (typeof window === 'undefined') return
+
+        this.log('pageView | starting page view polling')
 
         if (!this.isTrackingResponses) {
             this.trackResponses()
@@ -310,10 +339,12 @@ class AnalyticsCacheManager {
                 typeof Analytics.Analytics?.pageView === 'function' &&
                 this.isReady()
             ) {
+                this.log('pageView | analytics ready — sending page view', { href: window.location.href })
                 Analytics.Analytics.pageView(window.location.href, "Trader's hub")
             }
 
             if (this.isPageViewSent()) {
+                this.log('pageView | page view confirmed sent — clearing interval')
                 if (this.interval) clearInterval(this.interval)
             }
         }, 1000)
@@ -420,6 +451,10 @@ class AnalyticsCacheManager {
      * Load events immediately
      */
     loadEvent(items: LoadEventConfig[]): this {
+        this.log(
+            'loadEvent | firing load events',
+            items.map(i => i.event.name)
+        )
         items.forEach(({ event }) => {
             const { name, properties } = event
             this.track({
@@ -438,6 +473,8 @@ class AnalyticsCacheManager {
         if (typeof window === 'undefined') return this
 
         const pathname = window.location.pathname.slice(1)
+        this.log('pageLoadEvent | checking page load events', { pathname })
+
         items.forEach(({ pages = [], excludedPages = [], event, callback = null }) => {
             let dispatch = false
             if (pages.length) {
@@ -454,7 +491,15 @@ class AnalyticsCacheManager {
 
             if (dispatch) {
                 const eventData = callback ? callback() : event
+                this.log('pageLoadEvent | dispatching event for page', { pathname, event: eventData.name })
                 this.loadEvent([{ event: eventData }])
+            } else {
+                this.log('pageLoadEvent | skipped event for page', {
+                    pathname,
+                    event: event.name,
+                    pages,
+                    excludedPages,
+                })
             }
         })
 

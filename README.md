@@ -36,6 +36,7 @@ A modern, tree-shakeable analytics library for tracking user events with RudderS
     - [Page Views](#page-views)
     - [User Attributes](#user-attributes)
 - [Caching & Offline Support](#caching--offline-support)
+- [Debug Mode](#debug-mode)
 - [Advanced Usage](#advanced-usage)
 - [API Reference](#api-reference)
 - [Performance](#performance)
@@ -141,9 +142,10 @@ Analytics.trackEvent('ce_login_form', {
 })
 
 // User identification syncs with both providers
+// When using PostHog, pass email via provider-specific traits (see User Identification section)
 Analytics.identifyEvent('CR123456', {
-    language: 'en',
-    country_of_residence: 'US',
+    rudderstack: { language: 'en', country_of_residence: 'US' },
+    posthog: { email: 'user@example.com', language: 'en', country_of_residence: 'US' },
 })
 ```
 
@@ -438,6 +440,7 @@ await Analytics.initialise({
             autocapture: true,
         },
     },
+    debug: false, // Enable to log all analytics calls to the console
 })
 ```
 
@@ -486,23 +489,24 @@ Analytics.identifyEvent('CR123456')
 #### Identification with Custom Traits
 
 ```typescript
-// Send same traits to both RudderStack and PostHog
+// Send same traits to both RudderStack and PostHog (no PostHog-specific fields)
 Analytics.identifyEvent('CR123456', {
     language: 'en',
     country_of_residence: 'US',
     account_type: 'real',
 })
 
-// Send different traits to each provider
+// Send provider-specific traits (recommended when using PostHog)
+// PostHog requires `email` to automatically compute the `is_internal` flag
 Analytics.identifyEvent('CR123456', {
     rudderstack: {
         language: 'en',
         custom_field: 'value',
     },
     posthog: {
+        email: 'user@example.com', // Required for PostHog — used to set is_internal flag
         language: 'en',
         country_of_residence: 'US',
-        subscription_tier: 'premium',
     },
 })
 ```
@@ -513,6 +517,7 @@ Analytics.identifyEvent('CR123456', {
 - If you pass an object with `rudderstack` or `posthog` keys, provider-specific traits are used
 - Queues identify calls if provider not yet initialized
 - PostHog automatically handles aliasing between anonymous and identified users
+- When `email` is provided in PostHog traits, the `is_internal` flag is automatically computed and set as a person property — `email` itself is **not** forwarded to PostHog
 
 ### Page Views
 
@@ -653,6 +658,20 @@ cacheTrackEvents.pageLoadEvent([
 cacheTrackEvents.pageView()
 ```
 
+## Debug Mode
+
+Enable verbose logging to trace every analytics call in the browser console:
+
+```typescript
+await Analytics.initialise({
+    rudderstackKey: 'YOUR_KEY',
+    posthogOptions: { apiKey: 'phc_YOUR_KEY' },
+    debug: true,
+})
+```
+
+All logs are prefixed with `[ANALYTIC]` (e.g., `[ANALYTIC][RudderStack] trackEvent | ...`). Useful during development and QA to verify events are firing correctly without opening the network tab.
+
 ## Advanced Usage
 
 ### Independent Package Usage
@@ -678,8 +697,8 @@ const posthog = Posthog.getPosthogInstance({
 // Track events
 posthog.capture('button_clicked', { button_name: 'signup' })
 
-// Identify users
-posthog.identifyEvent('CR123', { language: 'en' })
+// Identify users — email is required and used to compute is_internal
+posthog.identifyEvent('CR123', { email: 'user@example.com', language: 'en' })
 
 // Check feature flags
 const isEnabled = posthog.isFeatureEnabled('new-feature')
@@ -743,6 +762,8 @@ interface Options {
         allowedDomains?: string[]
         config?: PostHogConfig
     }
+    /** Enable verbose debug logging — all analytics calls are logged prefixed with [ANALYTIC] */
+    debug?: boolean
 }
 ```
 
@@ -756,7 +777,16 @@ Track page navigation.
 
 ### `identifyEvent(userId?: string, traits?: Record<string, any>): void`
 
-Link anonymous session to a user ID with optional traits.
+Link anonymous session to a user ID with optional traits. When PostHog is active and traits include an `email` field (via provider-specific `posthog` key), `is_internal` is automatically computed and set as a person property — the email itself is not stored in PostHog.
+
+### `backfillPersonProperties(user_id: string, email: string): void`
+
+Backfills PostHog person properties for users identified in previous sessions. Sets `client_id` and `is_internal` if they are not already present. No-op if PostHog is not initialized or `user_id` is empty.
+
+```typescript
+// Call after PostHog has loaded and user ID is available
+Analytics.backfillPersonProperties('CR123456', 'user@example.com')
+```
 
 ### `setAttributes(attributes: TCoreAttributes): void`
 

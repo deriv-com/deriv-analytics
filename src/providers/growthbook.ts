@@ -7,6 +7,7 @@ import {
     TGrowthbookCoreAttributes,
 } from './growthbookTypes'
 import { growthbookApi } from '../utils/urls'
+import { createLogger } from '../utils/helpers'
 
 export class Growthbook {
     analytics = new RudderAnalytics()
@@ -14,9 +15,12 @@ export class Growthbook {
     private static _instance: Growthbook
     isLoaded = false
     status: void | InitResponse = undefined
+    private debug = false
+    private log = createLogger('[GrowthBook]', () => this.debug)
 
     // we have to pass settings due the specific framework implementation
-    constructor(clientKey: string, decryptionKey: string, growthbookOptions: TGrowthbookOptions = {}) {
+    constructor(clientKey: string, decryptionKey: string, growthbookOptions: TGrowthbookOptions = {}, debug = false) {
+        this.debug = debug
         const isLocalhost = typeof window !== 'undefined' ? window.location.hostname.includes('localhost') : false
 
         this.GrowthBook = new GrowthBook<GrowthbookConfigs>({
@@ -29,6 +33,10 @@ export class Growthbook {
             subscribeToChanges: true,
             enableDevMode: isLocalhost,
             trackingCallback: (experiment, result) => {
+                this.log('trackingCallback | experiment viewed', {
+                    experiment_id: experiment.key,
+                    variation_id: result.variationId,
+                })
                 if (typeof window !== 'undefined' && window.dataLayer) {
                     window.dataLayer.push({
                         event: 'experiment_viewed',
@@ -52,10 +60,11 @@ export class Growthbook {
     public static getGrowthBookInstance = (
         clientKey: string,
         decryptionKey?: string,
-        growthbookOptions?: TGrowthbookOptions
+        growthbookOptions?: TGrowthbookOptions,
+        debug = false
     ) => {
         if (!Growthbook._instance) {
-            Growthbook._instance = new Growthbook(clientKey, decryptionKey ?? '', growthbookOptions)
+            Growthbook._instance = new Growthbook(clientKey, decryptionKey ?? '', growthbookOptions, debug)
             return Growthbook._instance
         }
 
@@ -110,7 +119,7 @@ export class Growthbook {
         account_mode,
     }: TGrowthbookAttributes) => {
         const currentAttributes = this.GrowthBook.getAttributes()
-        this.GrowthBook.setAttributes({
+        const newAttributes = {
             ...currentAttributes,
             id,
             ...(user_id !== undefined && { user_id }),
@@ -131,10 +140,14 @@ export class Growthbook {
             ...(network_type !== undefined && { network_type }),
             ...(network_downlink !== undefined && { network_downlink }),
             ...(account_mode !== undefined && { account_mode }),
-        })
+        }
+        this.log('setAttributes | updating GrowthBook attributes', newAttributes)
+        this.GrowthBook.setAttributes(newAttributes)
     }
     getFeatureValue = <K extends keyof GrowthbookConfigs, V extends GrowthbookConfigs[K]>(key: K, defaultValue: V) => {
-        return this.GrowthBook.getFeatureValue(key as string, defaultValue)
+        const value = this.GrowthBook.getFeatureValue(key as string, defaultValue)
+        this.log('getFeatureValue', { key, value, defaultValue })
+        return value
     }
     getStatus = async (): Promise<{ isLoaded: boolean; status: void | InitResponse }> => {
         await this.waitForIsLoaded()
@@ -144,17 +157,30 @@ export class Growthbook {
             status: this.status,
         }
     }
-    getFeatureState = (id: string) => this.GrowthBook.evalFeature(id)
-    setUrl = (href: string) => this.GrowthBook.setURL(href)
-    isOn = (key: string) => this.GrowthBook.isOn(key)
+    getFeatureState = (id: string) => {
+        const state = this.GrowthBook.evalFeature(id)
+        this.log('getFeatureState', { id, result: state })
+        return state
+    }
+    setUrl = (href: string) => {
+        this.log('setUrl', { href })
+        this.GrowthBook.setURL(href)
+    }
+    isOn = (key: string) => {
+        const result = this.GrowthBook.isOn(key)
+        this.log('isOn', { key, result })
+        return result
+    }
 
     init = async () => {
+        this.log('init | initializing GrowthBook SDK')
         const status = await this.GrowthBook.init({ timeout: 2000, streaming: true }).catch(() => {
             // Silently handle initialization errors
         })
 
         this.status = status
         this.isLoaded = true
+        this.log('init | GrowthBook SDK loaded', { status })
     }
 
     // Destroy the GrowthBook instance and reset singleton

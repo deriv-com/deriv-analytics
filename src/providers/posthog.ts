@@ -2,6 +2,7 @@ import posthog from 'posthog-js'
 import type { TPosthogConfig, TPosthogIdentifyTraits, TPosthogOptions } from './posthogTypes'
 import type { TCoreAttributes } from '../types'
 import { allowedDomains, posthogApiHost, posthogUiHost } from '../utils/urls'
+import { createLogger, isInternalEmail } from '../utils/helpers'
 
 /**
  * PostHog analytics wrapper with singleton pattern.
@@ -10,7 +11,8 @@ import { allowedDomains, posthogApiHost, posthogUiHost } from '../utils/urls'
  * Features:
  * - Dynamically loads PostHog SDK on demand
  * - Domain allowlisting for security
- * - Automatic user identification and aliasing
+ * - Automatic user identification with client_id enforcement
+ * - client_id backfill for previously identified users via backfillPersonProperties
  * - Custom event tracking with property sanitization
  * - Built-in caching and retry mechanisms (handled by posthog-js library)
  *
@@ -22,20 +24,24 @@ export class Posthog {
     has_identified = false
     private static _instance: Posthog
     private options: TPosthogOptions
+    private debug = false
+    private log = createLogger('[PostHog]', () => this.debug)
 
-    constructor(options: TPosthogOptions) {
+    constructor(options: TPosthogOptions, debug = false) {
         this.options = options
+        this.debug = debug
         this.init()
     }
 
     /**
      * Get or create the singleton instance of Posthog
      * @param options - PostHog configuration options including API key
+     * @param debug - Enable debug logging
      * @returns The Posthog singleton instance
      */
-    public static getPosthogInstance = (options: TPosthogOptions): Posthog => {
+    public static getPosthogInstance = (options: TPosthogOptions, debug = false): Posthog => {
         if (!Posthog._instance) {
-            Posthog._instance = new Posthog(options)
+            Posthog._instance = new Posthog(options, debug)
         }
         return Posthog._instance
     }
@@ -52,6 +58,8 @@ export class Posthog {
                 console.warn('Posthog: No API key provided')
                 return
             }
+
+            this.log('init | loading PostHog SDK', { api_host: api_host || posthogApiHost })
 
             const posthogConfig: TPosthogConfig = {
                 api_host: api_host || posthogApiHost,
@@ -72,6 +80,7 @@ export class Posthog {
                     const isAllowed = allowedDomains.some(
                         domain => currentHost.endsWith(`.${domain}`) || currentHost === domain
                     )
+                    if (!isAllowed) this.log('init | before_send blocked event from disallowed host', { currentHost })
                     return isAllowed ? event : null
                 },
                 ...config,
@@ -80,19 +89,21 @@ export class Posthog {
             // Initialize PostHog
             posthog.init(apiKey, posthogConfig)
             this.has_initialized = true
+            this.log('init | PostHog SDK loaded successfully')
         } catch (error) {
             console.error('Posthog: Failed to initialize', error)
         }
     }
 
     /**
-     * Identify a user with PostHog
-     * Creates an alias between anonymous ID and user ID, then identifies with traits
+     * Identify a user with PostHog.
+     * Skipped if the user is already identified — use backfillPersonProperties to backfill
+     * client_id for users identified in previous sessions.
      *
      * @param user_id - The user ID to identify
      * @param traits - User properties (language, country_of_residence, etc.)
      */
-    identifyEvent = (user_id: string, traits?: TPosthogIdentifyTraits): void => {
+    identifyEvent = (user_id: string, traits: TPosthogIdentifyTraits): void => {
         if (!this.has_initialized) {
             console.warn('Posthog: Cannot identify - not initialized')
             return
@@ -103,8 +114,16 @@ export class Posthog {
                 typeof posthog._isIdentified === 'function' ? posthog._isIdentified() : this.has_identified
 
             if (user_id && !isIdentified) {
-                posthog.identify(user_id, { ...traits, client_id: user_id })
+                const { email, ...safeTraits } = traits
+                this.log('identifyEvent | identifying user', { user_id, safeTraits })
+                posthog.identify(user_id, {
+                    ...safeTraits,
+                    client_id: user_id,
+                    ...(email && { is_internal: isInternalEmail(email) }),
+                })
                 this.has_identified = true
+            } else {
+                this.log('identifyEvent | skipped — user already identified', { user_id })
             }
         } catch (error) {
             console.error('Posthog: Failed to identify user', error)
@@ -119,10 +138,44 @@ export class Posthog {
         if (!this.has_initialized) return
 
         try {
+            this.log('reset | resetting PostHog session')
             posthog.reset()
             this.has_identified = false
         } catch (error) {
             console.error('Posthog: Failed to reset', error)
+        }
+    }
+
+    /**
+     * Ensure client_id is set in PostHog stored person properties.
+     * Call this when the user ID is available and PostHog is loaded.
+     * No-op if client_id is already present.
+     *
+     * @param user_id - The user ID to use as client_id
+     * @param email - The user's email, used to determine is_internal
+     */
+    backfillPersonProperties = (user_id: string, email?: string): void => {
+        if (!this.has_initialized || !user_id) return
+
+        try {
+            const storedProperties = posthog.get_property('$stored_person_properties')
+            const updates: Record<string, any> = {}
+
+            if (!storedProperties?.client_id) {
+                updates.client_id = user_id
+            }
+            if (email && storedProperties?.is_internal === undefined) {
+                updates.is_internal = isInternalEmail(email)
+            }
+
+            if (Object.keys(updates).length > 0) {
+                this.log('backfillPersonProperties | backfilling person properties', { user_id, updates })
+                posthog.setPersonProperties(updates)
+            } else {
+                this.log('backfillPersonProperties | skipped — all properties already present', { user_id })
+            }
+        } catch (error) {
+            console.error('Posthog: Failed to backfill person properties', error)
         }
     }
 
@@ -137,6 +190,7 @@ export class Posthog {
         if (!this.has_initialized) return
 
         try {
+            this.log('capture | sending event to PostHog', { event_name, properties })
             posthog.capture(event_name, properties)
         } catch (error) {
             console.error('Posthog: Failed to capture event', error)

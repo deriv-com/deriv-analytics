@@ -1,5 +1,32 @@
 import Cookies from 'js-cookie'
-import { cloudflareTrace } from './urls'
+import { cloudflareTrace, internalEmailDomains } from './urls'
+
+/**
+ * Creates a prefixed logger that only outputs when debug mode is enabled.
+ * Pass a getter function so the logger always reads the latest debug state.
+ *
+ * @param prefix - Optional provider name appended after [ANALYTIC], e.g. '[RudderStack]'
+ * @param isDebugEnabled - A function that returns the current debug flag value
+ * @returns A log function with the same signature as console.log
+ *
+ * @example
+ * // In a class
+ * private log = createLogger('[RudderStack]', () => this.debug)
+ *
+ * // In a closure
+ * const log = createLogger('', () => _debug)
+ */
+export const createLogger =
+    (prefix: string, isDebugEnabled: () => boolean) =>
+    (...args: any[]): void => {
+        if (isDebugEnabled()) console.log(`[ANALYTIC]${prefix}`, ...args)
+    }
+
+export const isInternalEmail = (email: string): boolean => {
+    const domain = email.split('@')[1]?.toLowerCase()
+    if (!domain) return false
+    return (internalEmailDomains as readonly string[]).includes(domain)
+}
 
 export const isUUID = (str: string): boolean => {
     const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
@@ -58,27 +85,31 @@ export const cleanObject = (obj: any): any => {
     if (obj == null || typeof obj !== 'object') return obj
 
     if (Array.isArray(obj)) {
-        const cleanedArr = obj.map(cleanObject).filter(v => v !== undefined && v !== null)
-        return cleanedArr.length ? cleanedArr : undefined
+        const out: any[] = []
+        for (let i = 0; i < obj.length; i++) {
+            const v = cleanObject(obj[i])
+            if (v !== undefined && v !== null) out.push(v)
+        }
+        return out.length ? out : undefined
     }
 
     const cleaned: Record<string, any> = {}
-    Object.entries(obj).forEach(([key, value]) => {
-        const v = cleanObject(value)
+    let hasKeys = false
+    for (const key in obj) {
+        if (!Object.prototype.hasOwnProperty.call(obj, key)) continue
+        const v = cleanObject(obj[key])
         if (
             v === undefined ||
             v === null ||
             v === '' ||
             (typeof v === 'object' && !Array.isArray(v) && Object.keys(v).length === 0) ||
             (Array.isArray(v) && v.length === 0)
-        ) {
-            return
-        }
-
+        )
+            continue
         cleaned[key] = v
-    })
-
-    return Object.keys(cleaned).length ? cleaned : undefined
+        hasKeys = true
+    }
+    return hasKeys ? cleaned : undefined
 }
 
 /**
@@ -95,21 +126,23 @@ export const cleanObject = (obj: any): any => {
  * flattenObject({ form_name: 'signup', cta_information: { cta_name: 'signup', section_name: 'header' } })
  * // Returns: { form_name: 'signup', cta_name: 'signup', section_name: 'header' }
  */
+const _flattenInto = (obj: Record<string, any>, target: Record<string, any>): void => {
+    for (const key in obj) {
+        if (!Object.prototype.hasOwnProperty.call(obj, key)) continue
+        const value = obj[key]
+        if (value && typeof value === 'object' && !Array.isArray(value)) {
+            _flattenInto(value, target)
+        } else {
+            target[key] = value
+        }
+    }
+}
+
 export const flattenObject = (obj: any): Record<string, any> => {
     if (obj == null || typeof obj !== 'object' || Array.isArray(obj)) {
         return obj
     }
-
-    const flattened: Record<string, any> = {}
-
-    Object.entries(obj).forEach(([key, value]) => {
-        if (value && typeof value === 'object' && !Array.isArray(value)) {
-            // Recursively flatten nested objects and merge them at the top level
-            Object.assign(flattened, flattenObject(value))
-        } else {
-            flattened[key] = value
-        }
-    })
-
-    return flattened
+    const target: Record<string, any> = {}
+    _flattenInto(obj, target)
+    return target
 }
