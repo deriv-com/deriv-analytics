@@ -1,6 +1,6 @@
 {
     "name": "@deriv-com/analytics",
-    "version": "1.38.9",
+    "version": "1.38.10",
     "description": "Comprehensive analytics package for Deriv applications. Provides unified event tracking, A/B testing, and user analytics through RudderStack, PostHog and GrowthBook integrations with built-in caching and offline support.",
     "keywords": [
         "rudderstack",

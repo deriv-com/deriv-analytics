@@ -1,3 +1,10 @@
+## [1.38.10](https://github.com/deriv-com/deriv-analytics/compare/v1.38.9...v1.38.10) (2026-02-27)
+
+### ⚙️ Continuous Integrations
+
+- fix claude code review issue ([fefc412](https://github.com/deriv-com/deriv-analytics/commit/fefc4124849834eefe35319844201203931851db))
+- fix claude-code-action OIDC token permission ([072b1aa](https://github.com/deriv-com/deriv-analytics/commit/072b1aa124ac56ec2b2dbba89e6bdc9a141607d0))
+
 ## [1.38.9](https://github.com/deriv-com/deriv-analytics/compare/v1.38.8...v1.38.9) (2026-02-27)
 
 ### ♻️ Chores
