@@ -1,3 +1,10 @@
+## [1.39.3](https://github.com/deriv-com/deriv-analytics/compare/v1.39.2...v1.39.3) (2026-03-03)
+
+### 🐛 Bug Fixes
+
+- strip query string from cached_analytics_page_views cookie ([8d70c52](https://github.com/deriv-com/deriv-analytics/commit/8d70c52cae6ebbeef895e10214bf75bd69c422ea))
+- strip query string from cached_analytics_page_views cookie ([63ed9d9](https://github.com/deriv-com/deriv-analytics/commit/63ed9d975251641b9dcd7d7b3062a97e55531561))
+
 ## [1.39.2](https://github.com/deriv-com/deriv-analytics/compare/v1.39.1...v1.39.2) (2026-03-02)
 
 ### 🐛 Bug Fixes
