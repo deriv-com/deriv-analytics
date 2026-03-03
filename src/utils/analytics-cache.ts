@@ -109,10 +109,7 @@ class AnalyticsCacheManager {
         window.addEventListener('beforeunload', () => {
             if (!this.isPageViewSent()) {
                 this.push('cached_analytics_page_views', {
-                    name: window.location.href,
-                    properties: {
-                        url: window.location.href,
-                    },
+                    name: window.location.origin + window.location.pathname,
                 })
             }
         })
