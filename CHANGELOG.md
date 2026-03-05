@@ -1,3 +1,14 @@
+## [1.39.4](https://github.com/deriv-com/deriv-analytics/compare/v1.39.3...v1.39.4) (2026-03-05)
+
+### ♻️ Chores
+
+- add deriv.ae PostHog host and update posthog-js ([c74a2a1](https://github.com/deriv-com/deriv-analytics/commit/c74a2a1da6dad6dc85e72b0278d5288f1dfb54f4))
+- add deriv.ae PostHog host and update posthog-js to 1.358.0 ([395853c](https://github.com/deriv-com/deriv-analytics/commit/395853cbcf268ac6338769838b5e272f4afa4423))
+
+### ⚙️ Continuous Integrations
+
+- fix claude code review issue ([3be208a](https://github.com/deriv-com/deriv-analytics/commit/3be208ae9decec5dcc056c9127585b24613a8b11))
+
 ## [1.39.3](https://github.com/deriv-com/deriv-analytics/compare/v1.39.2...v1.39.3) (2026-03-03)
 
 ### 🐛 Bug Fixes
