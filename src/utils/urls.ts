@@ -9,6 +9,7 @@ export const getPosthogApiHost = (): string => {
     const hostname = window.location.hostname
     if (hostname.includes('.deriv.me')) return 'https://ph.deriv.me'
     if (hostname.includes('.deriv.be')) return 'https://ph.deriv.be'
+    if (hostname.includes('.deriv.ae')) return 'https://ph.deriv.ae'
     return posthogApiHost
 }
 
