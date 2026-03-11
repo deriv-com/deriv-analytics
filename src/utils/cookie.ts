@@ -62,9 +62,17 @@ export const getCachedPageViews = (): CachedPageView[] => {
 }
 
 export const clearCachedEvents = (): void => {
-    localStorage.removeItem(CACHE_COOKIE_EVENTS)
+    try {
+        localStorage.removeItem(CACHE_COOKIE_EVENTS)
+    } catch (err) {
+        console.warn('Analytics: Failed to clear cached events', err)
+    }
 }
 
 export const clearCachedPageViews = (): void => {
-    localStorage.removeItem(CACHE_COOKIE_PAGES)
+    try {
+        localStorage.removeItem(CACHE_COOKIE_PAGES)
+    } catch (err) {
+        console.warn('Analytics: Failed to clear cached page views', err)
+    }
 }
