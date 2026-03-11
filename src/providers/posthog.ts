@@ -67,6 +67,7 @@ export class Posthog {
                 ui_host: posthogUiHost,
                 autocapture: true,
                 capture_pageview: 'history_change',
+                persistence: 'localStorage',
                 session_recording: {
                     recordCrossOriginIframes: true,
                     minimumDurationMilliseconds: 30000,

@@ -1,6 +1,3 @@
-import Cookies from 'js-cookie'
-import { getAllowedDomain } from './urls'
-
 export const CACHE_COOKIE_EVENTS = 'cached_analytics_events'
 export const CACHE_COOKIE_PAGES = 'cached_analytics_page_views'
 
@@ -18,13 +15,10 @@ export type CachedPageView = {
 
 export const cacheEventToCookie = (eventName: string, properties: Record<string, unknown>): void => {
     try {
-        const domain = getAllowedDomain()
-        const existingCache = Cookies.get(CACHE_COOKIE_EVENTS)
+        const existingCache = localStorage.getItem(CACHE_COOKIE_EVENTS)
         const events: CachedEvent[] = existingCache ? JSON.parse(existingCache) : []
         events.push({ name: eventName, properties, timestamp: Date.now() })
-        const cookieOptions: Cookies.CookieAttributes = { expires: 1 }
-        if (domain) cookieOptions.domain = domain
-        Cookies.set(CACHE_COOKIE_EVENTS, JSON.stringify(events), cookieOptions)
+        localStorage.setItem(CACHE_COOKIE_EVENTS, JSON.stringify(events))
     } catch (err) {
         console.warn('Analytics: Failed to cache event', err)
     }
@@ -32,13 +26,10 @@ export const cacheEventToCookie = (eventName: string, properties: Record<string,
 
 export const cachePageViewToCookie = (pageName: string, properties?: Record<string, unknown>): void => {
     try {
-        const domain = getAllowedDomain()
-        const existingCache = Cookies.get(CACHE_COOKIE_PAGES)
+        const existingCache = localStorage.getItem(CACHE_COOKIE_PAGES)
         const pages: CachedPageView[] = existingCache ? JSON.parse(existingCache) : []
         pages.push({ name: pageName, properties, timestamp: Date.now() })
-        const cookieOptions: Cookies.CookieAttributes = { expires: 1 }
-        if (domain) cookieOptions.domain = domain
-        Cookies.set(CACHE_COOKIE_PAGES, JSON.stringify(pages), cookieOptions)
+        localStorage.setItem(CACHE_COOKIE_PAGES, JSON.stringify(pages))
     } catch (err) {
         console.warn('Analytics: Failed to cache page view', err)
     }
@@ -46,7 +37,7 @@ export const cachePageViewToCookie = (pageName: string, properties?: Record<stri
 
 export const getCachedEvents = (): CachedEvent[] => {
     try {
-        const storedEventsString = Cookies.get(CACHE_COOKIE_EVENTS)
+        const storedEventsString = localStorage.getItem(CACHE_COOKIE_EVENTS)
         if (storedEventsString) {
             const events = JSON.parse(storedEventsString)
             return Array.isArray(events) ? events : []
@@ -59,7 +50,7 @@ export const getCachedEvents = (): CachedEvent[] => {
 
 export const getCachedPageViews = (): CachedPageView[] => {
     try {
-        const storedPagesString = Cookies.get(CACHE_COOKIE_PAGES)
+        const storedPagesString = localStorage.getItem(CACHE_COOKIE_PAGES)
         if (storedPagesString) {
             const pages = JSON.parse(storedPagesString)
             return Array.isArray(pages) ? pages : []
@@ -71,13 +62,9 @@ export const getCachedPageViews = (): CachedPageView[] => {
 }
 
 export const clearCachedEvents = (): void => {
-    const domain = getAllowedDomain()
-    const cookieOptions = domain ? { domain } : {}
-    Cookies.remove(CACHE_COOKIE_EVENTS, cookieOptions)
+    localStorage.removeItem(CACHE_COOKIE_EVENTS)
 }
 
 export const clearCachedPageViews = (): void => {
-    const domain = getAllowedDomain()
-    const cookieOptions = domain ? { domain } : {}
-    Cookies.remove(CACHE_COOKIE_PAGES, cookieOptions)
+    localStorage.removeItem(CACHE_COOKIE_PAGES)
 }

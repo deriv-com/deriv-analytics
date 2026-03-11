@@ -119,6 +119,7 @@ export class RudderStack {
 
             this.analytics.load(RUDDERSTACK_KEY, rudderstackDataplane, {
                 externalAnonymousIdCookieName: this.rudderstack_anonymous_cookie_key,
+                storage: { type: 'localStorage' },
                 // Performance optimizations
                 lockIntegrationsVersion: true,
                 onLoaded: () => {
