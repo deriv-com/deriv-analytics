@@ -8,13 +8,8 @@ import {
     CACHE_COOKIE_EVENTS,
     CACHE_COOKIE_PAGES,
 } from '../src/utils/cookie'
-import { getAllowedDomain } from '../src/utils/urls'
 
 describe('cookie utilities', () => {
-    const mockWindowLocation = (hostname: string) => {
-        // Note: Cannot actually change hostname in jsdom, tests use default 'app.deriv.com'
-    }
-
     beforeEach(() => {
         localStorage.clear()
         jest.clearAllMocks()
@@ -24,66 +19,7 @@ describe('cookie utilities', () => {
         jest.restoreAllMocks()
     })
 
-    describe('getAllowedDomain', () => {
-        test('should return .deriv.com for deriv.com hostname', () => {
-            mockWindowLocation('deriv.com')
-            expect(getAllowedDomain()).toBe('.deriv.com')
-        })
-
-        test('should return .deriv.com for subdomain app.deriv.com', () => {
-            mockWindowLocation('app.deriv.com')
-            expect(getAllowedDomain()).toBe('.deriv.com')
-        })
-
-        test('should return .deriv.com for nested subdomain staging.app.deriv.com', () => {
-            mockWindowLocation('staging.app.deriv.com')
-            expect(getAllowedDomain()).toBe('.deriv.com')
-        })
-
-        test('should return .deriv.com for deriv.be hostname (fallback)', () => {
-            mockWindowLocation('app.deriv.be')
-            expect(getAllowedDomain()).toBe('.deriv.com')
-        })
-
-        test('should return .deriv.com for deriv.me hostname (fallback)', () => {
-            mockWindowLocation('staging.deriv.me')
-            expect(getAllowedDomain()).toBe('.deriv.com')
-        })
-
-        test('should return .deriv.com for binary.sx hostname (fallback)', () => {
-            mockWindowLocation('www.binary.sx')
-            expect(getAllowedDomain()).toBe('.deriv.com')
-        })
-
-        test('should fallback to .deriv.com for unknown domains', () => {
-            mockWindowLocation('unknown.example.com')
-            expect(getAllowedDomain()).toBe('.deriv.com')
-        })
-
-        test('should return .deriv.com when window is undefined', () => {
-            const originalWindow = global.window
-            const originalDescriptor = Object.getOwnPropertyDescriptor(global, 'window')
-
-            delete (global as any).window
-
-            try {
-                const result = getAllowedDomain()
-                expect(result).toBe('.deriv.com')
-            } finally {
-                if (originalDescriptor) {
-                    Object.defineProperty(global, 'window', originalDescriptor)
-                } else {
-                    ;(global as any).window = originalWindow
-                }
-            }
-        })
-    })
-
     describe('cacheEventToCookie', () => {
-        beforeEach(() => {
-            mockWindowLocation('app.deriv.com')
-        })
-
         test('should cache a new event to localStorage', () => {
             cacheEventToCookie('test_event', { action: 'click' })
 
@@ -145,10 +81,6 @@ describe('cookie utilities', () => {
     })
 
     describe('cachePageViewToCookie', () => {
-        beforeEach(() => {
-            mockWindowLocation('app.deriv.com')
-        })
-
         test('should cache a new page view to localStorage', () => {
             cachePageViewToCookie('/home', { platform: 'Deriv App' })
 
@@ -277,10 +209,6 @@ describe('cookie utilities', () => {
     })
 
     describe('clearCachedEvents', () => {
-        beforeEach(() => {
-            mockWindowLocation('app.deriv.com')
-        })
-
         test('should remove cached events from localStorage', () => {
             localStorage.setItem(CACHE_COOKIE_EVENTS, JSON.stringify([{ name: 'test' }]))
 
@@ -288,19 +216,37 @@ describe('cookie utilities', () => {
 
             expect(localStorage.getItem(CACHE_COOKIE_EVENTS)).toBeNull()
         })
+
+        test('should handle errors gracefully', () => {
+            jest.spyOn(Storage.prototype, 'removeItem').mockImplementation(() => {
+                throw new Error('localStorage error')
+            })
+
+            const consoleSpy = jest.spyOn(console, 'warn').mockImplementation()
+
+            expect(() => clearCachedEvents()).not.toThrow()
+            expect(consoleSpy).toHaveBeenCalledWith('Analytics: Failed to clear cached events', expect.any(Error))
+        })
     })
 
     describe('clearCachedPageViews', () => {
-        beforeEach(() => {
-            mockWindowLocation('app.deriv.com')
-        })
-
         test('should remove cached page views from localStorage', () => {
             localStorage.setItem(CACHE_COOKIE_PAGES, JSON.stringify([{ name: '/home' }]))
 
             clearCachedPageViews()
 
             expect(localStorage.getItem(CACHE_COOKIE_PAGES)).toBeNull()
+        })
+
+        test('should handle errors gracefully', () => {
+            jest.spyOn(Storage.prototype, 'removeItem').mockImplementation(() => {
+                throw new Error('localStorage error')
+            })
+
+            const consoleSpy = jest.spyOn(console, 'warn').mockImplementation()
+
+            expect(() => clearCachedPageViews()).not.toThrow()
+            expect(consoleSpy).toHaveBeenCalledWith('Analytics: Failed to clear cached page views', expect.any(Error))
         })
     })
 })

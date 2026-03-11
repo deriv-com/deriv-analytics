@@ -188,7 +188,7 @@ class AnalyticsCacheManager {
     /**
      * Parse a localStorage entry by key.
      */
-    private parseCookies(key: string): any {
+    private parseFromLocalStorage(key: string): any {
         if (typeof localStorage === 'undefined') return null
 
         try {
@@ -221,7 +221,7 @@ class AnalyticsCacheManager {
     push(key: string, data: any): void {
         if (typeof localStorage === 'undefined') return
 
-        const existing = this.parseCookies(key)
+        const existing = this.parseFromLocalStorage(key)
         const stored: any[] = Array.isArray(existing) ? existing : []
         stored.push(data)
 
