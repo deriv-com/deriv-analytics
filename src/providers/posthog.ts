@@ -47,6 +47,36 @@ export class Posthog {
     }
 
     /**
+     * Remove stale PostHog cookies that don't belong to the current project key.
+     * PostHog sets cookies named `ph_{apiKey}_posthog` — if multiple project keys
+     * have been used in the same browser, old cookies pile up and should be cleaned.
+     */
+    private cleanupStalePosthogCookies = (currentApiKey: string): void => {
+        if (typeof document === 'undefined') return
+
+        const currentCookieName = `ph_${currentApiKey}_posthog`
+        const staleCookies = document.cookie
+            .split(';')
+            .map(c => c.trim().split('=')[0])
+            .filter(name => /^ph_.+_posthog$/.test(name) && name !== currentCookieName)
+
+        if (staleCookies.length === 0) return
+
+        const hostname = window.location.hostname
+        const domainParts = hostname.split('.')
+        const rootDomain = domainParts.length >= 2 ? `.${domainParts.slice(-2).join('.')}` : hostname
+
+        staleCookies.forEach(name => {
+            // Try deleting with root domain, subdomain, and no domain
+            ;[rootDomain, hostname, ''].forEach(domain => {
+                const domainAttr = domain ? `; Domain=${domain}` : ''
+                document.cookie = `${name}=; path=/${domainAttr}; max-age=0; SameSite=Lax`
+            })
+            this.log(`cleanupStalePosthogCookies | removed stale cookie: ${name}`)
+        })
+    }
+
+    /**
      * Initialize PostHog with configuration
      * Configures PostHog instance with provided options
      */
@@ -59,6 +89,8 @@ export class Posthog {
                 return
             }
 
+            this.cleanupStalePosthogCookies(apiKey)
+
             const resolvedApiHost = api_host || getPosthogApiHost()
             this.log('init | loading PostHog SDK', { api_host: resolvedApiHost })
 
@@ -67,7 +99,6 @@ export class Posthog {
                 ui_host: posthogUiHost,
                 autocapture: true,
                 capture_pageview: 'history_change',
-                persistence: 'localStorage',
                 session_recording: {
                     recordCrossOriginIframes: true,
                     minimumDurationMilliseconds: 30000,

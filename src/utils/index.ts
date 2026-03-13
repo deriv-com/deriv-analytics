@@ -1,12 +1,12 @@
 export { cacheTrackEvents } from './analytics-cache'
 export {
-    cacheEventToCookie,
-    cachePageViewToCookie,
+    cacheEventToStorage,
+    cachePageViewToStorage,
     getCachedEvents,
     getCachedPageViews,
     clearCachedEvents,
     clearCachedPageViews,
-} from './cookie'
+} from './storage'
 export { getCountry, isUUID } from './helpers'
 export {
     allowedDomains,

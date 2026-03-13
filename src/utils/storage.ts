@@ -1,5 +1,5 @@
-export const CACHE_COOKIE_EVENTS = 'cached_analytics_events'
-export const CACHE_COOKIE_PAGES = 'cached_analytics_page_views'
+export const CACHE_STORAGE_EVENTS = 'cached_analytics_events'
+export const CACHE_STORAGE_PAGES = 'cached_analytics_page_views'
 
 export type CachedEvent = {
     name: string
@@ -13,23 +13,23 @@ export type CachedPageView = {
     timestamp: number
 }
 
-export const cacheEventToCookie = (eventName: string, properties: Record<string, unknown>): void => {
+export const cacheEventToStorage = (eventName: string, properties: Record<string, unknown>): void => {
     try {
-        const existingCache = localStorage.getItem(CACHE_COOKIE_EVENTS)
+        const existingCache = localStorage.getItem(CACHE_STORAGE_EVENTS)
         const events: CachedEvent[] = existingCache ? JSON.parse(existingCache) : []
         events.push({ name: eventName, properties, timestamp: Date.now() })
-        localStorage.setItem(CACHE_COOKIE_EVENTS, JSON.stringify(events))
+        localStorage.setItem(CACHE_STORAGE_EVENTS, JSON.stringify(events))
     } catch (err) {
         console.warn('Analytics: Failed to cache event', err)
     }
 }
 
-export const cachePageViewToCookie = (pageName: string, properties?: Record<string, unknown>): void => {
+export const cachePageViewToStorage = (pageName: string, properties?: Record<string, unknown>): void => {
     try {
-        const existingCache = localStorage.getItem(CACHE_COOKIE_PAGES)
+        const existingCache = localStorage.getItem(CACHE_STORAGE_PAGES)
         const pages: CachedPageView[] = existingCache ? JSON.parse(existingCache) : []
         pages.push({ name: pageName, properties, timestamp: Date.now() })
-        localStorage.setItem(CACHE_COOKIE_PAGES, JSON.stringify(pages))
+        localStorage.setItem(CACHE_STORAGE_PAGES, JSON.stringify(pages))
     } catch (err) {
         console.warn('Analytics: Failed to cache page view', err)
     }
@@ -37,7 +37,7 @@ export const cachePageViewToCookie = (pageName: string, properties?: Record<stri
 
 export const getCachedEvents = (): CachedEvent[] => {
     try {
-        const storedEventsString = localStorage.getItem(CACHE_COOKIE_EVENTS)
+        const storedEventsString = localStorage.getItem(CACHE_STORAGE_EVENTS)
         if (storedEventsString) {
             const events = JSON.parse(storedEventsString)
             return Array.isArray(events) ? events : []
@@ -50,7 +50,7 @@ export const getCachedEvents = (): CachedEvent[] => {
 
 export const getCachedPageViews = (): CachedPageView[] => {
     try {
-        const storedPagesString = localStorage.getItem(CACHE_COOKIE_PAGES)
+        const storedPagesString = localStorage.getItem(CACHE_STORAGE_PAGES)
         if (storedPagesString) {
             const pages = JSON.parse(storedPagesString)
             return Array.isArray(pages) ? pages : []
@@ -63,7 +63,7 @@ export const getCachedPageViews = (): CachedPageView[] => {
 
 export const clearCachedEvents = (): void => {
     try {
-        localStorage.removeItem(CACHE_COOKIE_EVENTS)
+        localStorage.removeItem(CACHE_STORAGE_EVENTS)
     } catch (err) {
         console.warn('Analytics: Failed to clear cached events', err)
     }
@@ -71,7 +71,7 @@ export const clearCachedEvents = (): void => {
 
 export const clearCachedPageViews = (): void => {
     try {
-        localStorage.removeItem(CACHE_COOKIE_PAGES)
+        localStorage.removeItem(CACHE_STORAGE_PAGES)
     } catch (err) {
         console.warn('Analytics: Failed to clear cached page views', err)
     }
