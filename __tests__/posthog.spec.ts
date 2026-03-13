@@ -497,6 +497,16 @@ describe('PostHog Provider', () => {
 
             global.document = originalDocument
         })
+
+        test('SSR guard → no crash when window is undefined', () => {
+            const originalWindow = global.window
+            // @ts-ignore
+            delete global.window
+
+            expect(() => new Posthog({ apiKey: 'current-key' })).not.toThrow()
+
+            global.window = originalWindow
+        })
     })
 
     describe('Integration Tests', () => {

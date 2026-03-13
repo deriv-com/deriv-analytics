@@ -52,7 +52,7 @@ export class Posthog {
      * have been used in the same browser, old cookies pile up and should be cleaned.
      */
     private cleanupStalePosthogCookies = (currentApiKey: string): void => {
-        if (typeof document === 'undefined') return
+        if (typeof document === 'undefined' || typeof window === 'undefined') return
 
         const currentCookieName = `ph_${currentApiKey}_posthog`
         const staleCookies = document.cookie
