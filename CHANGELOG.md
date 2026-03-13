@@ -1,3 +1,19 @@
+## [1.39.5](https://github.com/deriv-com/deriv-analytics/compare/v1.39.4...v1.39.5) (2026-03-13)
+
+### 🐛 Bug Fixes
+
+- add SSR guards to clearCachedEvents and clearCachedPageViews ([b12d14f](https://github.com/deriv-com/deriv-analytics/commit/b12d14fad9a0fbde67f4581cbf5a336d96463010))
+- migrate analytics cache from cookies to localStorage ([e6b8cf9](https://github.com/deriv-com/deriv-analytics/commit/e6b8cf989f8f2e50c36520b83e26515ae4115d61))
+- migrate analytics cache from cookies to localStorage ([fc56b72](https://github.com/deriv-com/deriv-analytics/commit/fc56b72ac968de03a317a19e00c11f53cada6076))
+
+### 📦 Code Refactoring
+
+- rename parseCookies to parseFromLocalStorage and clean up cookie.spec.ts ([455dcaf](https://github.com/deriv-com/deriv-analytics/commit/455dcaf84a582ac21062a70fcb051838a6937c7c))
+
+### 🚨 Tests
+
+- update cookie.spec.ts for localStorage migration ([dcdaa33](https://github.com/deriv-com/deriv-analytics/commit/dcdaa33b7d2a2f7745cb965092b2d812892c27b2))
+
 ## [1.39.4](https://github.com/deriv-com/deriv-analytics/compare/v1.39.3...v1.39.4) (2026-03-05)
 
 ### ♻️ Chores
