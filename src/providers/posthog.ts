@@ -57,7 +57,7 @@ export class Posthog {
         const currentCookieName = `ph_${currentApiKey}_posthog`
         const staleCookies = document.cookie
             .split(';')
-            .map(c => c.trim().split('=')[0])
+            .map(c => c.trim().split('=')[0] ?? '')
             .filter(name => /^ph_.+_posthog$/.test(name) && name !== currentCookieName)
 
         if (staleCookies.length === 0) return
