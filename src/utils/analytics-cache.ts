@@ -186,27 +186,18 @@ class AnalyticsCacheManager {
     }
 
     /**
-     * Parse cookies to find a specific cookie by name.
-     * Uses an early-exit linear scan instead of building a full map,
-     * which is significantly faster when there are many cookies.
+     * Parse a localStorage entry by key.
      */
-    private parseCookies(cookieName: string): any {
-        if (typeof document === 'undefined') return null
+    private parseFromLocalStorage(key: string): any {
+        if (typeof localStorage === 'undefined') return null
 
-        const cookies = document.cookie.split('; ')
-        for (const cookie of cookies) {
-            const eqIdx = cookie.indexOf('=')
-            if (eqIdx === -1) continue
-            if (decodeURIComponent(cookie.slice(0, eqIdx)) === cookieName) {
-                const raw = cookie.slice(eqIdx + 1)
-                try {
-                    return JSON.parse(decodeURIComponent(raw))
-                } catch {
-                    return decodeURIComponent(raw)
-                }
-            }
+        try {
+            const raw = localStorage.getItem(key)
+            if (raw === null) return null
+            return JSON.parse(raw)
+        } catch {
+            return null
         }
-        return null
     }
 
     /**
@@ -220,55 +211,25 @@ class AnalyticsCacheManager {
      * Set a cached event
      */
     set(event: CachedEvent): void {
-        this.log('set | caching event to cookie', event)
+        this.log('set | caching event to localStorage', event)
         this.push('cached_analytics_events', event)
     }
 
     /**
-     * Push data to cookie cache
+     * Push data to localStorage cache
      */
-    push(cookieName: string, data: any): void {
-        if (typeof document === 'undefined') return
+    push(key: string, data: any): void {
+        if (typeof localStorage === 'undefined') return
 
-        let storedCookies: any[] = []
-        const cacheCookie = this.parseCookies(cookieName)
-        if (cacheCookie && Array.isArray(cacheCookie)) {
-            storedCookies = cacheCookie
+        const existing = this.parseFromLocalStorage(key)
+        const stored: any[] = Array.isArray(existing) ? existing : []
+        stored.push(data)
+
+        try {
+            localStorage.setItem(key, JSON.stringify(stored))
+        } catch (err) {
+            console.warn('AnalyticsCacheManager: Failed to push to localStorage', err)
         }
-
-        storedCookies.push(data)
-
-        const domain = this.getAllowedDomain()
-        const maxAge = 365 * 24 * 60 * 60 // 1 year
-        const cookieString = `${cookieName}=${encodeURIComponent(JSON.stringify(storedCookies))}; path=/; Domain=${domain}; max-age=${maxAge}; SameSite=Lax`
-
-        document.cookie = cookieString
-    }
-
-    /**
-     * Get the allowed domain for cookies
-     * For localhost/single-part domains: use as-is
-     * For multi-part domains: use top-level domain (e.g., .deriv.com)
-     */
-    private getAllowedDomain(): string {
-        if (typeof window === 'undefined') return ''
-
-        const hostname = window.location.hostname
-
-        // Handle IP addresses and localhost
-        if (hostname === 'localhost' || /^\d+\.\d+\.\d+\.\d+$/.test(hostname)) {
-            return hostname
-        }
-
-        const parts = hostname.split('.')
-
-        // Single part domain (e.g., "localhost")
-        if (parts.length === 1) {
-            return hostname
-        }
-
-        // Use top-level domain for proper subdomain sharing
-        return `.${parts.slice(-2).join('.')}`
     }
 
     /**
