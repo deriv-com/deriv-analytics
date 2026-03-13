@@ -9,7 +9,7 @@ import {
     CACHE_STORAGE_PAGES,
 } from '../src/utils/storage'
 
-describe('cookie utilities', () => {
+describe('storage utilities', () => {
     beforeEach(() => {
         localStorage.clear()
         jest.clearAllMocks()

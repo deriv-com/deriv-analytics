@@ -64,6 +64,8 @@ export class Posthog {
 
         const hostname = window.location.hostname
         const domainParts = hostname.split('.')
+        // TLD+2 assumption: works for deriv.com → .deriv.com but would produce
+        // .co.uk for app.deriv.co.uk. Acceptable for current Deriv domains.
         const rootDomain = domainParts.length >= 2 ? `.${domainParts.slice(-2).join('.')}` : hostname
 
         staleCookies.forEach(name => {
@@ -72,7 +74,8 @@ export class Posthog {
                 const domainAttr = domain ? `; Domain=${domain}` : ''
                 document.cookie = `${name}=; path=/${domainAttr}; max-age=0; SameSite=Lax`
             })
-            this.log(`cleanupStalePosthogCookies | removed stale cookie: ${name}`)
+            const deleted = !document.cookie.split(';').some(c => c.trim().startsWith(`${name}=`))
+            this.log(`cleanupStalePosthogCookies | ${deleted ? 'removed' : 'failed to remove'} stale cookie: ${name}`)
         })
     }
 

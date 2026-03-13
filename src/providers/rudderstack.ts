@@ -4,7 +4,7 @@ import { rudderstackDataplane } from '../utils/urls'
 import { createLogger } from '../utils/helpers'
 
 // Constants
-const COOKIE_MAX_AGE_SECONDS = 6 * 30 * 24 * 60 * 60 // 6 months
+const COOKIE_MAX_AGE_SECONDS = 180 * 24 * 60 * 60 // 180 days (~6 months)
 
 /**
  * RudderStack analytics wrapper with singleton pattern.
