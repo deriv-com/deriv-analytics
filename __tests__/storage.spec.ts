@@ -1,15 +1,15 @@
 import {
-    cacheEventToCookie,
-    cachePageViewToCookie,
+    cacheEventToStorage,
+    cachePageViewToStorage,
     getCachedEvents,
     getCachedPageViews,
     clearCachedEvents,
     clearCachedPageViews,
-    CACHE_COOKIE_EVENTS,
-    CACHE_COOKIE_PAGES,
-} from '../src/utils/cookie'
+    CACHE_STORAGE_EVENTS,
+    CACHE_STORAGE_PAGES,
+} from '../src/utils/storage'
 
-describe('cookie utilities', () => {
+describe('storage utilities', () => {
     beforeEach(() => {
         localStorage.clear()
         jest.clearAllMocks()
@@ -19,11 +19,11 @@ describe('cookie utilities', () => {
         jest.restoreAllMocks()
     })
 
-    describe('cacheEventToCookie', () => {
+    describe('cacheEventToStorage', () => {
         test('should cache a new event to localStorage', () => {
-            cacheEventToCookie('test_event', { action: 'click' })
+            cacheEventToStorage('test_event', { action: 'click' })
 
-            const stored = JSON.parse(localStorage.getItem(CACHE_COOKIE_EVENTS)!)
+            const stored = JSON.parse(localStorage.getItem(CACHE_STORAGE_EVENTS)!)
             expect(stored).toHaveLength(1)
             expect(stored[0].name).toBe('test_event')
             expect(stored[0].properties).toEqual({ action: 'click' })
@@ -32,11 +32,11 @@ describe('cookie utilities', () => {
 
         test('should append event to existing cache', () => {
             const existingCache = [{ name: 'existing_event', properties: { foo: 'bar' }, timestamp: 123456789 }]
-            localStorage.setItem(CACHE_COOKIE_EVENTS, JSON.stringify(existingCache))
+            localStorage.setItem(CACHE_STORAGE_EVENTS, JSON.stringify(existingCache))
 
-            cacheEventToCookie('new_event', { action: 'submit' })
+            cacheEventToStorage('new_event', { action: 'submit' })
 
-            const stored = JSON.parse(localStorage.getItem(CACHE_COOKIE_EVENTS)!)
+            const stored = JSON.parse(localStorage.getItem(CACHE_STORAGE_EVENTS)!)
             expect(stored).toHaveLength(2)
             expect(stored[0]).toEqual(existingCache[0])
             expect(stored[1].name).toBe('new_event')
@@ -45,9 +45,9 @@ describe('cookie utilities', () => {
         })
 
         test('should handle empty properties', () => {
-            cacheEventToCookie('test_event', {})
+            cacheEventToStorage('test_event', {})
 
-            const stored = JSON.parse(localStorage.getItem(CACHE_COOKIE_EVENTS)!)
+            const stored = JSON.parse(localStorage.getItem(CACHE_STORAGE_EVENTS)!)
             expect(stored[0].name).toBe('test_event')
             expect(stored[0].properties).toEqual({})
             expect(typeof stored[0].timestamp).toBe('number')
@@ -60,9 +60,9 @@ describe('cookie utilities', () => {
                 tags: ['new', 'important'],
             }
 
-            cacheEventToCookie('test_event', complexProps)
+            cacheEventToStorage('test_event', complexProps)
 
-            const stored = JSON.parse(localStorage.getItem(CACHE_COOKIE_EVENTS)!)
+            const stored = JSON.parse(localStorage.getItem(CACHE_STORAGE_EVENTS)!)
             expect(stored[0].name).toBe('test_event')
             expect(stored[0].properties).toEqual(complexProps)
             expect(typeof stored[0].timestamp).toBe('number')
@@ -75,16 +75,16 @@ describe('cookie utilities', () => {
 
             const consoleSpy = jest.spyOn(console, 'warn').mockImplementation()
 
-            expect(() => cacheEventToCookie('test_event', { action: 'click' })).not.toThrow()
+            expect(() => cacheEventToStorage('test_event', { action: 'click' })).not.toThrow()
             expect(consoleSpy).toHaveBeenCalledWith('Analytics: Failed to cache event', expect.any(Error))
         })
     })
 
-    describe('cachePageViewToCookie', () => {
+    describe('cachePageViewToStorage', () => {
         test('should cache a new page view to localStorage', () => {
-            cachePageViewToCookie('/home', { platform: 'Deriv App' })
+            cachePageViewToStorage('/home', { platform: 'Deriv App' })
 
-            const stored = JSON.parse(localStorage.getItem(CACHE_COOKIE_PAGES)!)
+            const stored = JSON.parse(localStorage.getItem(CACHE_STORAGE_PAGES)!)
             expect(stored).toHaveLength(1)
             expect(stored[0].name).toBe('/home')
             expect(stored[0].properties).toEqual({ platform: 'Deriv App' })
@@ -93,11 +93,11 @@ describe('cookie utilities', () => {
 
         test('should append page view to existing cache', () => {
             const existingCache = [{ name: '/dashboard', properties: {}, timestamp: 123456789 }]
-            localStorage.setItem(CACHE_COOKIE_PAGES, JSON.stringify(existingCache))
+            localStorage.setItem(CACHE_STORAGE_PAGES, JSON.stringify(existingCache))
 
-            cachePageViewToCookie('/settings')
+            cachePageViewToStorage('/settings')
 
-            const stored = JSON.parse(localStorage.getItem(CACHE_COOKIE_PAGES)!)
+            const stored = JSON.parse(localStorage.getItem(CACHE_STORAGE_PAGES)!)
             expect(stored).toHaveLength(2)
             expect(stored[0]).toEqual(existingCache[0])
             expect(stored[1].name).toBe('/settings')
@@ -106,9 +106,9 @@ describe('cookie utilities', () => {
         })
 
         test('should cache page view without properties', () => {
-            cachePageViewToCookie('/about')
+            cachePageViewToStorage('/about')
 
-            const stored = JSON.parse(localStorage.getItem(CACHE_COOKIE_PAGES)!)
+            const stored = JSON.parse(localStorage.getItem(CACHE_STORAGE_PAGES)!)
             expect(stored[0].name).toBe('/about')
             expect(stored[0].properties).toBeUndefined()
             expect(typeof stored[0].timestamp).toBe('number')
@@ -121,7 +121,7 @@ describe('cookie utilities', () => {
 
             const consoleSpy = jest.spyOn(console, 'warn').mockImplementation()
 
-            expect(() => cachePageViewToCookie('/test')).not.toThrow()
+            expect(() => cachePageViewToStorage('/test')).not.toThrow()
             expect(consoleSpy).toHaveBeenCalledWith('Analytics: Failed to cache page view', expect.any(Error))
         })
     })
@@ -137,14 +137,14 @@ describe('cookie utilities', () => {
                 { name: 'event1', properties: { foo: 'bar' }, timestamp: 123456789 },
                 { name: 'event2', properties: { baz: 'qux' }, timestamp: 987654321 },
             ]
-            localStorage.setItem(CACHE_COOKIE_EVENTS, JSON.stringify(cachedEvents))
+            localStorage.setItem(CACHE_STORAGE_EVENTS, JSON.stringify(cachedEvents))
 
             const events = getCachedEvents()
             expect(events).toEqual(cachedEvents)
         })
 
         test('should return empty array for invalid JSON', () => {
-            localStorage.setItem(CACHE_COOKIE_EVENTS, 'invalid json')
+            localStorage.setItem(CACHE_STORAGE_EVENTS, 'invalid json')
 
             const consoleSpy = jest.spyOn(console, 'warn').mockImplementation()
             const events = getCachedEvents()
@@ -154,7 +154,7 @@ describe('cookie utilities', () => {
         })
 
         test('should return empty array if cached value is not an array', () => {
-            localStorage.setItem(CACHE_COOKIE_EVENTS, JSON.stringify({ not: 'an array' }))
+            localStorage.setItem(CACHE_STORAGE_EVENTS, JSON.stringify({ not: 'an array' }))
 
             const events = getCachedEvents()
             expect(events).toEqual([])
@@ -184,14 +184,14 @@ describe('cookie utilities', () => {
                 { name: '/home', properties: {}, timestamp: 123456789 },
                 { name: '/dashboard', properties: { platform: 'Deriv' }, timestamp: 987654321 },
             ]
-            localStorage.setItem(CACHE_COOKIE_PAGES, JSON.stringify(cachedPages))
+            localStorage.setItem(CACHE_STORAGE_PAGES, JSON.stringify(cachedPages))
 
             const pages = getCachedPageViews()
             expect(pages).toEqual(cachedPages)
         })
 
         test('should return empty array for invalid JSON', () => {
-            localStorage.setItem(CACHE_COOKIE_PAGES, 'not valid json')
+            localStorage.setItem(CACHE_STORAGE_PAGES, 'not valid json')
 
             const consoleSpy = jest.spyOn(console, 'warn').mockImplementation()
             const pages = getCachedPageViews()
@@ -201,7 +201,7 @@ describe('cookie utilities', () => {
         })
 
         test('should return empty array if cached value is not an array', () => {
-            localStorage.setItem(CACHE_COOKIE_PAGES, JSON.stringify('string'))
+            localStorage.setItem(CACHE_STORAGE_PAGES, JSON.stringify('string'))
 
             const pages = getCachedPageViews()
             expect(pages).toEqual([])
@@ -210,11 +210,11 @@ describe('cookie utilities', () => {
 
     describe('clearCachedEvents', () => {
         test('should remove cached events from localStorage', () => {
-            localStorage.setItem(CACHE_COOKIE_EVENTS, JSON.stringify([{ name: 'test' }]))
+            localStorage.setItem(CACHE_STORAGE_EVENTS, JSON.stringify([{ name: 'test' }]))
 
             clearCachedEvents()
 
-            expect(localStorage.getItem(CACHE_COOKIE_EVENTS)).toBeNull()
+            expect(localStorage.getItem(CACHE_STORAGE_EVENTS)).toBeNull()
         })
 
         test('should handle errors gracefully', () => {
@@ -231,11 +231,11 @@ describe('cookie utilities', () => {
 
     describe('clearCachedPageViews', () => {
         test('should remove cached page views from localStorage', () => {
-            localStorage.setItem(CACHE_COOKIE_PAGES, JSON.stringify([{ name: '/home' }]))
+            localStorage.setItem(CACHE_STORAGE_PAGES, JSON.stringify([{ name: '/home' }]))
 
             clearCachedPageViews()
 
-            expect(localStorage.getItem(CACHE_COOKIE_PAGES)).toBeNull()
+            expect(localStorage.getItem(CACHE_STORAGE_PAGES)).toBeNull()
         })
 
         test('should handle errors gracefully', () => {

@@ -1,13 +1,13 @@
 import { RudderStack } from './providers/rudderstack'
 import type { TCoreAttributes, TAllEvents, TV2EventPayload } from './types'
 import {
-    cacheEventToCookie,
-    cachePageViewToCookie,
+    cacheEventToStorage,
+    cachePageViewToStorage,
     getCachedEvents,
     getCachedPageViews,
     clearCachedEvents,
     clearCachedPageViews,
-} from './utils/cookie'
+} from './utils/storage'
 import { isUUID, getCountry, cleanObject, flattenObject, createLogger, isInternalEmail } from './utils/helpers'
 import { cacheTrackEvents } from './utils/analytics-cache'
 
@@ -91,18 +91,18 @@ export function createAnalyticsInstance(_options?: Options) {
         tracking_config: { [key: string]: boolean } = {},
         offline_event_cache: Array<{ event: keyof TAllEvents; payload: TAllEvents[keyof TAllEvents] }> = [],
         _pending_identify_calls: Array<{ userId: string; traits?: Record<string, any> }> = [],
-        _cookie_cache_processed = false
+        _storage_cache_processed = false
 
-    const processCookieCache = () => {
-        if (_cookie_cache_processed) return
+    const processStorageCache = () => {
+        if (_storage_cache_processed) return
         if (!_rudderstack?.has_initialized) return
 
-        _cookie_cache_processed = true
+        _storage_cache_processed = true
 
         try {
             const storedEvents = getCachedEvents()
             if (storedEvents.length > 0) {
-                log(`processCookieCache | replaying ${storedEvents.length} cached event(s)`, storedEvents)
+                log(`processStorageCache | replaying ${storedEvents.length} cached event(s)`, storedEvents)
                 storedEvents.forEach(event => {
                     const cleaned_properties = cleanObject(event.properties)
                     _rudderstack?.track(event.name as keyof TAllEvents, cleaned_properties as any)
@@ -112,20 +112,20 @@ export function createAnalyticsInstance(_options?: Options) {
 
             const storedPages = getCachedPageViews()
             if (storedPages.length > 0) {
-                log(`processCookieCache | replaying ${storedPages.length} cached page view(s)`, storedPages)
+                log(`processStorageCache | replaying ${storedPages.length} cached page view(s)`, storedPages)
                 storedPages.forEach(page => {
                     _rudderstack?.pageView(page.name, 'Deriv App', getId(), page.properties)
                 })
                 clearCachedPageViews()
             }
         } catch (err) {
-            console.warn('Analytics: Failed to process cookie cache', err)
+            console.warn('Analytics: Failed to process storage cache', err)
         }
     }
 
     const onSdkLoaded = () => {
         log('onSdkLoaded | RudderStack SDK loaded')
-        processCookieCache()
+        processStorageCache()
 
         if (_pending_identify_calls.length > 0) {
             log(`onSdkLoaded | flushing ${_pending_identify_calls.length} pending identify call(s)`)
@@ -426,8 +426,8 @@ export function createAnalyticsInstance(_options?: Options) {
                 log('pageView | sending page view to RudderStack', { current_page, platform })
                 _rudderstack.pageView(current_page, platform, userId, properties)
             } else {
-                log('pageView | RudderStack not initialized — caching page view to cookie', { current_page })
-                cachePageViewToCookie(current_page, { platform, ...properties })
+                log('pageView | RudderStack not initialized — caching page view to localStorage', { current_page })
+                cachePageViewToStorage(current_page, { platform, ...properties })
             }
         }
 
@@ -599,8 +599,8 @@ export function createAnalyticsInstance(_options?: Options) {
         const hasRudderstackInitialized = _rudderstack?.has_initialized
         if (!navigator.onLine || !hasRudderstackInitialized) {
             if (!hasRudderstackInitialized) {
-                log('trackEvent | RudderStack not initialized — caching event to cookie', { event })
-                cacheEventToCookie(event as string, final_payload)
+                log('trackEvent | RudderStack not initialized — caching event to localStorage', { event })
+                cacheEventToStorage(event as string, final_payload)
             } else {
                 log('trackEvent | offline — caching event to memory', { event })
                 offline_event_cache.push({ event, payload: final_payload })

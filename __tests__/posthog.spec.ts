@@ -450,6 +450,65 @@ describe('PostHog Provider', () => {
         })
     })
 
+    describe('cleanupStalePosthogCookies', () => {
+        let cookieSetSpy: jest.SpyInstance
+
+        beforeEach(() => {
+            cookieSetSpy = jest.spyOn(document, 'cookie', 'set')
+        })
+
+        afterEach(() => {
+            cookieSetSpy.mockRestore()
+        })
+
+        test('no ph_*_posthog cookies → no deletion writes', () => {
+            Object.defineProperty(document, 'cookie', {
+                get: () => 'other_cookie=value; unrelated=data',
+                configurable: true,
+            })
+
+            new Posthog({ apiKey: 'current-key' })
+
+            const deletionCalls = cookieSetSpy.mock.calls.filter(
+                ([val]: [string]) => /^ph_.+_posthog=/.test(val) && val.includes('max-age=0')
+            )
+            expect(deletionCalls).toHaveLength(0)
+        })
+
+        test('stale cookie present → deleted, current cookie → untouched', () => {
+            Object.defineProperty(document, 'cookie', {
+                get: () => 'ph_old-key_posthog=stale; ph_current-key_posthog=live',
+                configurable: true,
+            })
+
+            new Posthog({ apiKey: 'current-key' })
+
+            const deletionCalls = cookieSetSpy.mock.calls.filter(([val]: [string]) => val.includes('max-age=0'))
+            expect(deletionCalls.some(([val]: [string]) => val.startsWith('ph_old-key_posthog='))).toBe(true)
+            expect(deletionCalls.some(([val]: [string]) => val.startsWith('ph_current-key_posthog='))).toBe(false)
+        })
+
+        test('SSR guard → no crash when document is undefined', () => {
+            const originalDocument = global.document
+            // @ts-ignore
+            delete global.document
+
+            expect(() => new Posthog({ apiKey: 'current-key' })).not.toThrow()
+
+            global.document = originalDocument
+        })
+
+        test('SSR guard → no crash when window is undefined', () => {
+            const originalWindow = global.window
+            // @ts-ignore
+            delete global.window
+
+            expect(() => new Posthog({ apiKey: 'current-key' })).not.toThrow()
+
+            global.window = originalWindow
+        })
+    })
+
     describe('Integration Tests', () => {
         test('should handle full user lifecycle', async () => {
             ;(posthog.init as jest.Mock).mockClear()

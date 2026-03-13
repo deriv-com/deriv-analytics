@@ -2,7 +2,7 @@ import { createAnalyticsInstance } from '../src/analytics'
 
 // Mock dependencies
 jest.mock('../src/providers/rudderstack')
-jest.mock('../src/utils/cookie')
+jest.mock('../src/utils/storage')
 jest.mock('../src/utils/helpers', () => ({
     ...jest.requireActual('../src/utils/helpers'),
     getCountry: jest.fn(),
@@ -10,7 +10,7 @@ jest.mock('../src/utils/helpers', () => ({
 }))
 
 import { RudderStack } from '../src/providers/rudderstack'
-import * as cookieUtils from '../src/utils/cookie'
+import * as storageUtils from '../src/utils/storage'
 import { getCountry, isUUID } from '../src/utils/helpers'
 
 describe('Analytics - createAnalyticsInstance', () => {
@@ -39,12 +39,12 @@ describe('Analytics - createAnalyticsInstance', () => {
         })
         ;(getCountry as jest.Mock).mockResolvedValue('us')
         ;(isUUID as jest.Mock).mockReturnValue(false)
-        ;(cookieUtils.getCachedEvents as jest.Mock).mockReturnValue([])
-        ;(cookieUtils.getCachedPageViews as jest.Mock).mockReturnValue([])
-        ;(cookieUtils.cacheEventToCookie as jest.Mock).mockImplementation(() => {})
-        ;(cookieUtils.cachePageViewToCookie as jest.Mock).mockImplementation(() => {})
-        ;(cookieUtils.clearCachedEvents as jest.Mock).mockImplementation(() => {})
-        ;(cookieUtils.clearCachedPageViews as jest.Mock).mockImplementation(() => {})
+        ;(storageUtils.getCachedEvents as jest.Mock).mockReturnValue([])
+        ;(storageUtils.getCachedPageViews as jest.Mock).mockReturnValue([])
+        ;(storageUtils.cacheEventToStorage as jest.Mock).mockImplementation(() => {})
+        ;(storageUtils.cachePageViewToStorage as jest.Mock).mockImplementation(() => {})
+        ;(storageUtils.clearCachedEvents as jest.Mock).mockImplementation(() => {})
+        ;(storageUtils.clearCachedPageViews as jest.Mock).mockImplementation(() => {})
     })
 
     describe('Initialization', () => {
@@ -244,13 +244,13 @@ describe('Analytics - createAnalyticsInstance', () => {
             expect(mockRudderstack.track).not.toHaveBeenCalled()
         })
 
-        test('should cache event to cookie when RudderStack not initialized', () => {
+        test('should cache event to storage when RudderStack not initialized', () => {
             const originalValue = mockRudderstack.has_initialized
             mockRudderstack.has_initialized = false
 
             analytics.trackEvent('test_event' as any, { action: 'click' })
 
-            expect(cookieUtils.cacheEventToCookie).toHaveBeenCalledWith('test_event', expect.any(Object))
+            expect(storageUtils.cacheEventToStorage).toHaveBeenCalledWith('test_event', expect.any(Object))
 
             // Restore original value
             mockRudderstack.has_initialized = originalValue
@@ -292,7 +292,7 @@ describe('Analytics - createAnalyticsInstance', () => {
 
             newAnalytics.pageView('/dashboard')
 
-            expect(cookieUtils.cachePageViewToCookie).toHaveBeenCalled()
+            expect(storageUtils.cachePageViewToStorage).toHaveBeenCalled()
 
             // Restore
             mockRudderstack.has_initialized = true
@@ -400,13 +400,13 @@ describe('Analytics - createAnalyticsInstance', () => {
         })
     })
 
-    describe('Cookie cache processing', () => {
+    describe('Storage cache processing', () => {
         test('should process cached events on initialization', async () => {
             const cachedEvents = [
                 { name: 'cached_event_1', properties: { action: 'click' }, timestamp: Date.now() },
                 { name: 'cached_event_2', properties: { action: 'submit' }, timestamp: Date.now() },
             ]
-            ;(cookieUtils.getCachedEvents as jest.Mock).mockReturnValue(cachedEvents)
+            ;(storageUtils.getCachedEvents as jest.Mock).mockReturnValue(cachedEvents)
 
             analytics = createAnalyticsInstance()
             await analytics.initialise({ rudderstackKey: 'test_key' })
@@ -416,7 +416,7 @@ describe('Analytics - createAnalyticsInstance', () => {
 
             expect(mockRudderstack.track).toHaveBeenCalledWith('cached_event_1', expect.any(Object))
             expect(mockRudderstack.track).toHaveBeenCalledWith('cached_event_2', expect.any(Object))
-            expect(cookieUtils.clearCachedEvents).toHaveBeenCalled()
+            expect(storageUtils.clearCachedEvents).toHaveBeenCalled()
         })
 
         test('should process cached page views on initialization', async () => {
@@ -424,7 +424,7 @@ describe('Analytics - createAnalyticsInstance', () => {
                 { name: '/home', properties: {}, timestamp: Date.now() },
                 { name: '/dashboard', properties: {}, timestamp: Date.now() },
             ]
-            ;(cookieUtils.getCachedPageViews as jest.Mock).mockReturnValue(cachedPages)
+            ;(storageUtils.getCachedPageViews as jest.Mock).mockReturnValue(cachedPages)
 
             analytics = createAnalyticsInstance()
             await analytics.initialise({ rudderstackKey: 'test_key' })
@@ -434,7 +434,7 @@ describe('Analytics - createAnalyticsInstance', () => {
 
             expect(mockRudderstack.pageView).toHaveBeenCalledWith('/home', 'Deriv App', expect.any(String), {})
             expect(mockRudderstack.pageView).toHaveBeenCalledWith('/dashboard', 'Deriv App', expect.any(String), {})
-            expect(cookieUtils.clearCachedPageViews).toHaveBeenCalled()
+            expect(storageUtils.clearCachedPageViews).toHaveBeenCalled()
         })
     })
 })
