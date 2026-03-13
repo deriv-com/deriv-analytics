@@ -1,3 +1,21 @@
+## [1.39.6](https://github.com/deriv-com/deriv-analytics/compare/v1.39.5...v1.39.6) (2026-03-13)
+
+### ♻️ Chores
+
+- upgrade posthog-js to 1.360.1 and fix audit vulnerabilities ([79da9b9](https://github.com/deriv-com/deriv-analytics/commit/79da9b978ecee6de8b1d65d13c1e94566a37b204))
+
+### 🐛 Bug Fixes
+
+- accurate cookie deletion logging, TTL constant, test file rename, and TLD comment ([60a1ef7](https://github.com/deriv-com/deriv-analytics/commit/60a1ef71cdf8f7db5c0a4a28e1a9d0e2f1abd640))
+- clean up cookie naming, reduce RudderStack cookie TTL, and purge stale PostHog cookies ([74ad1ac](https://github.com/deriv-com/deriv-analytics/commit/74ad1ac3f618005cfe495f0a2acb84ba13880843))
+- clean up cookie naming, reduce RudderStack TTL, and purge stale PostHog cookies ([61802e3](https://github.com/deriv-com/deriv-analytics/commit/61802e31a6cf4d92f117288ce66238b2eeae7e98))
+- guard window in cleanupStalePosthogCookies SSR check ([97b1451](https://github.com/deriv-com/deriv-analytics/commit/97b145183e987c989ad13faabf6c7c4c26aec3c0))
+- resolve TS2345 error in cleanupStalePosthogCookies ([c060e47](https://github.com/deriv-com/deriv-analytics/commit/c060e4771b5d886403f1822f77d2b857cdf68d29))
+
+### 🚨 Tests
+
+- add tests for cleanupStalePosthogCookies ([f0b8731](https://github.com/deriv-com/deriv-analytics/commit/f0b873148d73bb61184dd86d9a40caa88a2809aa))
+
 ## [1.39.5](https://github.com/deriv-com/deriv-analytics/compare/v1.39.4...v1.39.5) (2026-03-13)
 
 ### 🐛 Bug Fixes
