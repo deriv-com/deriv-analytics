@@ -1,16 +1,17 @@
+import { vi } from 'vitest'
 import { Growthbook } from '../src/providers/growthbook'
 
-jest.mock('@rudderstack/analytics-js')
-jest.mock('@growthbook/growthbook', () => ({
-    GrowthBook: jest.fn().mockImplementation(() => ({
-        init: jest.fn().mockResolvedValue(undefined),
-        setAttributes: jest.fn(),
-        getAttributes: jest.fn().mockReturnValue({}),
-        evalFeature: jest.fn().mockReturnValue({ on: true, value: 'test' }),
-        getFeatureValue: jest.fn(),
-        setURL: jest.fn(),
-        isOn: jest.fn().mockReturnValue(true),
-        destroy: jest.fn(),
+vi.mock('@rudderstack/analytics-js')
+vi.mock('@growthbook/growthbook', () => ({
+    GrowthBook: vi.fn().mockImplementation(() => ({
+        init: vi.fn().mockResolvedValue(undefined),
+        setAttributes: vi.fn(),
+        getAttributes: vi.fn().mockReturnValue({}),
+        evalFeature: vi.fn().mockReturnValue({ on: true, value: 'test' }),
+        getFeatureValue: vi.fn(),
+        setURL: vi.fn(),
+        isOn: vi.fn().mockReturnValue(true),
+        destroy: vi.fn(),
     })),
 }))
 
@@ -18,12 +19,12 @@ describe('Growthbook Provider', () => {
     let growthbook: Growthbook
 
     beforeEach(() => {
-        jest.clearAllMocks()
+        vi.clearAllMocks()
 
         // Reset singleton instance before each test
         Growthbook.resetInstance()
 
-        // window.location.hostname is already 'app.deriv.com' from jest.config testEnvironmentOptions
+        // window.location.hostname is already 'app.deriv.com' from vitest.config environmentOptions
 
         // Mock window.dataLayer
         ;(window as any).dataLayer = []
@@ -38,7 +39,7 @@ describe('Growthbook Provider', () => {
 
         test('should create singleton instance', () => {
             // Suppress expected warning about existing instance
-            const consoleWarnSpy = jest.spyOn(console, 'warn').mockImplementation()
+            const consoleWarnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {})
 
             const instance1 = Growthbook.getGrowthBookInstance('key1', 'decrypt1')
             const instance2 = Growthbook.getGrowthBookInstance('key2', 'decrypt2')
@@ -99,7 +100,7 @@ describe('Growthbook Provider', () => {
         })
 
         test('should merge attributes with existing ones', () => {
-            growthbook.GrowthBook.getAttributes = jest.fn().mockReturnValue({ existing: 'value' })
+            growthbook.GrowthBook.getAttributes = vi.fn().mockReturnValue({ existing: 'value' })
 
             growthbook.setAttributes({
                 id: '456',

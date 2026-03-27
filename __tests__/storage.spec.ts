@@ -1,3 +1,4 @@
+import { vi } from 'vitest'
 import {
     cacheEventToStorage,
     cachePageViewToStorage,
@@ -12,11 +13,11 @@ import {
 describe('storage utilities', () => {
     beforeEach(() => {
         localStorage.clear()
-        jest.clearAllMocks()
+        vi.clearAllMocks()
     })
 
     afterEach(() => {
-        jest.restoreAllMocks()
+        vi.restoreAllMocks()
     })
 
     describe('cacheEventToStorage', () => {
@@ -69,11 +70,11 @@ describe('storage utilities', () => {
         })
 
         test('should handle errors gracefully', () => {
-            jest.spyOn(Storage.prototype, 'getItem').mockImplementation(() => {
+            vi.spyOn(localStorage, 'getItem').mockImplementation(() => {
                 throw new Error('localStorage error')
             })
 
-            const consoleSpy = jest.spyOn(console, 'warn').mockImplementation()
+            const consoleSpy = vi.spyOn(console, 'warn').mockImplementation(() => {})
 
             expect(() => cacheEventToStorage('test_event', { action: 'click' })).not.toThrow()
             expect(consoleSpy).toHaveBeenCalledWith('Analytics: Failed to cache event', expect.any(Error))
@@ -115,11 +116,11 @@ describe('storage utilities', () => {
         })
 
         test('should handle errors gracefully', () => {
-            jest.spyOn(Storage.prototype, 'setItem').mockImplementation(() => {
+            vi.spyOn(localStorage, 'setItem').mockImplementation(() => {
                 throw new Error('localStorage error')
             })
 
-            const consoleSpy = jest.spyOn(console, 'warn').mockImplementation()
+            const consoleSpy = vi.spyOn(console, 'warn').mockImplementation(() => {})
 
             expect(() => cachePageViewToStorage('/test')).not.toThrow()
             expect(consoleSpy).toHaveBeenCalledWith('Analytics: Failed to cache page view', expect.any(Error))
@@ -146,7 +147,7 @@ describe('storage utilities', () => {
         test('should return empty array for invalid JSON', () => {
             localStorage.setItem(CACHE_STORAGE_EVENTS, 'invalid json')
 
-            const consoleSpy = jest.spyOn(console, 'warn').mockImplementation()
+            const consoleSpy = vi.spyOn(console, 'warn').mockImplementation(() => {})
             const events = getCachedEvents()
 
             expect(events).toEqual([])
@@ -161,11 +162,11 @@ describe('storage utilities', () => {
         })
 
         test('should handle errors gracefully', () => {
-            jest.spyOn(Storage.prototype, 'getItem').mockImplementation(() => {
+            vi.spyOn(localStorage, 'getItem').mockImplementation(() => {
                 throw new Error('localStorage error')
             })
 
-            const consoleSpy = jest.spyOn(console, 'warn').mockImplementation()
+            const consoleSpy = vi.spyOn(console, 'warn').mockImplementation(() => {})
             const events = getCachedEvents()
 
             expect(events).toEqual([])
@@ -193,7 +194,7 @@ describe('storage utilities', () => {
         test('should return empty array for invalid JSON', () => {
             localStorage.setItem(CACHE_STORAGE_PAGES, 'not valid json')
 
-            const consoleSpy = jest.spyOn(console, 'warn').mockImplementation()
+            const consoleSpy = vi.spyOn(console, 'warn').mockImplementation(() => {})
             const pages = getCachedPageViews()
 
             expect(pages).toEqual([])
@@ -218,11 +219,11 @@ describe('storage utilities', () => {
         })
 
         test('should handle errors gracefully', () => {
-            jest.spyOn(Storage.prototype, 'removeItem').mockImplementation(() => {
+            vi.spyOn(localStorage, 'removeItem').mockImplementation(() => {
                 throw new Error('localStorage error')
             })
 
-            const consoleSpy = jest.spyOn(console, 'warn').mockImplementation()
+            const consoleSpy = vi.spyOn(console, 'warn').mockImplementation(() => {})
 
             expect(() => clearCachedEvents()).not.toThrow()
             expect(consoleSpy).toHaveBeenCalledWith('Analytics: Failed to clear cached events', expect.any(Error))
@@ -239,11 +240,11 @@ describe('storage utilities', () => {
         })
 
         test('should handle errors gracefully', () => {
-            jest.spyOn(Storage.prototype, 'removeItem').mockImplementation(() => {
+            vi.spyOn(localStorage, 'removeItem').mockImplementation(() => {
                 throw new Error('localStorage error')
             })
 
-            const consoleSpy = jest.spyOn(console, 'warn').mockImplementation()
+            const consoleSpy = vi.spyOn(console, 'warn').mockImplementation(() => {})
 
             expect(() => clearCachedPageViews()).not.toThrow()
             expect(consoleSpy).toHaveBeenCalledWith('Analytics: Failed to clear cached page views', expect.any(Error))

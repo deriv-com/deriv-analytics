@@ -1,12 +1,13 @@
+import { vi, type Mock } from 'vitest'
 import { createAnalyticsInstance } from '../src/analytics'
 
 // Mock dependencies
-jest.mock('../src/providers/rudderstack')
-jest.mock('../src/utils/storage')
-jest.mock('../src/utils/helpers', () => ({
-    ...jest.requireActual('../src/utils/helpers'),
-    getCountry: jest.fn(),
-    isUUID: jest.fn(),
+vi.mock('../src/providers/rudderstack')
+vi.mock('../src/utils/storage')
+vi.mock('../src/utils/helpers', async importOriginal => ({
+    ...(await importOriginal<typeof import('../src/utils/helpers')>()),
+    getCountry: vi.fn(),
+    isUUID: vi.fn(),
 }))
 
 import { RudderStack } from '../src/providers/rudderstack'
@@ -18,33 +19,33 @@ describe('Analytics - createAnalyticsInstance', () => {
     let analytics: ReturnType<typeof createAnalyticsInstance>
 
     beforeEach(() => {
-        jest.clearAllMocks()
+        vi.clearAllMocks()
 
         // Mock RudderStack instance
         mockRudderstack = {
             has_initialized: true,
-            track: jest.fn(),
-            pageView: jest.fn(),
-            identifyEvent: jest.fn(),
-            reset: jest.fn(),
-            getUserId: jest.fn().mockReturnValue('CR123'),
-            getAnonymousId: jest.fn().mockReturnValue('anon-123'),
+            track: vi.fn(),
+            pageView: vi.fn(),
+            identifyEvent: vi.fn(),
+            reset: vi.fn(),
+            getUserId: vi.fn().mockReturnValue('CR123'),
+            getAnonymousId: vi.fn().mockReturnValue('anon-123'),
         }
-        ;(RudderStack.getRudderStackInstance as jest.Mock).mockImplementation((_key, callback) => {
+        ;(RudderStack.getRudderStackInstance as Mock).mockImplementation((_key, callback) => {
             // Call the callback asynchronously to simulate SDK loading
             if (callback && typeof callback === 'function') {
                 setTimeout(() => callback(), 0)
             }
             return mockRudderstack
         })
-        ;(getCountry as jest.Mock).mockResolvedValue('us')
-        ;(isUUID as jest.Mock).mockReturnValue(false)
-        ;(storageUtils.getCachedEvents as jest.Mock).mockReturnValue([])
-        ;(storageUtils.getCachedPageViews as jest.Mock).mockReturnValue([])
-        ;(storageUtils.cacheEventToStorage as jest.Mock).mockImplementation(() => {})
-        ;(storageUtils.cachePageViewToStorage as jest.Mock).mockImplementation(() => {})
-        ;(storageUtils.clearCachedEvents as jest.Mock).mockImplementation(() => {})
-        ;(storageUtils.clearCachedPageViews as jest.Mock).mockImplementation(() => {})
+        ;(getCountry as Mock).mockResolvedValue('us')
+        ;(isUUID as Mock).mockReturnValue(false)
+        ;(storageUtils.getCachedEvents as Mock).mockReturnValue([])
+        ;(storageUtils.getCachedPageViews as Mock).mockReturnValue([])
+        ;(storageUtils.cacheEventToStorage as Mock).mockImplementation(() => {})
+        ;(storageUtils.cachePageViewToStorage as Mock).mockImplementation(() => {})
+        ;(storageUtils.clearCachedEvents as Mock).mockImplementation(() => {})
+        ;(storageUtils.clearCachedPageViews as Mock).mockImplementation(() => {})
     })
 
     describe('Initialization', () => {
@@ -69,11 +70,11 @@ describe('Analytics - createAnalyticsInstance', () => {
             analytics = createAnalyticsInstance()
 
             // Mock Growthbook module
-            jest.mock('../src/providers/growthbook', () => ({
+            vi.mock('../src/providers/growthbook', () => ({
                 Growthbook: {
-                    getGrowthBookInstance: jest.fn().mockReturnValue({
-                        setAttributes: jest.fn(),
-                        getFeatureValue: jest.fn(),
+                    getGrowthBookInstance: vi.fn().mockReturnValue({
+                        setAttributes: vi.fn(),
+                        getFeatureValue: vi.fn(),
                     }),
                 },
             }))
@@ -88,12 +89,12 @@ describe('Analytics - createAnalyticsInstance', () => {
         })
 
         test('should handle initialization errors gracefully', async () => {
-            ;(RudderStack.getRudderStackInstance as jest.Mock).mockImplementation(() => {
+            ;(RudderStack.getRudderStackInstance as Mock).mockImplementation(() => {
                 throw new Error('Initialization error')
             })
 
             analytics = createAnalyticsInstance()
-            const consoleSpy = jest.spyOn(console, 'warn').mockImplementation()
+            const consoleSpy = vi.spyOn(console, 'warn').mockImplementation(() => {})
 
             await analytics.initialise({ rudderstackKey: 'test_key' })
 
@@ -133,7 +134,7 @@ describe('Analytics - createAnalyticsInstance', () => {
         })
 
         test('should filter out UUID user IDs', () => {
-            ;(isUUID as jest.Mock).mockReturnValue(true)
+            ;(isUUID as Mock).mockReturnValue(true)
 
             analytics.setAttributes({
                 user_id: '550e8400-e29b-41d4-a716-446655440000',
@@ -147,7 +148,7 @@ describe('Analytics - createAnalyticsInstance', () => {
         })
 
         test('should include non-UUID user IDs', () => {
-            ;(isUUID as jest.Mock).mockReturnValue(false)
+            ;(isUUID as Mock).mockReturnValue(false)
 
             analytics.setAttributes({
                 user_id: 'CR123456',
@@ -378,7 +379,7 @@ describe('Analytics - createAnalyticsInstance', () => {
 
         test('getId should filter out UUID', () => {
             mockRudderstack.getUserId.mockReturnValue('550e8400-e29b-41d4-a716-446655440000')
-            ;(isUUID as jest.Mock).mockReturnValue(true)
+            ;(isUUID as Mock).mockReturnValue(true)
 
             const userId = analytics.getId()
 
@@ -406,7 +407,7 @@ describe('Analytics - createAnalyticsInstance', () => {
                 { name: 'cached_event_1', properties: { action: 'click' }, timestamp: Date.now() },
                 { name: 'cached_event_2', properties: { action: 'submit' }, timestamp: Date.now() },
             ]
-            ;(storageUtils.getCachedEvents as jest.Mock).mockReturnValue(cachedEvents)
+            ;(storageUtils.getCachedEvents as Mock).mockReturnValue(cachedEvents)
 
             analytics = createAnalyticsInstance()
             await analytics.initialise({ rudderstackKey: 'test_key' })
@@ -424,7 +425,7 @@ describe('Analytics - createAnalyticsInstance', () => {
                 { name: '/home', properties: {}, timestamp: Date.now() },
                 { name: '/dashboard', properties: {}, timestamp: Date.now() },
             ]
-            ;(storageUtils.getCachedPageViews as jest.Mock).mockReturnValue(cachedPages)
+            ;(storageUtils.getCachedPageViews as Mock).mockReturnValue(cachedPages)
 
             analytics = createAnalyticsInstance()
             await analytics.initialise({ rudderstackKey: 'test_key' })

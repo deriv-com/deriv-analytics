@@ -1,3 +1,4 @@
+import { vi } from 'vitest'
 import { cacheTrackEvents } from '../src/utils/analytics-cache'
 
 describe('analytics-cache - AnalyticsCacheManager', () => {
@@ -5,15 +6,15 @@ describe('analytics-cache - AnalyticsCacheManager', () => {
     let mockDocument: any
 
     beforeEach(() => {
-        jest.clearAllMocks()
-        jest.useFakeTimers()
+        vi.clearAllMocks()
+        vi.useFakeTimers()
 
         // Mock clearInterval globally
-        global.clearInterval = jest.fn(id => {
+        global.clearInterval = vi.fn(id => {
             if (id) {
-                jest.clearAllTimers()
+                vi.clearAllTimers()
             }
-        })
+        }) as any
 
         // Use existing jsdom document and window
         mockDocument = document
@@ -22,17 +23,17 @@ describe('analytics-cache - AnalyticsCacheManager', () => {
         // Mock document properties
         // Clear all cookies by expiring them
         document.cookie.split(';').forEach(cookie => {
-            const name = cookie.split('=')[0].trim()
+            const name = cookie.split('=')[0]!.trim()
             if (name) {
                 document.cookie = `${name}=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;`
             }
         })
-        document.querySelectorAll = jest.fn().mockReturnValue([])
+        document.querySelectorAll = vi.fn().mockReturnValue([])
 
-        // window.location is already set from jest.config
+        // window.location is already set from vitest.config
 
         // Mock addEventListener
-        window.addEventListener = jest.fn()
+        window.addEventListener = vi.fn()
 
         // Clear any intervals
         cacheTrackEvents.clearInterval()
@@ -40,7 +41,7 @@ describe('analytics-cache - AnalyticsCacheManager', () => {
 
     afterEach(() => {
         try {
-            jest.useRealTimers()
+            vi.useRealTimers()
             cacheTrackEvents.clearInterval()
         } catch (e) {
             // Ignore clearInterval errors in cleanup
@@ -188,7 +189,7 @@ describe('analytics-cache - AnalyticsCacheManager', () => {
             mockWindow.Analytics = {
                 Analytics: {
                     getInstances: () => ({ tracking: {} }),
-                    trackEvent: jest.fn(),
+                    trackEvent: vi.fn(),
                 },
             }
 
@@ -204,7 +205,7 @@ describe('analytics-cache - AnalyticsCacheManager', () => {
             mockWindow.Analytics = {
                 Analytics: {
                     getInstances: () => ({ tracking: {} }),
-                    trackEvent: jest.fn(),
+                    trackEvent: vi.fn(),
                 },
             }
 
@@ -223,7 +224,7 @@ describe('analytics-cache - AnalyticsCacheManager', () => {
             mockWindow.Analytics = {
                 Analytics: {
                     getInstances: () => ({ tracking: {} }),
-                    trackEvent: jest.fn(),
+                    trackEvent: vi.fn(),
                 },
             }
 
@@ -238,15 +239,15 @@ describe('analytics-cache - AnalyticsCacheManager', () => {
                     email_hash: expect.any(String),
                 })
             )
-            expect(mockWindow.Analytics.Analytics.trackEvent.mock.calls[0][1].email).toBeUndefined()
+            expect(mockWindow.Analytics.Analytics.trackEvent.mock.calls[0]![1].email).toBeUndefined()
         })
     })
 
     describe('listen', () => {
         test('should add click event listener to element', () => {
             const mockElement = {
-                addEventListener: jest.fn(),
-                dataset: {},
+                addEventListener: vi.fn(),
+                dataset: {} as Record<string, string>,
             }
 
             cacheTrackEvents.listen(mockElement as any, { name: 'button_click', properties: { button: 'submit' } })
@@ -257,7 +258,7 @@ describe('analytics-cache - AnalyticsCacheManager', () => {
 
         test('should not add listener if already added', () => {
             const mockElement = {
-                addEventListener: jest.fn(),
+                addEventListener: vi.fn(),
                 dataset: { clickEventTracking: 'true' },
             }
 
@@ -268,17 +269,17 @@ describe('analytics-cache - AnalyticsCacheManager', () => {
 
         test('should call callback when provided', () => {
             const mockElement = {
-                addEventListener: jest.fn(),
+                addEventListener: vi.fn(),
                 dataset: {},
             }
-            const mockCallback = jest.fn().mockReturnValue({
+            const mockCallback = vi.fn().mockReturnValue({
                 name: 'custom_event',
                 properties: { custom: 'data' },
             })
 
             cacheTrackEvents.listen(mockElement as any, { name: 'button_click', properties: {} }, false, mockCallback)
 
-            const clickHandler = mockElement.addEventListener.mock.calls[0][1]
+            const clickHandler = mockElement.addEventListener.mock.calls[0]![1]
             const mockEvent = new Event('click')
             clickHandler(mockEvent)
 
@@ -307,7 +308,7 @@ describe('analytics-cache - AnalyticsCacheManager', () => {
             mockWindow.Analytics = {
                 Analytics: {
                     getInstances: () => ({ tracking: {} }),
-                    trackEvent: jest.fn(),
+                    trackEvent: vi.fn(),
                 },
             }
 
@@ -327,7 +328,7 @@ describe('analytics-cache - AnalyticsCacheManager', () => {
             mockWindow.Analytics = {
                 Analytics: {
                     getInstances: () => ({ tracking: {} }),
-                    trackEvent: jest.fn(),
+                    trackEvent: vi.fn(),
                 },
             }
 
@@ -352,11 +353,11 @@ describe('analytics-cache - AnalyticsCacheManager', () => {
 
     describe('pageLoadEvent', () => {
         beforeEach(() => {
-            // pathname is already '/' from jest.config, tests will work with that
+            // pathname is already '/' from vitest.config, tests will work with that
             mockWindow.Analytics = {
                 Analytics: {
                     getInstances: () => ({ tracking: {} }),
-                    trackEvent: jest.fn(),
+                    trackEvent: vi.fn(),
                 },
             }
         })
@@ -406,7 +407,7 @@ describe('analytics-cache - AnalyticsCacheManager', () => {
         })
 
         test('should call callback when provided', () => {
-            const mockCallback = jest.fn().mockReturnValue({
+            const mockCallback = vi.fn().mockReturnValue({
                 name: 'dynamic_event',
                 properties: { dynamic: 'value' },
             })
@@ -444,7 +445,7 @@ describe('analytics-cache - AnalyticsCacheManager', () => {
 
     describe('clearInterval', () => {
         test('should clear the interval', () => {
-            const mockClearInterval = jest.spyOn(global, 'clearInterval')
+            const mockClearInterval = vi.spyOn(global, 'clearInterval')
 
             // Set up an interval first by calling pageView
             cacheTrackEvents.pageView()
