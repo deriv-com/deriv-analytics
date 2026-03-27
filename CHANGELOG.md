@@ -1,3 +1,11 @@
+## [1.39.7](https://github.com/deriv-com/deriv-analytics/compare/v1.39.6...v1.39.7) (2026-03-27)
+
+### 🐛 Bug Fixes
+
+- security issue ([54e77f4](https://github.com/deriv-com/deriv-analytics/commit/54e77f4c7738151b56eed0dbdb5d4017e74b0465))
+- security issue ([0bd3e75](https://github.com/deriv-com/deriv-analytics/commit/0bd3e7544ff60ecdf9e216756b599e24ad6889d3))
+- security issue ([abe6ce9](https://github.com/deriv-com/deriv-analytics/commit/abe6ce9a85ad7b85c8fdf35a39e8b73c22bd4d6a))
+
 ## [1.39.6](https://github.com/deriv-com/deriv-analytics/compare/v1.39.5...v1.39.6) (2026-03-13)
 
 ### ♻️ Chores
