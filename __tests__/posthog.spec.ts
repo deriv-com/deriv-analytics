@@ -1,53 +1,53 @@
+import { vi, type MockInstance, type Mock } from 'vitest'
 import { Posthog } from '../src/providers/posthog'
 import posthog from 'posthog-js'
 
 // Mock posthog-js
-jest.mock('posthog-js', () => ({
-    __esModule: true,
+vi.mock('posthog-js', () => ({
     default: {
-        init: jest.fn(),
-        identify: jest.fn(),
-        alias: jest.fn(),
-        capture: jest.fn(),
-        reset: jest.fn(),
-        get_distinct_id: jest.fn(),
-        _isIdentified: jest.fn(),
-        get_property: jest.fn(),
-        setPersonProperties: jest.fn(),
+        init: vi.fn(),
+        identify: vi.fn(),
+        alias: vi.fn(),
+        capture: vi.fn(),
+        reset: vi.fn(),
+        get_distinct_id: vi.fn(),
+        _isIdentified: vi.fn(),
+        get_property: vi.fn(),
+        setPersonProperties: vi.fn(),
     },
 }))
 
 // Mock URL utilities
-jest.mock('../src/utils/urls', () => ({
+vi.mock('../src/utils/urls', () => ({
     allowedDomains: ['deriv.com', 'deriv.me', 'deriv.be'],
     internalEmailDomains: ['deriv.com'],
     posthogApiHost: 'https://ph-api.deriv.com',
     posthogUiHost: 'https://ph-ui.deriv.com',
-    getPosthogApiHost: jest.fn(() => 'https://ph-api.deriv.com'),
+    getPosthogApiHost: vi.fn(() => 'https://ph-api.deriv.com'),
 }))
 
 describe('PostHog Provider', () => {
-    let consoleWarnSpy: jest.SpyInstance
-    let consoleErrorSpy: jest.SpyInstance
+    let consoleWarnSpy: MockInstance
+    let consoleErrorSpy: MockInstance
 
     beforeEach(() => {
         // Reset all mocks but keep their implementation
-        ;(posthog.init as jest.Mock).mockClear()
-        ;(posthog.identify as jest.Mock).mockClear()
-        ;(posthog.alias as jest.Mock).mockClear()
-        ;(posthog.capture as jest.Mock).mockClear()
-        ;(posthog.reset as jest.Mock).mockClear()
-        ;(posthog.get_distinct_id as jest.Mock).mockClear()
-        ;(posthog.get_property as jest.Mock).mockClear()
-        ;(posthog.setPersonProperties as jest.Mock).mockClear()
+        ;(posthog.init as Mock).mockClear()
+        ;(posthog.identify as Mock).mockClear()
+        ;(posthog.alias as Mock).mockClear()
+        ;(posthog.capture as Mock).mockClear()
+        ;(posthog.reset as Mock).mockClear()
+        ;(posthog.get_distinct_id as Mock).mockClear()
+        ;(posthog.get_property as Mock).mockClear()
+        ;(posthog.setPersonProperties as Mock).mockClear()
 
         // Ensure _isIdentified is properly mocked
         if (typeof posthog._isIdentified !== 'function') {
-            ;(posthog._isIdentified as jest.Mock) = jest.fn()
+            ;(posthog._isIdentified as Mock) = vi.fn()
         }
 
-        consoleWarnSpy = jest.spyOn(console, 'warn').mockImplementation()
-        consoleErrorSpy = jest.spyOn(console, 'error').mockImplementation()
+        consoleWarnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {})
+        consoleErrorSpy = vi.spyOn(console, 'error').mockImplementation(() => {})
         // Reset singleton instance
         // @ts-ignore - accessing private property for testing
         Posthog._instance = undefined
@@ -133,7 +133,7 @@ describe('PostHog Provider', () => {
         })
 
         test('should handle initialization errors gracefully', async () => {
-            ;(posthog.init as jest.Mock).mockImplementation(() => {
+            ;(posthog.init as Mock).mockImplementation(() => {
                 throw new Error('Init failed')
             })
 
@@ -144,7 +144,7 @@ describe('PostHog Provider', () => {
             expect(instance.has_initialized).toBe(false)
 
             // Restore mock for subsequent tests
-            ;(posthog.init as jest.Mock).mockImplementation(() => {})
+            ;(posthog.init as Mock).mockImplementation(() => {})
         })
 
         describe('Domain Filtering (before_send)', () => {
@@ -152,7 +152,7 @@ describe('PostHog Provider', () => {
                 const instance = new Posthog({ apiKey: 'test-key' })
                 await instance.init()
 
-                const initCall = (posthog.init as jest.Mock).mock.calls[0]
+                const initCall = (posthog.init as Mock).mock.calls[0]!
                 const config = initCall[1]
 
                 expect(config.before_send).toBeDefined()
@@ -163,7 +163,7 @@ describe('PostHog Provider', () => {
                 const instance = new Posthog({ apiKey: 'test-key' })
                 await instance.init()
 
-                const initCall = (posthog.init as jest.Mock).mock.calls[0]
+                const initCall = (posthog.init as Mock).mock.calls[0]!
                 const beforeSendFn = initCall[1].before_send
                 const mockEvent = { event: 'test_event' }
 
@@ -180,13 +180,13 @@ describe('PostHog Provider', () => {
 
         beforeEach(async () => {
             // Clear mock call history but not implementations
-            ;(posthog.init as jest.Mock).mockClear()
-            ;(posthog.identify as jest.Mock).mockClear()
-            ;(posthog.alias as jest.Mock).mockClear()
-            ;(posthog.capture as jest.Mock).mockClear()
-            ;(posthog.reset as jest.Mock).mockClear()
-            ;(posthog._isIdentified as jest.Mock).mockReturnValue(false)
-            ;(posthog.get_distinct_id as jest.Mock).mockReturnValue('anon-default')
+            ;(posthog.init as Mock).mockClear()
+            ;(posthog.identify as Mock).mockClear()
+            ;(posthog.alias as Mock).mockClear()
+            ;(posthog.capture as Mock).mockClear()
+            ;(posthog.reset as Mock).mockClear()
+            ;(posthog._isIdentified as Mock).mockReturnValue(false)
+            ;(posthog.get_distinct_id as Mock).mockReturnValue('anon-default')
             instance = new Posthog({ apiKey: 'test-key' })
             await instance.init()
         })
@@ -219,7 +219,7 @@ describe('PostHog Provider', () => {
         })
 
         test('should identify user when not previously identified', () => {
-            ;(posthog._isIdentified as jest.Mock).mockReturnValue(false)
+            ;(posthog._isIdentified as Mock).mockReturnValue(false)
 
             instance.identifyEvent('CR123', { is_internal: false })
 
@@ -227,7 +227,7 @@ describe('PostHog Provider', () => {
         })
 
         test('should not identify when user is already identified', () => {
-            ;(posthog._isIdentified as jest.Mock).mockReturnValue(true)
+            ;(posthog._isIdentified as Mock).mockReturnValue(true)
 
             instance.identifyEvent('CR123', { is_internal: false })
 
@@ -237,7 +237,7 @@ describe('PostHog Provider', () => {
         })
 
         test('should identify user and include client_id in traits', () => {
-            ;(posthog._isIdentified as jest.Mock).mockReturnValue(false)
+            ;(posthog._isIdentified as Mock).mockReturnValue(false)
 
             instance.identifyEvent('CR123', { is_internal: false })
 
@@ -269,7 +269,7 @@ describe('PostHog Provider', () => {
         })
 
         test('should handle identify errors gracefully', () => {
-            ;(posthog.identify as jest.Mock).mockImplementationOnce(() => {
+            ;(posthog.identify as Mock).mockImplementationOnce(() => {
                 throw new Error('Identify failed')
             })
 
@@ -283,7 +283,7 @@ describe('PostHog Provider', () => {
         let instance: Posthog
 
         beforeEach(async () => {
-            ;(posthog.reset as jest.Mock).mockClear()
+            ;(posthog.reset as Mock).mockClear()
             instance = new Posthog({ apiKey: 'test-key' })
             await instance.init()
             instance.has_identified = true
@@ -297,7 +297,7 @@ describe('PostHog Provider', () => {
         })
 
         test('should not reset when not initialized', () => {
-            ;(posthog.reset as jest.Mock).mockClear()
+            ;(posthog.reset as Mock).mockClear()
             const uninitializedInstance = new Posthog({ apiKey: '' })
 
             uninitializedInstance.reset()
@@ -306,11 +306,11 @@ describe('PostHog Provider', () => {
         })
 
         test('should handle reset errors gracefully', async () => {
-            ;(posthog.reset as jest.Mock).mockClear()
+            ;(posthog.reset as Mock).mockClear()
             const errorInstance = new Posthog({ apiKey: 'test-key' })
             await errorInstance.init()
             errorInstance.has_identified = true
-            ;(posthog.reset as jest.Mock).mockImplementationOnce(() => {
+            ;(posthog.reset as Mock).mockImplementationOnce(() => {
                 throw new Error('Reset failed')
             })
 
@@ -326,7 +326,7 @@ describe('PostHog Provider', () => {
         let instance: Posthog
 
         beforeEach(async () => {
-            ;(posthog.capture as jest.Mock).mockClear()
+            ;(posthog.capture as Mock).mockClear()
             instance = new Posthog({ apiKey: 'test-key' })
             await instance.init()
         })
@@ -350,7 +350,7 @@ describe('PostHog Provider', () => {
         })
 
         test('should not capture when not initialized', () => {
-            ;(posthog.capture as jest.Mock).mockClear()
+            ;(posthog.capture as Mock).mockClear()
             const uninitializedInstance = new Posthog({ apiKey: '' })
 
             uninitializedInstance.capture('test_event', { action: 'click' })
@@ -359,10 +359,10 @@ describe('PostHog Provider', () => {
         })
 
         test('should handle capture errors gracefully', async () => {
-            ;(posthog.capture as jest.Mock).mockClear()
+            ;(posthog.capture as Mock).mockClear()
             const errorInstance = new Posthog({ apiKey: 'test-key' })
             await errorInstance.init()
-            ;(posthog.capture as jest.Mock).mockImplementationOnce(() => {
+            ;(posthog.capture as Mock).mockImplementationOnce(() => {
                 throw new Error('Capture failed')
             })
 
@@ -390,14 +390,14 @@ describe('PostHog Provider', () => {
         let instance: Posthog
 
         beforeEach(async () => {
-            ;(posthog.get_property as jest.Mock).mockClear()
-            ;(posthog.setPersonProperties as jest.Mock).mockClear()
+            ;(posthog.get_property as Mock).mockClear()
+            ;(posthog.setPersonProperties as Mock).mockClear()
             instance = new Posthog({ apiKey: 'test-key' })
             await instance.init()
         })
 
         test('should set client_id when missing from stored person properties', () => {
-            ;(posthog.get_property as jest.Mock).mockReturnValue({})
+            ;(posthog.get_property as Mock).mockReturnValue({})
 
             instance.backfillPersonProperties({ user_id: 'CR123', email: 'user@example.com' })
 
@@ -405,7 +405,7 @@ describe('PostHog Provider', () => {
         })
 
         test('should set client_id when stored person properties is null', () => {
-            ;(posthog.get_property as jest.Mock).mockReturnValue(null)
+            ;(posthog.get_property as Mock).mockReturnValue(null)
 
             instance.backfillPersonProperties({ user_id: 'CR123', email: 'user@example.com' })
 
@@ -413,7 +413,7 @@ describe('PostHog Provider', () => {
         })
 
         test('should not set client_id when already present in stored person properties', () => {
-            ;(posthog.get_property as jest.Mock).mockReturnValue({ client_id: 'CR123', is_internal: false })
+            ;(posthog.get_property as Mock).mockReturnValue({ client_id: 'CR123', is_internal: false })
 
             instance.backfillPersonProperties({ user_id: 'CR123', email: 'user@example.com' })
 
@@ -437,7 +437,7 @@ describe('PostHog Provider', () => {
         })
 
         test('should handle errors gracefully', () => {
-            ;(posthog.get_property as jest.Mock).mockImplementationOnce(() => {
+            ;(posthog.get_property as Mock).mockImplementationOnce(() => {
                 throw new Error('get_property failed')
             })
 
@@ -451,10 +451,10 @@ describe('PostHog Provider', () => {
     })
 
     describe('cleanupStalePosthogCookies', () => {
-        let cookieSetSpy: jest.SpyInstance
+        let cookieSetSpy: MockInstance
 
         beforeEach(() => {
-            cookieSetSpy = jest.spyOn(document, 'cookie', 'set')
+            cookieSetSpy = vi.spyOn(document, 'cookie', 'set')
         })
 
         afterEach(() => {
@@ -470,7 +470,7 @@ describe('PostHog Provider', () => {
             new Posthog({ apiKey: 'current-key' })
 
             const deletionCalls = cookieSetSpy.mock.calls.filter(
-                ([val]: [string]) => /^ph_.+_posthog=/.test(val) && val.includes('max-age=0')
+                (args: string[]) => /^ph_.+_posthog=/.test(args[0]!) && args[0]!.includes('max-age=0')
             )
             expect(deletionCalls).toHaveLength(0)
         })
@@ -483,9 +483,9 @@ describe('PostHog Provider', () => {
 
             new Posthog({ apiKey: 'current-key' })
 
-            const deletionCalls = cookieSetSpy.mock.calls.filter(([val]: [string]) => val.includes('max-age=0'))
-            expect(deletionCalls.some(([val]: [string]) => val.startsWith('ph_old-key_posthog='))).toBe(true)
-            expect(deletionCalls.some(([val]: [string]) => val.startsWith('ph_current-key_posthog='))).toBe(false)
+            const deletionCalls = cookieSetSpy.mock.calls.filter((args: string[]) => args[0]!.includes('max-age=0'))
+            expect(deletionCalls.some((args: string[]) => args[0]!.startsWith('ph_old-key_posthog='))).toBe(true)
+            expect(deletionCalls.some((args: string[]) => args[0]!.startsWith('ph_current-key_posthog='))).toBe(false)
         })
 
         test('SSR guard → no crash when document is undefined', () => {
@@ -511,11 +511,11 @@ describe('PostHog Provider', () => {
 
     describe('Integration Tests', () => {
         test('should handle full user lifecycle', async () => {
-            ;(posthog.init as jest.Mock).mockClear()
-            ;(posthog.identify as jest.Mock).mockClear()
-            ;(posthog.capture as jest.Mock).mockClear()
-            ;(posthog.reset as jest.Mock).mockClear()
-            ;(posthog._isIdentified as jest.Mock) = jest.fn().mockReturnValue(false)
+            ;(posthog.init as Mock).mockClear()
+            ;(posthog.identify as Mock).mockClear()
+            ;(posthog.capture as Mock).mockClear()
+            ;(posthog.reset as Mock).mockClear()
+            ;(posthog._isIdentified as Mock) = vi.fn().mockReturnValue(false)
 
             const instance = new Posthog({ apiKey: 'test-key' })
             await instance.init()
@@ -548,8 +548,8 @@ describe('PostHog Provider', () => {
         })
 
         test('should handle multiple identify calls correctly', async () => {
-            ;(posthog.identify as jest.Mock).mockClear()
-            ;(posthog._isIdentified as jest.Mock) = jest.fn().mockReturnValue(false)
+            ;(posthog.identify as Mock).mockClear()
+            ;(posthog._isIdentified as Mock) = vi.fn().mockReturnValue(false)
 
             const instance = new Posthog({ apiKey: 'test-key' })
             await instance.init()
@@ -561,7 +561,7 @@ describe('PostHog Provider', () => {
             expect(instance.has_identified).toBe(true)
 
             // Second identify - should not call identify again
-            ;(posthog._isIdentified as jest.Mock).mockReturnValue(true)
+            ;(posthog._isIdentified as Mock).mockReturnValue(true)
 
             instance.identifyEvent('CR100', { email: 'user@example.com', language: 'es' })
 

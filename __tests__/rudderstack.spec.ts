@@ -1,22 +1,23 @@
+import { vi } from 'vitest'
 import { RudderAnalytics } from '@rudderstack/analytics-js'
 import { RudderStack } from '../src/providers/rudderstack'
 
-jest.mock('@rudderstack/analytics-js', () => {
+vi.mock('@rudderstack/analytics-js', () => {
     return {
-        RudderAnalytics: jest.fn().mockImplementation(() => {
+        RudderAnalytics: vi.fn().mockImplementation(() => {
             return {
-                load: jest.fn().mockImplementation((key, url, options) => {
+                load: vi.fn().mockImplementation((key, url, options) => {
                     if (options?.onLoaded) {
                         setTimeout(options.onLoaded, 0)
                     }
                 }),
                 ready: (callback: () => any) => callback(),
-                identify: jest.fn(),
-                page: jest.fn(),
-                reset: jest.fn(),
-                track: jest.fn(),
-                getAnonymousId: jest.fn(),
-                getUserId: jest.fn(),
+                identify: vi.fn(),
+                page: vi.fn(),
+                reset: vi.fn(),
+                track: vi.fn(),
+                getAnonymousId: vi.fn(),
+                getUserId: vi.fn(),
             }
         }),
     }
@@ -26,29 +27,26 @@ describe('RudderStack Provider', () => {
     let rudderstack: RudderStack
 
     beforeEach(() => {
-        jest.clearAllMocks()
+        vi.clearAllMocks()
         document.cookie = ''
 
-        // window.location.hostname is already 'app.deriv.com' from jest.config
+        // window.location.hostname is already 'app.deriv.com' from vitest.config
 
         // Mock crypto.randomUUID
         Object.defineProperty(global, 'crypto', {
             writable: true,
             configurable: true,
             value: {
-                randomUUID: jest.fn(() => 'test-uuid-123'),
+                randomUUID: vi.fn(() => 'test-uuid-123'),
             },
         })
     })
 
     describe('Initialization', () => {
-        test('should initialize RudderStack instance properly', done => {
+        test('should initialize RudderStack instance properly', async () => {
             rudderstack = new RudderStack('test_key')
-
-            setTimeout(() => {
-                expect(rudderstack.has_initialized).toBe(true)
-                done()
-            }, 10)
+            await new Promise(resolve => setTimeout(resolve, 10))
+            expect(rudderstack.has_initialized).toBe(true)
         })
 
         test('should create singleton instance', () => {
@@ -58,20 +56,17 @@ describe('RudderStack Provider', () => {
             expect(instance1).toBe(instance2)
         })
 
-        test('should call onLoaded callback when initialized', done => {
-            const onLoaded = jest.fn()
+        test('should call onLoaded callback when initialized', async () => {
+            const onLoaded = vi.fn()
 
             rudderstack = new RudderStack('test_key', onLoaded)
-
-            setTimeout(() => {
-                expect(onLoaded).toHaveBeenCalled()
-                done()
-            }, 10)
+            await new Promise(resolve => setTimeout(resolve, 10))
+            expect(onLoaded).toHaveBeenCalled()
         })
 
         test('should not initialize without key', () => {
             // Suppress expected warning about missing key
-            const consoleWarnSpy = jest.spyOn(console, 'warn').mockImplementation()
+            const consoleWarnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {})
 
             rudderstack = new RudderStack('')
 
@@ -95,13 +90,13 @@ describe('RudderStack Provider', () => {
     })
 
     describe('User Identification', () => {
-        beforeEach(done => {
+        beforeEach(async () => {
             rudderstack = new RudderStack('test_key')
-            setTimeout(done, 10)
+            await new Promise(resolve => setTimeout(resolve, 10))
         })
 
         test('should identify user when identifyEvent is called', () => {
-            rudderstack.analytics.getUserId = jest.fn().mockReturnValue(null)
+            rudderstack.analytics.getUserId = vi.fn().mockReturnValue(null)
 
             rudderstack.identifyEvent('CR123', { language: 'en' })
 
@@ -110,7 +105,7 @@ describe('RudderStack Provider', () => {
         })
 
         test('should not call identify if user already identified', () => {
-            rudderstack.analytics.getUserId = jest.fn().mockReturnValue('CR123')
+            rudderstack.analytics.getUserId = vi.fn().mockReturnValue('CR123')
 
             rudderstack.identifyEvent('CR123', { language: 'en' })
 
@@ -119,7 +114,7 @@ describe('RudderStack Provider', () => {
         })
 
         test('should get user ID from analytics', () => {
-            rudderstack.analytics.getUserId = jest.fn().mockReturnValue('CR456')
+            rudderstack.analytics.getUserId = vi.fn().mockReturnValue('CR456')
 
             const userId = rudderstack.getUserId()
 
@@ -128,9 +123,9 @@ describe('RudderStack Provider', () => {
     })
 
     describe('Page View Tracking', () => {
-        beforeEach(done => {
+        beforeEach(async () => {
             rudderstack = new RudderStack('test_key')
-            setTimeout(done, 10)
+            await new Promise(resolve => setTimeout(resolve, 10))
         })
 
         test('should track page view', () => {
@@ -172,9 +167,9 @@ describe('RudderStack Provider', () => {
     })
 
     describe('Event Tracking', () => {
-        beforeEach(done => {
+        beforeEach(async () => {
             rudderstack = new RudderStack('test_key')
-            setTimeout(done, 10)
+            await new Promise(resolve => setTimeout(resolve, 10))
         })
 
         test('should track events with payload', () => {
@@ -208,11 +203,11 @@ describe('RudderStack Provider', () => {
         })
 
         test('should handle tracking errors gracefully', () => {
-            rudderstack.analytics.track = jest.fn().mockImplementation(() => {
+            rudderstack.analytics.track = vi.fn().mockImplementation(() => {
                 throw new Error('Tracking error')
             })
 
-            const consoleSpy = jest.spyOn(console, 'warn').mockImplementation()
+            const consoleSpy = vi.spyOn(console, 'warn').mockImplementation(() => {})
 
             rudderstack.track('test_event' as any, { action: 'click' })
 
@@ -223,9 +218,9 @@ describe('RudderStack Provider', () => {
     })
 
     describe('Reset Functionality', () => {
-        beforeEach(done => {
+        beforeEach(async () => {
             rudderstack = new RudderStack('test_key')
-            setTimeout(done, 10)
+            await new Promise(resolve => setTimeout(resolve, 10))
         })
 
         test('should reset analytics', () => {
