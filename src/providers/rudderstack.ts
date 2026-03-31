@@ -1,5 +1,4 @@
 import { RudderAnalytics } from '@rudderstack/analytics-js'
-import type { TCoreAttributes, TAllEvents } from '../types'
 import { rudderstackDataplane } from '../utils/urls'
 import { createLogger } from '../utils/helpers'
 
@@ -216,7 +215,7 @@ export class RudderStack {
      * @param event - The event name
      * @param payload - The event payload with core attributes
      */
-    track = <T extends keyof TAllEvents>(event: T, payload: TAllEvents[T] & Partial<TCoreAttributes>): void => {
+    track = (event: string, payload: Record<string, any>): void => {
         if (!this.has_initialized) return
 
         try {

@@ -120,7 +120,7 @@ describe('Analytics - createAnalyticsInstance', () => {
             })
 
             // Verify by tracking an event and checking payload
-            analytics.trackEvent('test_event' as any, {})
+            analytics.trackEvent('test_event', {})
 
             expect(mockRudderstack.track).toHaveBeenCalledWith(
                 'test_event',
@@ -141,7 +141,7 @@ describe('Analytics - createAnalyticsInstance', () => {
                 country: 'US',
             })
 
-            analytics.trackEvent('test_event' as any, {})
+            analytics.trackEvent('test_event', {})
 
             const callArgs = mockRudderstack.track.mock.calls[0][1]
             expect(callArgs.user_id).toBeUndefined()
@@ -155,7 +155,7 @@ describe('Analytics - createAnalyticsInstance', () => {
                 country: 'US',
             })
 
-            analytics.trackEvent('test_event' as any, {})
+            analytics.trackEvent('test_event', {})
 
             expect(mockRudderstack.track).toHaveBeenCalledWith(
                 'test_event',
@@ -184,35 +184,28 @@ describe('Analytics - createAnalyticsInstance', () => {
             await new Promise(resolve => setTimeout(resolve, 10))
         })
 
-        test('should handle V2 event payload format', async () => {
-            // Wait for async initialization to complete
+        test('should pass through arbitrary nested payload as-is', async () => {
             await new Promise(resolve => setTimeout(resolve, 10))
-
-            // Ensure has_initialized is true
             expect(mockRudderstack.has_initialized).toBe(true)
 
-            const v2Payload = {
-                event_metadata: {
-                    page: 'home',
-                },
-                cta_information: {
-                    button: 'submit',
-                },
+            const payload = {
+                event_metadata: { page: 'home' },
+                cta_information: { button: 'submit' },
             }
 
-            analytics.trackEvent('test_event' as any, v2Payload as any)
+            analytics.trackEvent('test_event', payload)
 
             expect(mockRudderstack.track).toHaveBeenCalledWith(
                 'test_event',
                 expect.objectContaining({
                     event_metadata: expect.any(Object),
-                    cta_information: v2Payload.cta_information,
+                    cta_information: payload.cta_information,
                 })
             )
         })
 
         test('should track event with properties', () => {
-            analytics.trackEvent('test_event' as any, { action: 'click', page: 'home' })
+            analytics.trackEvent('test_event', { action: 'click', page: 'home' })
 
             expect(mockRudderstack.track).toHaveBeenCalledWith(
                 'test_event',
@@ -223,7 +216,7 @@ describe('Analytics - createAnalyticsInstance', () => {
         test('should include user ID in event payload', () => {
             mockRudderstack.getUserId.mockReturnValue('CR123')
 
-            analytics.trackEvent('test_event' as any, { action: 'submit' })
+            analytics.trackEvent('test_event', { action: 'submit' })
 
             expect(mockRudderstack.track).toHaveBeenCalledWith(
                 'test_event',
@@ -239,7 +232,7 @@ describe('Analytics - createAnalyticsInstance', () => {
                 value: false,
             })
 
-            analytics.trackEvent('test_event' as any, { action: 'click' })
+            analytics.trackEvent('test_event', { action: 'click' })
 
             // Event should not be sent immediately
             expect(mockRudderstack.track).not.toHaveBeenCalled()
@@ -249,7 +242,7 @@ describe('Analytics - createAnalyticsInstance', () => {
             const originalValue = mockRudderstack.has_initialized
             mockRudderstack.has_initialized = false
 
-            analytics.trackEvent('test_event' as any, { action: 'click' })
+            analytics.trackEvent('test_event', { action: 'click' })
 
             expect(storageUtils.cacheEventToStorage).toHaveBeenCalledWith('test_event', expect.any(Object))
 
