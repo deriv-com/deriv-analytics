@@ -8,9 +8,8 @@ A modern, tree-shakeable analytics library for tracking user events with RudderS
 - 🎄 **Tree-Shakeable**: Only bundle what you use - each provider can be imported independently
 - 📡 **Offline-First**: Automatic event caching when offline with replay on reconnection
 - ⚡ **Performance Optimized**: Batching, deduplication, and SendBeacon API for fast tracking
-- 🔐 **Type-Safe**: Full TypeScript support with discriminated unions for event payloads
 - 🔄 **Backward Compatible**: Supports older React, Node.js, and other legacy package versions
-- 💾 **Advanced Caching**: Cookie-based and in-memory caching for robust event delivery
+- 💾 **Advanced Caching**: localStorage and in-memory caching for robust event delivery
 - 🎥 **Session Recording**: Built-in PostHog session recording with customizable settings
 
 > **Note**: GrowthBook support is deprecated and will be removed in a future major version. For A/B testing and feature flags, we recommend using PostHog's built-in feature flag capabilities.
@@ -124,7 +123,6 @@ await Analytics.initialise({
     // PostHog for analytics and session recording (optional)
     posthogOptions: {
         apiKey: 'phc_YOUR_POSTHOG_KEY',
-        allowedDomains: ['deriv.com', 'deriv.team', 'deriv.ae'],
         config: {
             session_recording: {
                 recordCrossOriginIframes: true,
@@ -153,41 +151,58 @@ Analytics.identifyEvent('CR123456', {
 
 ### React Integration
 
-Create an analytics initialization hook:
+The recommended pattern is a single `useAnalytics` hook that handles initialization and exposes all tracking methods:
 
 ```typescript
 // hooks/useAnalytics.ts
 import { useEffect } from 'react'
 import { Analytics } from '@deriv-com/analytics'
 
+let isInitialized = false
+
 export function useAnalytics() {
     useEffect(() => {
+        if (isInitialized) return
+        isInitialized = true
+
+        const rudderstackKey = process.env.REACT_APP_RUDDERSTACK_KEY // ← replace with your env var
+        const posthogKey = process.env.REACT_APP_POSTHOG_KEY // ← replace with your env var
+
+        if (!rudderstackKey && !posthogKey) return
+
         Analytics.initialise({
-            rudderstackKey: process.env.REACT_APP_RUDDERSTACK_KEY!,
-            posthogOptions: {
-                apiKey: process.env.REACT_APP_POSTHOG_KEY!,
-                config: {
-                    autocapture: true,
+            ...(rudderstackKey && { rudderstackKey }),
+            ...(posthogKey && {
+                posthogOptions: {
+                    apiKey: posthogKey,
+                    api_host: process.env.REACT_APP_POSTHOG_HOST,
                 },
-            },
+            }),
+            debug: process.env.NODE_ENV === 'development',
         })
     }, [])
-}
 
+    return {
+        trackEvent: Analytics.trackEvent,
+        identifyEvent: Analytics.identifyEvent,
+        pageView: Analytics.pageView,
+        loadEvent: Analytics.loadEvent,
+        setAttributes: Analytics.setAttributes,
+        reset: Analytics.reset,
+    }
+}
+```
+
+Call the hook once at the top of your app:
+
+```tsx
 // App.tsx
 import { useAnalytics } from './hooks/useAnalytics'
 
 function App() {
-    useAnalytics()
+    const { trackEvent } = useAnalytics()
 
-    const handleSignup = () => {
-        Analytics.trackEvent('ce_virtual_signup_form', {
-            action: 'signup_modal_open',
-            form_source: 'header_cta',
-        })
-    }
-
-    return <button onClick={handleSignup}>Sign Up</button>
+    return <button onClick={() => trackEvent('ce_signup_button', { action: 'click' })}>Sign Up</button>
 }
 ```
 
@@ -195,28 +210,63 @@ function App() {
 
 #### App Router (Next.js 13+)
 
+Use the same `useAnalytics` hook (with `NEXT_PUBLIC_` env var prefix) inside a dedicated client provider:
+
 ```typescript
-// app/providers.tsx
+// hooks/useAnalytics.ts
 'use client'
 
-import { Analytics } from '@deriv-com/analytics'
 import { useEffect } from 'react'
+import { Analytics } from '@deriv-com/analytics'
 
-export function AnalyticsProvider({ children }: { children: React.ReactNode }) {
+let isInitialized = false
+
+export function useAnalytics() {
     useEffect(() => {
+        if (isInitialized) return
+        isInitialized = true
+
+        const rudderstackKey = process.env.NEXT_PUBLIC_RUDDERSTACK_KEY // ← replace with your env var
+        const posthogKey = process.env.NEXT_PUBLIC_POSTHOG_KEY // ← replace with your env var
+
+        if (!rudderstackKey && !posthogKey) return
+
         Analytics.initialise({
-            rudderstackKey: process.env.NEXT_PUBLIC_RUDDERSTACK_KEY!,
-            posthogOptions: {
-                apiKey: process.env.NEXT_PUBLIC_POSTHOG_KEY!,
-            },
+            ...(rudderstackKey && { rudderstackKey }),
+            ...(posthogKey && {
+                posthogOptions: {
+                    apiKey: posthogKey,
+                    api_host: process.env.NEXT_PUBLIC_POSTHOG_HOST,
+                },
+            }),
+            debug: process.env.NODE_ENV === 'development',
         })
     }, [])
 
+    return {
+        trackEvent: Analytics.trackEvent,
+        identifyEvent: Analytics.identifyEvent,
+        pageView: Analytics.pageView,
+        loadEvent: Analytics.loadEvent,
+        setAttributes: Analytics.setAttributes,
+        reset: Analytics.reset,
+    }
+}
+```
+
+```tsx
+// app/analytics-provider.tsx
+'use client'
+
+import { useAnalytics } from '@/hooks/useAnalytics'
+
+export function AnalyticsProvider({ children }: { children: React.ReactNode }) {
+    useAnalytics()
     return <>{children}</>
 }
 
 // app/layout.tsx
-import { AnalyticsProvider } from './providers'
+import { AnalyticsProvider } from './analytics-provider'
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
     return (
@@ -233,20 +283,11 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
 
 ```typescript
 // pages/_app.tsx
-import { Analytics } from '@deriv-com/analytics'
-import { useEffect } from 'react'
+import { useAnalytics } from '../hooks/useAnalytics'
 import type { AppProps } from 'next/app'
 
 export default function App({ Component, pageProps }: AppProps) {
-    useEffect(() => {
-        Analytics.initialise({
-            rudderstackKey: process.env.NEXT_PUBLIC_RUDDERSTACK_KEY!,
-            posthogOptions: {
-                apiKey: process.env.NEXT_PUBLIC_POSTHOG_KEY!,
-            },
-        })
-    }, [])
-
+    useAnalytics()
     return <Component {...pageProps} />
 }
 ```
@@ -333,7 +374,7 @@ await Analytics.initialise({
 - **Event Batching**: Flushes after 10 events or 10 seconds
 - **SendBeacon API**: Uses `navigator.sendBeacon` for better performance on page unload
 - **Automatic Retry**: Failed requests are automatically retried
-- **Cookie Management**: Automatic anonymous ID generation and persistence (2-year cookie lifetime)
+- **Cookie Management**: Automatic anonymous ID generation and persistence (6-month cookie lifetime)
 - **Offline Support**: Events are cached when offline and replayed when connection is restored
 
 ### PostHog Configuration
@@ -347,13 +388,19 @@ await Analytics.initialise({
         // Required: API key
         apiKey: 'phc_YOUR_KEY',
 
-        // Optional: Domain allowlist for security
-        allowedDomains: ['deriv.com', 'deriv.team', 'deriv.ae'],
+        // Optional: Override the PostHog API host.
+        // If omitted, the host is auto-selected at init time based on window.location.hostname:
+        //   *.deriv.me  → https://ph.deriv.me
+        //   *.deriv.be  → https://ph.deriv.be
+        //   *.deriv.ae  → https://ph.deriv.ae
+        //   all others  → https://ph.deriv.com (default, also used in SSR/non-browser environments)
+        // Set this explicitly if you need to override the resolved host (e.g. in tests or custom deployments).
+        api_host: 'https://ph.deriv.com',
 
         // Optional: PostHog configuration
         config: {
-            // API endpoints (defaults shown)
-            api_host: 'https://ph.deriv.com',
+            // ui_host controls where the PostHog UI links point (e.g. session replay links).
+            // This is separate from api_host and should remain pointed at the PostHog cloud UI.
             ui_host: 'https://us.posthog.com',
 
             // Session recording
@@ -385,18 +432,18 @@ await Analytics.initialise({
 })
 ```
 
+#### Stale Cookie Cleanup
+
+On every PostHog initialization, the library automatically removes leftover `ph_*_posthog` cookies from previous or rotated API keys. This prevents stale cookies from accumulating in users' browsers when the PostHog project key changes.
+
 #### Domain Allowlisting
 
-For security, PostHog can be configured to only send events from specific domains:
+PostHog events are only sent from the following domains (hardcoded internally):
 
-```typescript
-posthogOptions: {
-    apiKey: 'phc_YOUR_KEY',
-    allowedDomains: ['deriv.com', 'deriv.team', 'deriv.ae'],
-}
-```
+- `deriv.com`, `deriv.be`, `deriv.me`, `deriv.team`, `deriv.ae`
+- `localhost` and `127.0.0.1` are always allowed
 
-Events from `app.deriv.com`, `staging.deriv.team`, etc. will be sent. Events from other domains will be blocked.
+Events from any other domain are silently blocked. This list is not user-configurable.
 
 #### Session Recording Customization
 
@@ -446,9 +493,7 @@ await Analytics.initialise({
 
 ### Event Tracking
 
-Track custom events with associated data. Supports both V1 (flat) and V2 (structured) formats:
-
-#### V1 Event Format (Flat Structure)
+Track custom events with any payload — there are no enforced property types. Send exactly what your event needs:
 
 ```typescript
 Analytics.trackEvent('ce_login_form', {
@@ -456,21 +501,13 @@ Analytics.trackEvent('ce_login_form', {
     login_provider: 'email',
     form_name: 'main_login',
 })
-```
 
-#### V2 Event Format (Structured with Metadata)
-
-```typescript
-Analytics.trackEvent('ce_get_start_page', {
-    action: 'click',
-    form_name: 'signup_form',
+Analytics.trackEvent('ce_signup_form', {
+    action: 'signup_done',
+    signup_provider: 'google',
     cta_information: {
         cta_name: 'get_started',
         section_name: 'hero',
-    },
-    event_metadata: {
-        page_name: '/home',
-        user_language: 'en',
     },
 })
 ```
@@ -541,7 +578,7 @@ Analytics.pageView('/trade', 'Deriv App', {
 
 ### User Attributes
 
-Set user and context attributes that are automatically included in all events:
+Set user and context attributes that are automatically included in all subsequent events. Pass any key-value pairs — no fixed schema is enforced:
 
 ```typescript
 Analytics.setAttributes({
@@ -553,10 +590,9 @@ Analytics.setAttributes({
     account_mode: 'demo',
     residence_country: 'US',
     loggedIn: true,
+    // any additional fields your app needs
 })
 ```
-
-**All subsequent events will include these attributes automatically.**
 
 ### Reset User Session
 
@@ -568,94 +604,42 @@ Analytics.reset()
 
 ## Caching & Offline Support
 
-The package includes robust caching mechanisms to ensure no events are lost:
+The package includes automatic caching to ensure no events are lost — no extra configuration needed.
 
-### Cookie-Based Caching
+### localStorage Caching (SDK not yet loaded)
 
-Events are cached in cookies when:
-
-- **RudderStack SDK hasn't loaded yet** - Events are stored and replayed once the SDK initializes
-- **User is offline** - Events are queued and sent when connection is restored
+When you call `trackEvent` or `pageView` before `initialise()` completes, events are stored in `localStorage` and replayed automatically once the SDK loads:
 
 ```typescript
-// Automatic - no configuration needed
+// Safe to call before initialise() — automatically replayed on load
 Analytics.trackEvent('button_clicked', { button: 'submit' })
-// ↓ If offline or SDK not ready, stored in cookies
-// ↓ Automatically sent when online/SDK ready
-```
-
-**Technical Details:**
-
-- Cookies have a 7-day expiration
-- Maximum 10 cached events (oldest events dropped if exceeded)
-- Automatic cleanup after successful replay
-- SameSite=Lax for security
-
-### In-Memory Caching
-
-In addition to cookie caching, events are cached in memory when the user is offline but the SDK is initialized:
-
-```typescript
-// While offline
-Analytics.trackEvent('offline_event', { data: 'cached' })
-// ↓ Stored in memory
-// ↓ Sent immediately when online
-
-// Check offline status
-window.addEventListener('online', () => {
-    // Cached events automatically sent
-})
-```
-
-### Page View Caching
-
-Page views are also cached using the same mechanism:
-
-```typescript
-// While SDK is loading
 Analytics.pageView('/dashboard')
-// ↓ Cached in cookies
-// ↓ Replayed once SDK is ready
 ```
 
-### Advanced Caching Utilities
+### In-Memory Caching (offline)
 
-For complex scenarios requiring more control, use the advanced caching utilities:
+When the user is offline but the SDK is already initialized, events are held in memory and flushed on the next online `trackEvent` call:
 
 ```typescript
-import { cacheTrackEvents } from '@deriv-com/analytics'
+// While offline — queued in memory, sent automatically when back online
+Analytics.trackEvent('offline_event', { data: 'cached' })
+```
 
-// Track events with automatic caching before SDK loads
-cacheTrackEvents.track({
-    name: 'ce_login_form',
-    properties: { action: 'open' },
-})
+### Route-Based Events
 
-// Add click event listeners with auto-retry
-cacheTrackEvents.addEventHandler([
-    {
-        element: '.signup-button',
-        event: {
-            name: 'ce_button_click',
-            properties: { button_name: 'signup' },
-        },
-        cache: true, // Cache if SDK not ready
-    },
-])
+Fire events only on specific pages using `loadEvent`:
 
-// Track page-specific events
-cacheTrackEvents.pageLoadEvent([
+```typescript
+Analytics.loadEvent([
     {
         pages: ['dashboard', 'profile'],
-        event: {
-            name: 'ce_page_load',
-            properties: { page_type: 'authenticated' },
-        },
+        event: { name: 'ce_page_load', properties: { page_type: 'authenticated' } },
+    },
+    {
+        excludedPages: ['login'],
+        event: { name: 'ce_authenticated_view', properties: {} },
     },
 ])
-
-// Automatic pageview tracking
-cacheTrackEvents.pageView()
 ```
 
 ## Debug Mode
@@ -685,7 +669,6 @@ import { Posthog } from '@deriv-com/analytics/posthog'
 
 const posthog = Posthog.getPosthogInstance({
     apiKey: 'phc_YOUR_KEY',
-    allowedDomains: ['deriv.com'],
     config: {
         autocapture: true,
         session_recording: {
@@ -759,7 +742,14 @@ interface Options {
     rudderstackKey?: string
     posthogOptions?: {
         apiKey: string
-        allowedDomains?: string[]
+        /**
+         * Optional PostHog API host. If omitted, resolved automatically based on window.location.hostname:
+         *   *.deriv.me  → https://ph.deriv.me
+         *   *.deriv.be  → https://ph.deriv.be
+         *   *.deriv.ae  → https://ph.deriv.ae
+         *   all others  → https://ph.deriv.com (default; also used server-side)
+         */
+        api_host?: string
         config?: PostHogConfig
     }
     /** Enable verbose debug logging — all analytics calls are logged prefixed with [ANALYTIC] */
@@ -767,9 +757,9 @@ interface Options {
 }
 ```
 
-### `trackEvent<T>(event: T, payload: TAllEvents[T]): void`
+### `trackEvent(event: string, payload: Record<string, any>): void`
 
-Track a typed event.
+Track an event. No payload schema is enforced — send any key-value pairs.
 
 ### `pageView(url: string, platform?: string, properties?: Record<string, unknown>): void`
 
@@ -779,18 +769,31 @@ Track page navigation.
 
 Link anonymous session to a user ID with optional traits. When PostHog is active and traits include an `email` field (via provider-specific `posthog` key), `is_internal` is automatically computed and set as a person property — the email itself is not stored in PostHog.
 
-### `backfillPersonProperties(user_id: string, email: string): void`
+### `backfillPersonProperties({ user_id, email?, country_of_residence? }): void`
 
 Backfills PostHog person properties for users identified in previous sessions. Sets `client_id` and `is_internal` if they are not already present. No-op if PostHog is not initialized or `user_id` is empty.
 
 ```typescript
 // Call after PostHog has loaded and user ID is available
-Analytics.backfillPersonProperties('CR123456', 'user@example.com')
+Analytics.backfillPersonProperties({ user_id: 'CR123456', email: 'user@example.com', country_of_residence: 'US' })
 ```
 
-### `setAttributes(attributes: TCoreAttributes): void`
+### `setAttributes(attributes: Record<string, any>): void`
 
-Update user attributes that flow to all providers.
+Update user attributes that flow to all providers. No schema is enforced.
+
+### `loadEvent(items: PageLoadEventConfig[]): void`
+
+Fire events conditionally based on the current page pathname.
+
+```typescript
+type PageLoadEventConfig = {
+    pages?: string[] // fire only on these pages
+    excludedPages?: string[] // fire on all pages except these
+    event: { name: string; properties: Record<string, any> }
+    callback?: () => { name: string; properties: Record<string, any> }
+}
+```
 
 ### `reset(): void`
 
@@ -862,8 +865,8 @@ Estimated sizes (minified + gzipped):
 
 1. **Check online status**: Run `navigator.onLine` in console
 2. **Verify SDK loaded**: Run `Analytics.getInstances().tracking.has_initialized`
-3. **Check cookies**: Look for `rudder_*` and `analytics_cached_*` cookies in DevTools
-4. **Clear cache manually**: Clear cookies or run `Analytics.reset()`
+3. **Check storage**: Open DevTools → Application → Local Storage — look for `cached_analytics_events` and `cached_analytics_page_views` keys. The `rudder_anonymous_id` is still stored as a cookie.
+4. **Clear cache manually**: Clear localStorage keys or run `Analytics.reset()`
 
 ## Migration Guide
 
