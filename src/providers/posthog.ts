@@ -186,15 +186,18 @@ export class Posthog {
      *
      * @param params.user_id - The user ID to use as client_id
      * @param params.email - The user's email, used to determine is_internal
+     * @param params.language - The user's language (BCP 47 tag, e.g. "en-GB")
      * @param params.country_of_residence - The user's country of residence
      */
     backfillPersonProperties = ({
         user_id,
         email,
+        language,
         country_of_residence,
     }: {
         user_id: string
         email?: string
+        language?: string
         country_of_residence?: string
     }): void => {
         if (!this.has_initialized || !user_id) return
@@ -208,6 +211,9 @@ export class Posthog {
             }
             if (email && storedProperties.is_internal === undefined) {
                 updates.is_internal = isInternalEmail(email)
+            }
+            if (language && !storedProperties.language) {
+                updates.language = language
             }
             if (country_of_residence && !storedProperties.country_of_residence) {
                 updates.country_of_residence = country_of_residence
