@@ -534,28 +534,31 @@ export function createAnalyticsInstance(_options?: Options) {
      *
      * @param params.user_id - The user ID to use as client_id
      * @param params.email - The user's email, used to determine is_internal
+     * @param params.language - The user's language (BCP 47 tag, e.g. "en-GB")
      * @param params.country_of_residence - The user's country of residence
      *
      * @example
      * ```typescript
      * if (window.posthog?.__loaded && userId) {
-     *     analytics.backfillPersonProperties({ user_id: userId, email, country_of_residence })
+     *     analytics.backfillPersonProperties({ user_id: userId, email, language, country_of_residence })
      * }
      * ```
      */
     const backfillPersonProperties = ({
         user_id,
         email,
+        language,
         country_of_residence,
     }: {
         user_id: string
         email?: string
+        language?: string
         country_of_residence?: string
     }): void => {
         log('backfillPersonProperties | called', { user_id })
         if (_posthog?.has_initialized) {
             log('backfillPersonProperties | backfilling person properties in PostHog', { user_id })
-            _posthog.backfillPersonProperties({ user_id, email, country_of_residence })
+            _posthog.backfillPersonProperties({ user_id, email, language, country_of_residence })
         } else {
             log('backfillPersonProperties | skipped — PostHog not initialized')
         }
