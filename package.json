@@ -38,11 +38,6 @@
             "types": "./dist/providers/posthog/index.d.ts",
             "import": "./dist/providers/posthog/index.mjs",
             "require": "./dist/providers/posthog/index.js"
-        },
-        "./cache": {
-            "types": "./dist/utils/analytics-cache/index.d.ts",
-            "import": "./dist/utils/analytics-cache/index.mjs",
-            "require": "./dist/utils/analytics-cache/index.js"
         }
     },
     "scripts": {

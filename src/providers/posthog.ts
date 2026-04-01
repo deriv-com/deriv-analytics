@@ -1,6 +1,5 @@
 import posthog from 'posthog-js'
 import type { TPosthogConfig, TPosthogIdentifyTraits, TPosthogOptions } from './posthogTypes'
-import type { TCoreAttributes } from '../types'
 import { allowedDomains, getPosthogApiHost, posthogUiHost } from '../utils/urls'
 import { createLogger, isInternalEmail } from '../utils/helpers'
 
@@ -235,7 +234,7 @@ export class Posthog {
      * @param event_name - The name of the event to track
      * @param properties - Event properties including core attributes (already flattened and cleaned)
      */
-    capture = (event_name: string, properties?: Record<string, any> & Partial<TCoreAttributes>): void => {
+    capture = (event_name: string, properties?: Record<string, any>): void => {
         if (!this.has_initialized) return
 
         try {

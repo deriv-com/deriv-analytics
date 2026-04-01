@@ -1,4 +1,3 @@
-export { cacheTrackEvents } from './analytics-cache'
 export {
     cacheEventToStorage,
     cachePageViewToStorage,

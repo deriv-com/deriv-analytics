@@ -14,7 +14,6 @@ export default defineConfig([
             'providers/growthbook/index': 'src/providers/growthbook.ts',
             'providers/rudderstack/index': 'src/providers/rudderstack.ts',
             'providers/posthog/index': 'src/providers/posthog.ts',
-            'utils/analytics-cache/index': 'src/utils/analytics-cache.ts',
         },
 
         // Output formats for NPM

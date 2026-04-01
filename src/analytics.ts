@@ -1,5 +1,4 @@
 import { RudderStack } from './providers/rudderstack'
-import type { TCoreAttributes, TAllEvents, TV2EventPayload } from './types'
 import {
     cacheEventToStorage,
     cachePageViewToStorage,
@@ -9,8 +8,6 @@ import {
     clearCachedPageViews,
 } from './utils/storage'
 import { isUUID, getCountry, cleanObject, flattenObject, createLogger, isInternalEmail } from './utils/helpers'
-import { cacheTrackEvents } from './utils/analytics-cache'
-
 // Optional Growthbook types - only import if using Growthbook
 import type { Growthbook, GrowthbookConfigs } from './providers/growthbook'
 import type { TGrowthbookAttributes, TGrowthbookOptions } from './providers/growthbookTypes'
@@ -87,9 +84,9 @@ export function createAnalyticsInstance(_options?: Options) {
     let _growthbook: Growthbook | undefined,
         _rudderstack: RudderStack,
         _posthog: Posthog | undefined,
-        core_data: Partial<TCoreAttributes> = {},
+        core_data: Record<string, any> = {},
         tracking_config: { [key: string]: boolean } = {},
-        offline_event_cache: Array<{ event: keyof TAllEvents; payload: TAllEvents[keyof TAllEvents] }> = [],
+        offline_event_cache: Array<{ event: string; payload: Record<string, any> }> = [],
         _pending_identify_calls: Array<{ userId: string; traits?: Record<string, any> }> = [],
         _storage_cache_processed = false
 
@@ -105,7 +102,7 @@ export function createAnalyticsInstance(_options?: Options) {
                 log(`processStorageCache | replaying ${storedEvents.length} cached event(s)`, storedEvents)
                 storedEvents.forEach(event => {
                     const cleaned_properties = cleanObject(event.properties)
-                    _rudderstack?.track(event.name as keyof TAllEvents, cleaned_properties as any)
+                    _rudderstack?.track(event.name, cleaned_properties)
                 })
                 clearCachedEvents()
             }
@@ -178,7 +175,6 @@ export function createAnalyticsInstance(_options?: Options) {
         debug,
     }: Options) => {
         if (debug !== undefined) _debug = debug
-        cacheTrackEvents.setDebug(_debug)
 
         log('initialise | starting analytics initialization', {
             rudderstack: !!rudderstackKey,
@@ -281,74 +277,15 @@ export function createAnalyticsInstance(_options?: Options) {
      * });
      * ```
      */
-    const setAttributes = ({
-        country,
-        user_language,
-        device_language,
-        device_type,
-        account_type,
-        user_id,
-        anonymous_id,
-        app_id,
-        utm_source,
-        utm_medium,
-        utm_campaign,
-        is_authorised,
-        residence_country,
-        url,
-        domain,
-        geo_location,
-        loggedIn,
-        network_downlink,
-        network_rtt,
-        network_type,
-        account_currency,
-        account_mode,
-    }: TCoreAttributes) => {
+    const setAttributes = (attributes: Record<string, any>) => {
+        log('setAttributes | received attributes', attributes)
+
+        const { user_id, ...rest } = attributes
         const user_identity = user_id ?? getId()
 
-        log('setAttributes | received attributes', {
-            country,
-            user_language,
-            device_language,
-            device_type,
-            account_type,
-            user_id,
-            anonymous_id,
-            app_id,
-            utm_source,
-            utm_medium,
-            utm_campaign,
-            is_authorised,
-            residence_country,
-            url,
-            domain,
-            geo_location,
-            loggedIn,
-            network_downlink,
-            network_rtt,
-            network_type,
-            account_currency,
-            account_mode,
-        })
-
         if (_growthbook) {
-            const config: TGrowthbookAttributes = {
-                country,
-                residence_country,
-                user_language,
-                device_language,
-                device_type,
-                utm_source,
-                utm_medium,
-                utm_campaign,
-                is_authorised,
-                url,
-                domain,
-                loggedIn,
-                ...(user_id && !isUUID(user_id) && { user_id }),
-                anonymous_id,
-            }
+            const config: TGrowthbookAttributes = { ...rest }
+            if (user_id && !isUUID(user_id)) config.user_id = user_id
             if (user_identity) {
                 config.id = user_identity
                 config.user_id = user_identity
@@ -359,22 +296,8 @@ export function createAnalyticsInstance(_options?: Options) {
 
         core_data = {
             ...core_data,
-            ...(country !== undefined && { country }),
-            ...(geo_location !== undefined && { geo_location }),
-            ...(user_language !== undefined && { user_language }),
-            ...(account_type !== undefined && { account_type }),
-            ...(app_id !== undefined && { app_id }),
-            ...(residence_country !== undefined && { residence_country }),
-            ...(device_type !== undefined && { device_type }),
-            ...(url !== undefined && { url }),
-            ...(loggedIn !== undefined && { loggedIn }),
-            ...(network_downlink !== undefined && { network_downlink }),
-            ...(network_rtt !== undefined && { network_rtt }),
-            ...(network_type !== undefined && { network_type }),
+            ...Object.fromEntries(Object.entries(rest).filter(([, v]) => v !== undefined)),
             ...(user_id !== undefined && !isUUID(user_id) && { user_id }),
-            ...(anonymous_id !== undefined && { anonymous_id }),
-            ...(account_currency !== undefined && { account_currency }),
-            ...(account_mode !== undefined && { account_mode }),
         }
 
         log('setAttributes | updated core_data', core_data)
@@ -421,14 +344,12 @@ export function createAnalyticsInstance(_options?: Options) {
         log('pageView | called', { current_page, platform, properties, userId })
 
         // Handle RudderStack pageView independently
-        if (_rudderstack) {
-            if (_rudderstack.has_initialized) {
-                log('pageView | sending page view to RudderStack', { current_page, platform })
-                _rudderstack.pageView(current_page, platform, userId, properties)
-            } else {
-                log('pageView | RudderStack not initialized — caching page view to localStorage', { current_page })
-                cachePageViewToStorage(current_page, { platform, ...properties })
-            }
+        if (_rudderstack?.has_initialized) {
+            log('pageView | sending page view to RudderStack', { current_page, platform })
+            _rudderstack.pageView(current_page, platform, userId, properties)
+        } else {
+            log('pageView | RudderStack not initialized — caching page view to localStorage', { current_page })
+            cachePageViewToStorage(current_page, { platform, ...properties })
         }
 
         // PostHog handles page views automatically via autocapture
@@ -532,62 +453,31 @@ export function createAnalyticsInstance(_options?: Options) {
         }
     }
 
-    const isV2Payload = (payload: any): payload is TV2EventPayload => {
-        return 'event_metadata' in payload || 'cta_information' in payload || 'error' in payload
-    }
-
     /**
      * Tracks a custom event with associated data.
      *
      * Features:
      * - Automatically enriches events with core attributes
-     * - Supports both V1 and V2 event payload formats
      * - RudderStack: Caches events when offline or not initialized
      * - PostHog: Sends immediately if initialized (has built-in caching)
      * - Respects feature flag configurations
      * - Each provider works independently - one failing won't affect the other
      *
-     * @template T - The event name type from TAllEvents
-     * @param {T} event - The event name to track
-     * @param {TAllEvents[T]} analytics_data - The event data payload
-     *
-     * @example
-     * ```typescript
-     * // Simple event
-     * analytics.trackEvent('button_clicked', { button_name: 'signup' });
-     *
-     * // V2 event with metadata
-     * analytics.trackEvent('form_submitted', {
-     *   event_metadata: { form_name: 'registration' },
-     *   cta_information: { button_text: 'Create Account' }
-     * });
-     * ```
+     * @param {string} event - The event name to track
+     * @param {Record<string, any>} analytics_data - The event data payload
      */
-    const trackEvent = <T extends keyof TAllEvents>(event: T, analytics_data: TAllEvents[T]) => {
+    const trackEvent = (event: string, analytics_data: Record<string, any>) => {
         const userId = getId()
-        let final_payload: any = {}
 
         log('trackEvent | called', { event, analytics_data, userId, core_data })
 
-        if (isV2Payload(analytics_data)) {
-            const v2_data = analytics_data as TV2EventPayload
-            final_payload = {
-                ...v2_data,
-                event_metadata: {
-                    ...core_data,
-                    ...(userId && !core_data.user_id && { user_id: userId }),
-                    ...v2_data.event_metadata,
-                },
-            }
-            log('trackEvent | built V2 payload', { event, final_payload })
-        } else {
-            final_payload = {
-                ...core_data,
-                ...analytics_data,
-                ...(userId && !core_data.user_id && { user_id: userId }),
-            }
-            log('trackEvent | built V1 payload', { event, final_payload })
+        const final_payload = {
+            ...core_data,
+            ...analytics_data,
+            ...(userId && !core_data.user_id && { user_id: userId }),
         }
+
+        log('trackEvent | built payload', { event, final_payload })
 
         const shouldTrack = !(event in tracking_config) || tracking_config[event as string]
         if (!shouldTrack) {
