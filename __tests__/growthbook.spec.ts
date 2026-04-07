@@ -3,16 +3,18 @@ import { Growthbook } from '../src/providers/growthbook'
 
 vi.mock('@rudderstack/analytics-js')
 vi.mock('@growthbook/growthbook', () => ({
-    GrowthBook: vi.fn().mockImplementation(() => ({
-        init: vi.fn().mockResolvedValue(undefined),
-        setAttributes: vi.fn(),
-        getAttributes: vi.fn().mockReturnValue({}),
-        evalFeature: vi.fn().mockReturnValue({ on: true, value: 'test' }),
-        getFeatureValue: vi.fn(),
-        setURL: vi.fn(),
-        isOn: vi.fn().mockReturnValue(true),
-        destroy: vi.fn(),
-    })),
+    GrowthBook: vi.fn().mockImplementation(function () {
+        return {
+            init: vi.fn().mockResolvedValue(undefined),
+            setAttributes: vi.fn(),
+            getAttributes: vi.fn().mockReturnValue({}),
+            evalFeature: vi.fn().mockReturnValue({ on: true, value: 'test' }),
+            getFeatureValue: vi.fn(),
+            setURL: vi.fn(),
+            isOn: vi.fn().mockReturnValue(true),
+            destroy: vi.fn(),
+        }
+    }),
 }))
 
 describe('Growthbook Provider', () => {

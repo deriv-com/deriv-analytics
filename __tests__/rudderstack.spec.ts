@@ -4,7 +4,7 @@ import { RudderStack } from '../src/providers/rudderstack'
 
 vi.mock('@rudderstack/analytics-js', () => {
     return {
-        RudderAnalytics: vi.fn().mockImplementation(() => {
+        RudderAnalytics: vi.fn().mockImplementation(function () {
             return {
                 load: vi.fn().mockImplementation((key, url, options) => {
                     if (options?.onLoaded) {
