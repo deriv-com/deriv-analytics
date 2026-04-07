@@ -1,3 +1,14 @@
+## [1.40.1](https://github.com/deriv-com/deriv-analytics/compare/v1.40.0...v1.40.1) (2026-04-07)
+
+### ♻️ Chores
+
+- update packages to latest and backfill changelog from v1.37.0 ([ccb2701](https://github.com/deriv-com/deriv-analytics/commit/ccb2701b6861f9d66a6fa1f22c8f92690e6306c2))
+- update packages to latest and backfill changelog from v1.37.0 ([3622cd1](https://github.com/deriv-com/deriv-analytics/commit/3622cd1a8a29dc094a06c00d24fb63d2bba23230))
+
+### 🐛 Bug Fixes
+
+- resolve test failures after package upgrades ([cb30d62](https://github.com/deriv-com/deriv-analytics/commit/cb30d627c453b580fbb6a93f1fe2970bc389b521))
+
 # [1.40.0](https://github.com/deriv-com/deriv-analytics/compare/v1.39.8...v1.40.0) (2026-04-01)
 
 ### ♻️ Chores
