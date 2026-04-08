@@ -1,3 +1,10 @@
+## [1.40.2](https://github.com/deriv-com/deriv-analytics/compare/v1.40.1...v1.40.2) (2026-04-08)
+
+### ♻️ Chores
+
+- remove posthog_excluded_keys filtering from PostHog event tracking ([269c032](https://github.com/deriv-com/deriv-analytics/commit/269c032be9324dd3f49bc06c36b67abfc6ac6dd1))
+- remove posthog_excluded_keys filtering from trackEvent ([9616469](https://github.com/deriv-com/deriv-analytics/commit/96164695685332551506344e75f980c36121b71b))
+
 ## [1.40.1](https://github.com/deriv-com/deriv-analytics/compare/v1.40.0...v1.40.1) (2026-04-07)
 
 ### ♻️ Chores
