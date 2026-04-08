@@ -514,13 +514,7 @@ export function createAnalyticsInstance(_options?: Options) {
 
         // Handle PostHog independently - send immediately if initialized
         if (_posthog?.has_initialized) {
-            const posthog_excluded_keys = ['page_name', 'user_language', 'form_name', 'version', 'email_hash'] as const
-            const flattened_payload = flattenObject(final_payload)
-            const posthog_payload = cleanObject(
-                Object.fromEntries(
-                    Object.entries(flattened_payload).filter(([key]) => !posthog_excluded_keys.includes(key as any))
-                )
-            )
+            const posthog_payload = cleanObject(flattenObject(final_payload))
             log('trackEvent | sending event to PostHog', { event, payload: posthog_payload })
             _posthog.capture(event as string, posthog_payload)
         }
