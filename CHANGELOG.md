@@ -1,3 +1,13 @@
+## [1.40.3](https://github.com/deriv-com/deriv-analytics/compare/v1.40.2...v1.40.3) (2026-04-14)
+
+### 🐛 Bug Fixes
+
+- bump picomatch to >=4.0.4 to resolve CVE-2026-33672 ([e150a47](https://github.com/deriv-com/deriv-analytics/commit/e150a477c0a8c9fad5bd138ae8a657dbb244fcf8))
+- make traits parameter optional in identifyEvent ([a95ad40](https://github.com/deriv-com/deriv-analytics/commit/a95ad40ce46098e91d11f84e83fb4a61bc84056b))
+- pass github_token explicitly to skip OIDC app token exchange ([dccbf90](https://github.com/deriv-com/deriv-analytics/commit/dccbf906467f72e7aabad39c45c2527741c2e09f))
+- remove id-token permission to prevent OIDC app token exchange ([813bcc6](https://github.com/deriv-com/deriv-analytics/commit/813bcc6a5e12c33956719949ddfac67c78763e99))
+- resolve CVE-2026-33672 and make identifyEvent traits optional ([44253af](https://github.com/deriv-com/deriv-analytics/commit/44253af96694168b99371a96c4d4991bd40ba5c6))
+
 ## [1.40.2](https://github.com/deriv-com/deriv-analytics/compare/v1.40.1...v1.40.2) (2026-04-08)
 
 ### ♻️ Chores
