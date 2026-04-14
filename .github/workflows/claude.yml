@@ -14,7 +14,6 @@ jobs:
             contents: read
             pull-requests: write
             issues: write
-            id-token: write
             actions: read
 
         # Cancel older runs when new commits arrive on the same PR
