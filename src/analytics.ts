@@ -434,7 +434,7 @@ export function createAnalyticsInstance(_options?: Options) {
         }
 
         // Handle PostHog identification independently
-        if (_posthog?.has_initialized && posthogTraits) {
+        if (_posthog?.has_initialized) {
             log('identifyEvent | calling PostHog identify', { user_id: stored_user_id, traits: posthogTraits })
             _posthog.identifyEvent(stored_user_id, posthogTraits as TPosthogIdentifyTraits)
         }
