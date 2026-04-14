@@ -138,7 +138,7 @@ export class Posthog {
      * @param user_id - The user ID to identify
      * @param traits - User properties (language, country_of_residence, etc.)
      */
-    identifyEvent = (user_id: string, traits: TPosthogIdentifyTraits): void => {
+    identifyEvent = (user_id: string, traits: TPosthogIdentifyTraits = {}): void => {
         if (!this.has_initialized) {
             console.warn('Posthog: Cannot identify - not initialized')
             return

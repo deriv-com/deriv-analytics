@@ -14,7 +14,6 @@ jobs:
             contents: read
             pull-requests: write
             issues: write
-            id-token: write
             actions: read
 
         # Cancel older runs when new commits arrive on the same PR
@@ -73,6 +72,7 @@ jobs:
               timeout-minutes: 60
               with:
                   anthropic_api_key: ${{ secrets.ANTHROPIC_API_KEY }}
+                  github_token: ${{ secrets.GITHUB_TOKEN }}
                   track_progress: true
                   prompt: |
                       REPO: ${{ github.repository }}
