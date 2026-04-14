@@ -80,6 +80,13 @@
     "optionalDependencies": {
         "@growthbook/growthbook": "^1.6.5"
     },
+    "overrides": {
+        "npm": {
+            "tinyglobby": {
+                "picomatch": ">=4.0.4"
+            }
+        }
+    },
     "engines": {
         "node": ">=24.13.0",
         "npm": ">=11.7.0"
