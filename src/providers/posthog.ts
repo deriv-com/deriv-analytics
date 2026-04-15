@@ -250,4 +250,117 @@ export class Posthog {
             console.error('Posthog: Failed to capture event', error)
         }
     }
+
+    /**
+     * Check whether a feature flag is enabled for the current user.
+     *
+     * @param key - The feature flag key
+     * @returns true/false, or undefined if PostHog is not ready
+     */
+    isFeatureEnabled = (key: string): boolean | undefined => {
+        if (!this.has_initialized) return undefined
+
+        try {
+            const result = posthog.isFeatureEnabled(key)
+            this.log('isFeatureEnabled', { key, result })
+            return result
+        } catch (error) {
+            console.error('Posthog: Failed to check feature flag', error)
+            return undefined
+        }
+    }
+
+    /**
+     * Get the value of a feature flag.
+     * Returns a string variant for multivariate flags, true/false for boolean flags,
+     * or undefined if the flag does not exist or PostHog is not ready.
+     *
+     * @param key - The feature flag key
+     */
+    getFeatureFlag = (key: string): string | boolean | undefined => {
+        if (!this.has_initialized) return undefined
+
+        try {
+            const result = posthog.getFeatureFlag(key)
+            this.log('getFeatureFlag', { key, result })
+            return result
+        } catch (error) {
+            console.error('Posthog: Failed to get feature flag', error)
+            return undefined
+        }
+    }
+
+    /**
+     * Get the JSON payload associated with a feature flag.
+     * Payloads allow attaching structured metadata (e.g. config objects) to a flag.
+     *
+     * @param key - The feature flag key
+     */
+    getFeatureFlagPayload = (key: string): Record<string, any> | undefined => {
+        if (!this.has_initialized) return undefined
+
+        try {
+            const result = posthog.featureFlags?.getFeatureFlagResult(key)?.payload as Record<string, any> | undefined
+            this.log('getFeatureFlagPayload', { key, result })
+            return result
+        } catch (error) {
+            console.error('Posthog: Failed to get feature flag payload', error)
+            return undefined
+        }
+    }
+
+    /**
+     * Get all currently active feature flags and their values.
+     *
+     * @returns A map of flag key → value (boolean or string variant)
+     */
+    getAllFlags = (): Record<string, string | boolean> => {
+        if (!this.has_initialized) return {}
+
+        try {
+            const result = posthog.featureFlags?.getFlagVariants() ?? {}
+            this.log('getAllFlags', { result })
+            return result
+        } catch (error) {
+            console.error('Posthog: Failed to get all feature flags', error)
+            return {}
+        }
+    }
+
+    /**
+     * Subscribe to feature flag changes.
+     * The callback fires immediately with the current flags and again whenever they are reloaded.
+     *
+     * @param callback - Receives the list of active flag keys and a map of key → variant
+     * @returns An unsubscribe function — call it to stop listening
+     */
+    onFeatureFlags = (
+        callback: (flags: string[], variants: Record<string, string | boolean>) => void
+    ): (() => void) => {
+        if (!this.has_initialized) return () => {}
+
+        try {
+            this.log('onFeatureFlags | subscribing to feature flag changes')
+            const unsubscribe = posthog.onFeatureFlags(callback)
+            return typeof unsubscribe === 'function' ? unsubscribe : () => {}
+        } catch (error) {
+            console.error('Posthog: Failed to subscribe to feature flags', error)
+            return () => {}
+        }
+    }
+
+    /**
+     * Force PostHog to reload feature flags from the server.
+     * Useful after login, logout, or any attribute change that may affect targeting.
+     */
+    reloadFeatureFlags = (): void => {
+        if (!this.has_initialized) return
+
+        try {
+            this.log('reloadFeatureFlags | reloading feature flags')
+            posthog.reloadFeatureFlags()
+        } catch (error) {
+            console.error('Posthog: Failed to reload feature flags', error)
+        }
+    }
 }

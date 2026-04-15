@@ -75,7 +75,7 @@
     "dependencies": {
         "@rudderstack/analytics-js": "^3.31.0",
         "js-cookie": "^3.0.5",
-        "posthog-js": "^1.364.0"
+        "posthog-js": "^1.367.0"
     },
     "optionalDependencies": {
         "@growthbook/growthbook": "^1.6.5"

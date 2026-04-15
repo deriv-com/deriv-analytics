@@ -560,6 +560,47 @@ export function createAnalyticsInstance(_options?: Options) {
 
     const getInstances = () => ({ ab: _growthbook, tracking: _rudderstack, posthog: _posthog })
 
+    /**
+     * Check whether a PostHog feature flag is enabled for the current user.
+     * Returns undefined if PostHog is not initialized.
+     */
+    const isPosthogFeatureEnabled = (key: string): boolean | undefined => _posthog?.isFeatureEnabled(key)
+
+    /**
+     * Get the value of a PostHog feature flag.
+     * Returns a string variant for multivariate flags, true/false for boolean flags,
+     * or undefined if the flag does not exist or PostHog is not initialized.
+     */
+    const getPosthogFeatureFlag = (key: string): string | boolean | undefined => _posthog?.getFeatureFlag(key)
+
+    /**
+     * Get the JSON payload attached to a PostHog feature flag.
+     * Returns undefined if the flag has no payload or PostHog is not initialized.
+     */
+    const getPosthogFeatureFlagPayload = (key: string): Record<string, any> | undefined =>
+        _posthog?.getFeatureFlagPayload(key)
+
+    /**
+     * Get all currently active PostHog feature flags and their values.
+     * Returns an empty object if PostHog is not initialized.
+     */
+    const getPosthogAllFlags = (): Record<string, string | boolean> => _posthog?.getAllFlags() ?? {}
+
+    /**
+     * Subscribe to PostHog feature flag changes.
+     * The callback fires immediately with current flags and again whenever flags are reloaded.
+     * Returns an unsubscribe function — call it to stop listening.
+     */
+    const onPosthogFeatureFlags = (
+        callback: (flags: string[], variants: Record<string, string | boolean>) => void
+    ): (() => void) => _posthog?.onFeatureFlags(callback) ?? (() => {})
+
+    /**
+     * Force PostHog to reload feature flags from the server.
+     * Useful after attribute/identity changes that may affect flag targeting.
+     */
+    const reloadPosthogFeatureFlags = (): void => _posthog?.reloadFeatureFlags()
+
     const AnalyticsInstance = {
         initialise,
         setAttributes,
@@ -576,6 +617,12 @@ export function createAnalyticsInstance(_options?: Options) {
         getInstances,
         pageView,
         reset,
+        isPosthogFeatureEnabled,
+        getPosthogFeatureFlag,
+        getPosthogFeatureFlagPayload,
+        getPosthogAllFlags,
+        onPosthogFeatureFlags,
+        reloadPosthogFeatureFlags,
     }
 
     if (typeof window !== 'undefined') {
