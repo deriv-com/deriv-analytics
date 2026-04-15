@@ -1,3 +1,10 @@
+# [1.41.0](https://github.com/deriv-com/deriv-analytics/compare/v1.40.3...v1.41.0) (2026-04-15)
+
+### ✨ Features
+
+- expose PostHog feature flag API through analytics instance ([fb3b50c](https://github.com/deriv-com/deriv-analytics/commit/fb3b50c8ae52fdf06e9738c783127fdd52da6a1a))
+- expose PostHog feature flag API through analytics instance ([3e86539](https://github.com/deriv-com/deriv-analytics/commit/3e8653920af88b40dad8976a22e3095ad44c831e))
+
 ## [1.40.3](https://github.com/deriv-com/deriv-analytics/compare/v1.40.2...v1.40.3) (2026-04-14)
 
 ### 🐛 Bug Fixes
