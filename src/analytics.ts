@@ -577,7 +577,9 @@ export function createAnalyticsInstance(_options?: Options) {
      * Get the JSON payload attached to a PostHog feature flag.
      * Returns undefined if the flag has no payload or PostHog is not initialized.
      */
-    const getPosthogFeatureFlagPayload = (key: string): Record<string, any> | undefined =>
+    const getPosthogFeatureFlagPayload = (
+        key: string
+    ): string | number | boolean | null | Record<string, unknown> | unknown[] | undefined =>
         _posthog?.getFeatureFlagPayload(key)
 
     /**
