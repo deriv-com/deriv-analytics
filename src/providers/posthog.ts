@@ -326,7 +326,7 @@ export class Posthog {
         if (!this.has_initialized) return {}
 
         try {
-            const result = posthog.featureFlags.getFlagVariants() ?? {}
+            const result = posthog.featureFlags?.getFlagVariants() ?? {}
             this.log('getAllFlags', { result })
             return result
         } catch (error) {
