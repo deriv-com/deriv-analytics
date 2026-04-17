@@ -145,10 +145,9 @@ export class Posthog {
         }
 
         try {
-            const isIdentified =
-                typeof posthog._isIdentified === 'function' ? posthog._isIdentified() : this.has_identified
+            const alreadyThisUser = this.has_identified && posthog.get_distinct_id() === user_id
 
-            if (user_id && !isIdentified) {
+            if (user_id && !alreadyThisUser) {
                 this.log('identifyEvent | identifying user', { user_id, traits })
                 posthog.identify(user_id, {
                     ...traits,
@@ -296,11 +295,20 @@ export class Posthog {
      *
      * @param key - The feature flag key
      */
-    getFeatureFlagPayload = (key: string): Record<string, any> | undefined => {
+    getFeatureFlagPayload = (
+        key: string
+    ): string | number | boolean | null | Record<string, unknown> | unknown[] | undefined => {
         if (!this.has_initialized) return undefined
 
         try {
-            const result = posthog.featureFlags?.getFeatureFlagResult(key)?.payload as Record<string, any> | undefined
+            const result = posthog.getFeatureFlagResult(key)?.payload as
+                | string
+                | number
+                | boolean
+                | null
+                | Record<string, unknown>
+                | unknown[]
+                | undefined
             this.log('getFeatureFlagPayload', { key, result })
             return result
         } catch (error) {
@@ -318,7 +326,7 @@ export class Posthog {
         if (!this.has_initialized) return {}
 
         try {
-            const result = posthog.featureFlags?.getFlagVariants() ?? {}
+            const result = posthog.featureFlags.getFlagVariants() ?? {}
             this.log('getAllFlags', { result })
             return result
         } catch (error) {

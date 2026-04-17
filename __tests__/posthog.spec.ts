@@ -14,6 +14,14 @@ vi.mock('posthog-js', () => ({
         _isIdentified: vi.fn(),
         get_property: vi.fn(),
         setPersonProperties: vi.fn(),
+        isFeatureEnabled: vi.fn(),
+        getFeatureFlag: vi.fn(),
+        getFeatureFlagResult: vi.fn(),
+        onFeatureFlags: vi.fn(),
+        reloadFeatureFlags: vi.fn(),
+        featureFlags: {
+            getFlagVariants: vi.fn(),
+        },
     },
 }))
 
@@ -40,6 +48,12 @@ describe('PostHog Provider', () => {
         ;(posthog.get_distinct_id as Mock).mockClear()
         ;(posthog.get_property as Mock).mockClear()
         ;(posthog.setPersonProperties as Mock).mockClear()
+        ;(posthog.isFeatureEnabled as Mock).mockClear()
+        ;(posthog.getFeatureFlag as Mock).mockClear()
+        ;(posthog.getFeatureFlagResult as Mock).mockClear()
+        ;(posthog.onFeatureFlags as Mock).mockClear()
+        ;(posthog.reloadFeatureFlags as Mock).mockClear()
+        ;(posthog.featureFlags.getFlagVariants as Mock).mockClear()
 
         // Ensure _isIdentified is properly mocked
         if (typeof posthog._isIdentified !== 'function') {
@@ -219,44 +233,41 @@ describe('PostHog Provider', () => {
         })
 
         test('should identify user when not previously identified', () => {
-            ;(posthog._isIdentified as Mock).mockReturnValue(false)
+            instance.has_identified = false
 
             instance.identifyEvent('CR123', { is_internal: false })
 
             expect(posthog.identify).toHaveBeenCalledWith('CR123', { client_id: 'CR123', is_internal: false })
         })
 
-        test('should not identify when user is already identified', () => {
-            ;(posthog._isIdentified as Mock).mockReturnValue(true)
+        test('should not identify when already identified as the same user', () => {
+            instance.has_identified = true
+            ;(posthog.get_distinct_id as Mock).mockReturnValue('CR123')
 
             instance.identifyEvent('CR123', { is_internal: false })
 
             expect(posthog.identify).not.toHaveBeenCalled()
-            // setPersonProperties is not called here — use backfillPersonProperties for backfilling
             expect(posthog.setPersonProperties).not.toHaveBeenCalled()
         })
 
+        test('should re-identify when a different user logs in after account switch', () => {
+            // Simulate: user A was identified, then logged out (reset called),
+            // but stale distinct_id from localStorage is still account A's id
+            instance.has_identified = true
+            ;(posthog.get_distinct_id as Mock).mockReturnValue('CR111') // stale distinct_id
+
+            instance.identifyEvent('CR222', { is_internal: false }) // new user
+
+            expect(posthog.identify).toHaveBeenCalledWith('CR222', { client_id: 'CR222', is_internal: false })
+            expect(instance.has_identified).toBe(true)
+        })
+
         test('should identify user and include client_id in traits', () => {
-            ;(posthog._isIdentified as Mock).mockReturnValue(false)
+            instance.has_identified = false
 
             instance.identifyEvent('CR123', { is_internal: false })
 
             expect(posthog.identify).toHaveBeenCalledWith('CR123', { client_id: 'CR123', is_internal: false })
-        })
-
-        test('should handle missing _isIdentified function gracefully', () => {
-            const original_isIdentified = posthog._isIdentified
-            // @ts-ignore - testing runtime scenario
-            posthog._isIdentified = undefined
-
-            instance.identifyEvent('CR789', { is_internal: false })
-
-            // Should use instance has_identified flag (false by default)
-            expect(posthog.alias).not.toHaveBeenCalled()
-            expect(posthog.identify).toHaveBeenCalledWith('CR789', { client_id: 'CR789', is_internal: false })
-
-            // Restore
-            posthog._isIdentified = original_isIdentified
         })
 
         test('should warn when not initialized', () => {
@@ -509,13 +520,245 @@ describe('PostHog Provider', () => {
         })
     })
 
+    describe('Feature Flags', () => {
+        let instance: Posthog
+
+        beforeEach(async () => {
+            instance = new Posthog({ apiKey: 'test-key' })
+            await instance.init()
+        })
+
+        describe('isFeatureEnabled', () => {
+            test('should return true when flag is enabled', () => {
+                ;(posthog.isFeatureEnabled as Mock).mockReturnValue(true)
+
+                expect(instance.isFeatureEnabled('my-flag')).toBe(true)
+                expect(posthog.isFeatureEnabled).toHaveBeenCalledWith('my-flag')
+            })
+
+            test('should return false when flag is disabled', () => {
+                ;(posthog.isFeatureEnabled as Mock).mockReturnValue(false)
+
+                expect(instance.isFeatureEnabled('my-flag')).toBe(false)
+            })
+
+            test('should return undefined when not initialized', () => {
+                const uninitializedInstance = new Posthog({ apiKey: '' })
+
+                expect(uninitializedInstance.isFeatureEnabled('my-flag')).toBeUndefined()
+                expect(posthog.isFeatureEnabled).not.toHaveBeenCalled()
+            })
+
+            test('should handle errors gracefully', () => {
+                ;(posthog.isFeatureEnabled as Mock).mockImplementationOnce(() => {
+                    throw new Error('isFeatureEnabled failed')
+                })
+
+                expect(instance.isFeatureEnabled('my-flag')).toBeUndefined()
+                expect(consoleErrorSpy).toHaveBeenCalledWith('Posthog: Failed to check feature flag', expect.any(Error))
+            })
+        })
+
+        describe('getFeatureFlag', () => {
+            test('should return string variant for multivariate flag', () => {
+                ;(posthog.getFeatureFlag as Mock).mockReturnValue('variant-a')
+
+                expect(instance.getFeatureFlag('my-flag')).toBe('variant-a')
+                expect(posthog.getFeatureFlag).toHaveBeenCalledWith('my-flag')
+            })
+
+            test('should return true for enabled boolean flag', () => {
+                ;(posthog.getFeatureFlag as Mock).mockReturnValue(true)
+
+                expect(instance.getFeatureFlag('my-flag')).toBe(true)
+            })
+
+            test('should return undefined when flag does not exist', () => {
+                ;(posthog.getFeatureFlag as Mock).mockReturnValue(undefined)
+
+                expect(instance.getFeatureFlag('nonexistent')).toBeUndefined()
+            })
+
+            test('should return undefined when not initialized', () => {
+                const uninitializedInstance = new Posthog({ apiKey: '' })
+
+                expect(uninitializedInstance.getFeatureFlag('my-flag')).toBeUndefined()
+                expect(posthog.getFeatureFlag).not.toHaveBeenCalled()
+            })
+
+            test('should handle errors gracefully', () => {
+                ;(posthog.getFeatureFlag as Mock).mockImplementationOnce(() => {
+                    throw new Error('getFeatureFlag failed')
+                })
+
+                expect(instance.getFeatureFlag('my-flag')).toBeUndefined()
+                expect(consoleErrorSpy).toHaveBeenCalledWith('Posthog: Failed to get feature flag', expect.any(Error))
+            })
+        })
+
+        describe('getFeatureFlagPayload', () => {
+            test('should return object payload', () => {
+                ;(posthog.getFeatureFlagResult as Mock).mockReturnValue({ payload: { color: 'blue' } })
+
+                expect(instance.getFeatureFlagPayload('my-flag')).toEqual({ color: 'blue' })
+                expect(posthog.getFeatureFlagResult).toHaveBeenCalledWith('my-flag')
+            })
+
+            test('should return string payload', () => {
+                ;(posthog.getFeatureFlagResult as Mock).mockReturnValue({ payload: 'control' })
+
+                expect(instance.getFeatureFlagPayload('my-flag')).toBe('control')
+            })
+
+            test('should return number payload', () => {
+                ;(posthog.getFeatureFlagResult as Mock).mockReturnValue({ payload: 42 })
+
+                expect(instance.getFeatureFlagPayload('my-flag')).toBe(42)
+            })
+
+            test('should return undefined when flag has no payload', () => {
+                ;(posthog.getFeatureFlagResult as Mock).mockReturnValue(undefined)
+
+                expect(instance.getFeatureFlagPayload('my-flag')).toBeUndefined()
+            })
+
+            test('should return undefined when not initialized', () => {
+                const uninitializedInstance = new Posthog({ apiKey: '' })
+
+                expect(uninitializedInstance.getFeatureFlagPayload('my-flag')).toBeUndefined()
+                expect(posthog.getFeatureFlagResult).not.toHaveBeenCalled()
+            })
+
+            test('should handle errors gracefully', () => {
+                ;(posthog.getFeatureFlagResult as Mock).mockImplementationOnce(() => {
+                    throw new Error('getFeatureFlagResult failed')
+                })
+
+                expect(instance.getFeatureFlagPayload('my-flag')).toBeUndefined()
+                expect(consoleErrorSpy).toHaveBeenCalledWith(
+                    'Posthog: Failed to get feature flag payload',
+                    expect.any(Error)
+                )
+            })
+        })
+
+        describe('getAllFlags', () => {
+            test('should return map of flag key to value', () => {
+                ;(posthog.featureFlags.getFlagVariants as Mock).mockReturnValue({
+                    'flag-a': true,
+                    'flag-b': 'variant-x',
+                })
+
+                expect(instance.getAllFlags()).toEqual({ 'flag-a': true, 'flag-b': 'variant-x' })
+            })
+
+            test('should return empty object when no flags are active', () => {
+                ;(posthog.featureFlags.getFlagVariants as Mock).mockReturnValue({})
+
+                expect(instance.getAllFlags()).toEqual({})
+            })
+
+            test('should return empty object when not initialized', () => {
+                const uninitializedInstance = new Posthog({ apiKey: '' })
+
+                expect(uninitializedInstance.getAllFlags()).toEqual({})
+                expect(posthog.featureFlags.getFlagVariants).not.toHaveBeenCalled()
+            })
+
+            test('should handle errors gracefully', () => {
+                ;(posthog.featureFlags.getFlagVariants as Mock).mockImplementationOnce(() => {
+                    throw new Error('getFlagVariants failed')
+                })
+
+                expect(instance.getAllFlags()).toEqual({})
+                expect(consoleErrorSpy).toHaveBeenCalledWith(
+                    'Posthog: Failed to get all feature flags',
+                    expect.any(Error)
+                )
+            })
+        })
+
+        describe('onFeatureFlags', () => {
+            test('should subscribe and return unsubscribe function', () => {
+                const unsubscribe = vi.fn()
+                ;(posthog.onFeatureFlags as Mock).mockReturnValue(unsubscribe)
+                const callback = vi.fn()
+
+                const result = instance.onFeatureFlags(callback)
+
+                expect(posthog.onFeatureFlags).toHaveBeenCalledWith(callback)
+                expect(result).toBe(unsubscribe)
+            })
+
+            test('should return no-op when posthog.onFeatureFlags returns non-function', () => {
+                ;(posthog.onFeatureFlags as Mock).mockReturnValue(undefined)
+
+                const result = instance.onFeatureFlags(vi.fn())
+
+                expect(typeof result).toBe('function')
+                expect(() => result()).not.toThrow()
+            })
+
+            test('should return no-op when not initialized', () => {
+                const uninitializedInstance = new Posthog({ apiKey: '' })
+
+                const result = uninitializedInstance.onFeatureFlags(vi.fn())
+
+                expect(posthog.onFeatureFlags).not.toHaveBeenCalled()
+                expect(typeof result).toBe('function')
+            })
+
+            test('should handle errors gracefully', () => {
+                ;(posthog.onFeatureFlags as Mock).mockImplementationOnce(() => {
+                    throw new Error('onFeatureFlags failed')
+                })
+
+                const result = instance.onFeatureFlags(vi.fn())
+
+                expect(result).toBeDefined()
+                expect(consoleErrorSpy).toHaveBeenCalledWith(
+                    'Posthog: Failed to subscribe to feature flags',
+                    expect.any(Error)
+                )
+            })
+        })
+
+        describe('reloadFeatureFlags', () => {
+            test('should call posthog.reloadFeatureFlags', () => {
+                instance.reloadFeatureFlags()
+
+                expect(posthog.reloadFeatureFlags).toHaveBeenCalledTimes(1)
+            })
+
+            test('should be a no-op when not initialized', () => {
+                const uninitializedInstance = new Posthog({ apiKey: '' })
+
+                uninitializedInstance.reloadFeatureFlags()
+
+                expect(posthog.reloadFeatureFlags).not.toHaveBeenCalled()
+            })
+
+            test('should handle errors gracefully', () => {
+                ;(posthog.reloadFeatureFlags as Mock).mockImplementationOnce(() => {
+                    throw new Error('reloadFeatureFlags failed')
+                })
+
+                expect(() => instance.reloadFeatureFlags()).not.toThrow()
+                expect(consoleErrorSpy).toHaveBeenCalledWith(
+                    'Posthog: Failed to reload feature flags',
+                    expect.any(Error)
+                )
+            })
+        })
+    })
+
     describe('Integration Tests', () => {
         test('should handle full user lifecycle', async () => {
             ;(posthog.init as Mock).mockClear()
             ;(posthog.identify as Mock).mockClear()
             ;(posthog.capture as Mock).mockClear()
             ;(posthog.reset as Mock).mockClear()
-            ;(posthog._isIdentified as Mock) = vi.fn().mockReturnValue(false)
+            ;(posthog.get_distinct_id as Mock).mockReturnValue('anon-id')
 
             const instance = new Posthog({ apiKey: 'test-key' })
             await instance.init()
@@ -549,7 +792,7 @@ describe('PostHog Provider', () => {
 
         test('should handle multiple identify calls correctly', async () => {
             ;(posthog.identify as Mock).mockClear()
-            ;(posthog._isIdentified as Mock) = vi.fn().mockReturnValue(false)
+            ;(posthog.get_distinct_id as Mock).mockReturnValue('anon-id')
 
             const instance = new Posthog({ apiKey: 'test-key' })
             await instance.init()
@@ -560,13 +803,41 @@ describe('PostHog Provider', () => {
             expect(posthog.identify).toHaveBeenCalledTimes(1)
             expect(instance.has_identified).toBe(true)
 
-            // Second identify - should not call identify again
-            ;(posthog._isIdentified as Mock).mockReturnValue(true)
+            // Second identify for same user — should not call identify again
+            ;(posthog.get_distinct_id as Mock).mockReturnValue('CR100')
 
             instance.identifyEvent('CR100', { email: 'user@example.com', language: 'es' })
 
             expect(posthog.alias).not.toHaveBeenCalled()
             expect(posthog.identify).toHaveBeenCalledTimes(1) // Still only 1 call
+        })
+
+        test('should re-identify after logout and login with a different account', async () => {
+            ;(posthog.identify as Mock).mockClear()
+            ;(posthog.reset as Mock).mockClear()
+            ;(posthog.get_distinct_id as Mock).mockReturnValue('anon-id')
+
+            const instance = new Posthog({ apiKey: 'test-key' })
+            await instance.init()
+
+            // User A logs in
+            instance.identifyEvent('CR111', { is_internal: false })
+            expect(posthog.identify).toHaveBeenCalledWith('CR111', { client_id: 'CR111', is_internal: false })
+            expect(instance.has_identified).toBe(true)
+
+            // User A logs out — reset clears has_identified
+            instance.reset()
+            expect(instance.has_identified).toBe(false)
+
+            // Simulate stale localStorage: distinct_id is still CR111
+            ;(posthog.get_distinct_id as Mock).mockReturnValue('CR111')
+
+            // User B logs in — must re-identify even though distinct_id !== CR222
+            instance.has_identified = true // simulate race where flag was not cleared
+            instance.identifyEvent('CR222', { is_internal: false })
+
+            expect(posthog.identify).toHaveBeenCalledWith('CR222', { client_id: 'CR222', is_internal: false })
+            expect(posthog.identify).toHaveBeenCalledTimes(2)
         })
     })
 })
