@@ -1,3 +1,15 @@
+## [1.41.1](https://github.com/deriv-com/deriv-analytics/compare/v1.41.0...v1.41.1) (2026-04-17)
+
+### ♻️ Chores
+
+- update package.json and lock file for v1.41.0 ([479385f](https://github.com/deriv-com/deriv-analytics/commit/479385f98f77f10c668bc903f39ee78d84bdc5b6))
+
+### 🐛 Bug Fixes
+
+- replace \_isIdentified with get_distinct_id comparison for account switch detection ([0e14e2f](https://github.com/deriv-com/deriv-analytics/commit/0e14e2f076e25595df795400d0f2061f09485d06))
+- replace \_isIdentified with get_distinct_id for account switch detection ([3b86d8d](https://github.com/deriv-com/deriv-analytics/commit/3b86d8d325083f80e358126d2efcd6a6f6c07ad0))
+- restore safe optional chaining on posthog.featureFlags ([5ae8ebf](https://github.com/deriv-com/deriv-analytics/commit/5ae8ebfb0a92a3200859bad4a5cd7601981141cf))
+
 # [1.41.0](https://github.com/deriv-com/deriv-analytics/compare/v1.40.3...v1.41.0) (2026-04-15)
 
 ### ✨ Features
