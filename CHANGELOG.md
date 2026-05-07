@@ -1,3 +1,14 @@
+# [1.42.0](https://github.com/deriv-com/deriv-analytics/compare/v1.41.1...v1.42.0) (2026-05-07)
+
+### ♻️ Chores
+
+- update package.json and lock file ([98fe826](https://github.com/deriv-com/deriv-analytics/commit/98fe826012d861b25d2e838fbe4cf37804d4c809))
+
+### ✨ Features
+
+- set maskAllInputs as default for PostHog session recording ([f6f43de](https://github.com/deriv-com/deriv-analytics/commit/f6f43de03b464e7312fd493153d3e7abc8cd45a3))
+- set maskAllInputs as default for PostHog session recording ([df9424c](https://github.com/deriv-com/deriv-analytics/commit/df9424c7943faa6c3bc2803944036d33f84d143d))
+
 ## [1.41.1](https://github.com/deriv-com/deriv-analytics/compare/v1.41.0...v1.41.1) (2026-04-17)
 
 ### ♻️ Chores
