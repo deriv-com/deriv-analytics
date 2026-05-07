@@ -104,6 +104,7 @@ export class Posthog {
                 session_recording: {
                     recordCrossOriginIframes: true,
                     minimumDurationMilliseconds: 30000,
+                    maskAllInputs: true,
                     ...config.session_recording,
                 },
                 before_send: event => {
