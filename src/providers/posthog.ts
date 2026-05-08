@@ -208,6 +208,9 @@ export class Posthog {
 
     private static isAnonymousId = (id: string | undefined | null): boolean => {
         if (!id) return true
+        // Hard-coded UUID v4 pattern — matches posthog-js anonymous ID format.
+        // Verify after major posthog-js version bumps; a changed format would treat
+        // new anonymous IDs as identified and trigger spurious resets on every login.
         return /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(id)
     }
 
@@ -312,12 +315,22 @@ export class Posthog {
         }
 
         try {
+            const currentDistinctId = posthog.get_distinct_id()
+            const alreadyIdentified = currentDistinctId === user_id
+
+            // Reset stale identity FIRST — otherwise property reads below see the previous
+            // user's cached values and we may early-return without identifying the new user.
+            if (!alreadyIdentified) {
+                this.resetIfStaleId(currentDistinctId, user_id, 'backfillPersonProperties')
+            }
+
             const updates: Record<string, any> = {}
 
+            // Falsy is correct for string-valued properties; '' is not a valid value and also warrants a rewrite.
+            // is_internal uses == null because false is a legitimate value that must not be overwritten.
             if (!posthog.get_property('client_id')) {
                 updates.client_id = user_id
             }
-            // Use == null (catches both null and undefined) so is_internal: false is never overwritten.
             if (email && posthog.get_property('is_internal') == null) {
                 updates.is_internal = isInternalEmail(email)
             }
@@ -328,26 +341,19 @@ export class Posthog {
                 updates.country_of_residence = country_of_residence
             }
 
-            if (Object.keys(updates).length === 0) {
-                this.log('backfillPersonProperties | skipped — all properties already present', {
-                    user_id,
-                    country_of_residence,
-                })
-                return
-            }
-
-            const currentDistinctId = posthog.get_distinct_id()
-            const alreadyIdentified = currentDistinctId === user_id
-
-            if (!alreadyIdentified) {
-                this.resetIfStaleId(currentDistinctId, user_id, 'backfillPersonProperties')
-
+            if (alreadyIdentified) {
+                if (Object.keys(updates).length === 0) {
+                    this.log('backfillPersonProperties | skipped — all properties already present', { user_id })
+                    return
+                }
+                this.log('backfillPersonProperties | backfilling person properties', { user_id, updates })
+                posthog.setPersonProperties(updates)
+            } else {
+                // Always identify after a potential reset — ensures client_id lands even if persistence was cleared.
+                if (!updates.client_id) updates.client_id = user_id
                 this.log('backfillPersonProperties | user not identified, identifying now', { user_id, updates })
                 posthog.identify(user_id, updates)
                 this.has_identified = true
-            } else {
-                this.log('backfillPersonProperties | backfilling person properties', { user_id, updates })
-                posthog.setPersonProperties(updates)
             }
         } catch (error) {
             console.error('Posthog: Failed to backfill person properties', error)
@@ -450,7 +456,12 @@ export class Posthog {
         try {
             // NOTE: featureFlags and getFlagVariants() are internal posthog-js APIs.
             // Verify after major SDK version bumps.
-            const result = posthog.featureFlags?.getFlagVariants() ?? {}
+            const raw = posthog.featureFlags?.getFlagVariants() ?? {}
+            // FeatureFlagValue includes null/undefined for disabled/unresolved flags;
+            // filter them out to honour the declared return type.
+            const result = Object.fromEntries(
+                Object.entries(raw).filter((entry): entry is [string, string | boolean] => entry[1] != null)
+            )
             this.log('getAllFlags', { result })
             return result
         } catch (error) {

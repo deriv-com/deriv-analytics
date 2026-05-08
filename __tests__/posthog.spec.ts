@@ -585,8 +585,43 @@ describe('PostHog Provider', () => {
 
             instance.backfillPersonProperties({ user_id: 'CR123', email: 'user@example.com' })
 
+            // Anonymous session (UUID distinct_id) → identify is still called to link the session,
+            // but only with client_id since all other properties were already present.
+            expect(posthog.identify).toHaveBeenCalledWith('CR123', { client_id: 'CR123' })
             expect(posthog.setPersonProperties).not.toHaveBeenCalled()
-            expect(posthog.identify).not.toHaveBeenCalled()
+        })
+
+        test('should reset stale distinct_id and identify the new user', () => {
+            ;(posthog.get_property as Mock).mockReturnValue(undefined)
+            ;(posthog.get_distinct_id as Mock).mockReturnValue('CR111') // stale non-anonymous ID
+
+            instance.backfillPersonProperties({ user_id: 'CR222', email: 'b@example.com' })
+
+            expect(posthog.reset).toHaveBeenCalled()
+            expect(posthog.identify).toHaveBeenCalledWith('CR222', expect.objectContaining({ client_id: 'CR222' }))
+        })
+
+        test('should reset and identify even when stale cache fills all properties', () => {
+            // Regression: without the fix, updates={} because stale user's properties satisfy
+            // all get_property checks, the early-return fires, and resetIfStaleId is never reached.
+            ;(posthog.get_property as Mock).mockImplementation((key: string) => {
+                if (key === 'client_id') return 'CR111'
+                if (key === 'is_internal') return false
+                if (key === 'language') return 'en'
+                if (key === 'country_of_residence') return 'US'
+                return undefined
+            })
+            ;(posthog.get_distinct_id as Mock).mockReturnValue('CR111') // stale
+
+            instance.backfillPersonProperties({
+                user_id: 'CR222',
+                email: 'b@example.com',
+                language: 'en',
+                country_of_residence: 'US',
+            })
+
+            expect(posthog.reset).toHaveBeenCalled()
+            expect(posthog.identify).toHaveBeenCalledWith('CR222', expect.objectContaining({ client_id: 'CR222' }))
         })
 
         test('should be a no-op when not initialized', () => {
@@ -827,6 +862,16 @@ describe('PostHog Provider', () => {
                 ;(posthog.featureFlags.getFlagVariants as Mock).mockReturnValue({})
 
                 expect(instance.getAllFlags()).toEqual({})
+            })
+
+            test('should filter out null and undefined flag values', () => {
+                ;(posthog.featureFlags.getFlagVariants as Mock).mockReturnValue({
+                    'flag-active': true,
+                    'flag-null': null,
+                    'flag-undefined': undefined,
+                })
+
+                expect(instance.getAllFlags()).toEqual({ 'flag-active': true })
             })
 
             test('should return empty object when not initialized', () => {
