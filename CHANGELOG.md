@@ -1,3 +1,11 @@
+## [1.42.1](https://github.com/deriv-com/deriv-analytics/compare/v1.42.0...v1.42.1) (2026-05-08)
+
+### 🐛 Bug Fixes
+
+- claude code issue ([0aa2086](https://github.com/deriv-com/deriv-analytics/commit/0aa2086dbe03f30c6f689f1ce8ec33eb5b601e48))
+- harden PostHog config, fix isAnonymousId(null) bug, and update consumer guide ([138bd69](https://github.com/deriv-com/deriv-analytics/commit/138bd69231755686792f1afcf3b14e64b840f3e9))
+- harden PostHog config, fix isAnonymousId(null) bug, update consumer guide ([1d26792](https://github.com/deriv-com/deriv-analytics/commit/1d26792ea0da0edb756e4ee2bc1fbeaae1d41929))
+
 # [1.42.0](https://github.com/deriv-com/deriv-analytics/compare/v1.41.1...v1.42.0) (2026-05-07)
 
 ### ♻️ Chores
