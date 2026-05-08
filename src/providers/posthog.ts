@@ -22,6 +22,28 @@ export class Posthog {
     has_initialized = false
     has_identified = false
     private static _instance: Posthog
+    // Survives re-instantiation — covers hot reload and multiple module copies.
+    // posthog.__loaded is checked as a secondary guard for cases where this
+    // static field is reset but posthog-js already has a live instance (e.g.
+    // duplicate module bundles in micro-frontends).
+    private static _hasLoaded = false
+    private static readonly ILLEGAL_IDS = new Set([
+        'restored',
+        'null',
+        'undefined',
+        'anonymous',
+        'guest',
+        'distinctid',
+        'distinct_id',
+        'id',
+        'not_authenticated',
+        'email',
+        'true',
+        'false',
+        '0',
+        'none',
+        'nan',
+    ])
     private options: TPosthogOptions
     private debug = false
     private log = createLogger('[PostHog]', () => this.debug)
@@ -41,6 +63,8 @@ export class Posthog {
     public static getPosthogInstance = (options: TPosthogOptions, debug = false): Posthog => {
         if (!Posthog._instance) {
             Posthog._instance = new Posthog(options, debug)
+        } else if (options.apiKey && options.apiKey !== Posthog._instance.options.apiKey) {
+            console.warn('Posthog: getPosthogInstance called with a different API key — returning existing instance')
         }
         return Posthog._instance
     }
@@ -91,43 +115,113 @@ export class Posthog {
                 return
             }
 
+            if (Posthog._hasLoaded || (posthog as any).__loaded) {
+                this.log('init | PostHog already initialized, skipping re-init')
+                this.has_initialized = true
+                return
+            }
+
             this.cleanupStalePosthogCookies(apiKey)
 
             const resolvedApiHost = api_host || getPosthogApiHost()
             this.log('init | loading PostHog SDK', { api_host: resolvedApiHost })
 
             const posthogConfig: TPosthogConfig = {
+                // Overridable defaults — consumers can override these via config
                 api_host: resolvedApiHost,
                 ui_host: posthogUiHost,
-                autocapture: true,
+                // Scope autocapture to clicks only. Default also captures input changes and
+                // form submissions which, on a high-frequency trading SPA, contributes to
+                // burst-limit hits.
+                autocapture: { dom_event_allowlist: ['click'] },
+                // Pin rate limits explicitly so SDK default changes don't silently affect us.
+                rate_limiting: {
+                    events_per_second: 10,
+                    events_burst_limit: 100,
+                },
+                ...config,
+
+                // ── Enforced after consumer spread ─────────────────────────────────────
+                person_profiles: 'identified_only',
+                // 'history_change' fires $pageview on every pushState/replaceState (SPA-friendly).
+                // Consumers must NOT also call posthog.capture('$pageview') manually — that
+                // causes a duplicate on every navigation and hits the burst rate limit.
                 capture_pageview: 'history_change',
+                capture_pageleave: true,
                 session_recording: {
+                    ...config.session_recording,
                     recordCrossOriginIframes: true,
                     minimumDurationMilliseconds: 30000,
                     maskAllInputs: true,
-                    ...config.session_recording,
                 },
                 before_send: event => {
-                    if (typeof window === 'undefined') return null
+                    // SSR guard — note: this drops all server-side events.
+                    // If consumers ever use SSR (Next.js, Nuxt), move domain check
+                    // to runtime and remove the window guard from the timestamp filter.
+                    if (typeof window === 'undefined' || !event) return null
+
+                    if (event.timestamp) {
+                        const sevenDaysMs = 7 * 24 * 60 * 60 * 1000
+                        const eventMs = event.timestamp.getTime()
+                        const now = Date.now()
+                        if (eventMs < now - sevenDaysMs || eventMs > now + sevenDaysMs) {
+                            this.log('init | before_send dropped event with bad timestamp', {
+                                event: event.event,
+                                timestamp: event.timestamp.toISOString(),
+                            })
+                            return null
+                        }
+                    }
 
                     const currentHost = window.location.hostname
-                    if (currentHost === 'localhost' || currentHost === '127.0.0.1') return event
+                    if (currentHost !== 'localhost' && currentHost !== '127.0.0.1') {
+                        const isAllowed = allowedDomains.some(
+                            domain => currentHost.endsWith(`.${domain}`) || currentHost === domain
+                        )
+                        if (!isAllowed) {
+                            this.log('init | before_send blocked event from disallowed host', { currentHost })
+                            return null
+                        }
+                    }
 
-                    const isAllowed = allowedDomains.some(
-                        domain => currentHost.endsWith(`.${domain}`) || currentHost === domain
-                    )
-                    if (!isAllowed) this.log('init | before_send blocked event from disallowed host', { currentHost })
-                    return isAllowed ? event : null
+                    if (config.before_send) {
+                        const fns = Array.isArray(config.before_send) ? config.before_send : [config.before_send]
+                        let result: typeof event | null = event
+                        for (const fn of fns) {
+                            result = result ? fn(result) : null
+                        }
+                        return result
+                    }
+                    return event
                 },
-                ...config,
             }
 
             // Initialize PostHog
             posthog.init(apiKey, posthogConfig)
+            Posthog._hasLoaded = true
             this.has_initialized = true
             this.log('init | PostHog SDK loaded successfully')
         } catch (error) {
             console.error('Posthog: Failed to initialize', error)
+        }
+    }
+
+    private static isAnonymousId = (id: string | undefined | null): boolean => {
+        if (!id) return true
+        return /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(id)
+    }
+
+    private resetIfStaleId = (
+        currentDistinctId: string | undefined | null,
+        nextUserId: string,
+        caller: string
+    ): void => {
+        if (!Posthog.isAnonymousId(currentDistinctId)) {
+            this.log(`${caller} | stale identified user, resetting`, {
+                previous: currentDistinctId,
+                next: nextUserId,
+            })
+            posthog.reset()
         }
     }
 
@@ -146,18 +240,28 @@ export class Posthog {
         }
 
         try {
-            const alreadyThisUser = this.has_identified && posthog.get_distinct_id() === user_id
-
-            if (user_id && !alreadyThisUser) {
-                this.log('identifyEvent | identifying user', { user_id, traits })
-                posthog.identify(user_id, {
-                    ...traits,
-                    client_id: user_id,
-                })
-                this.has_identified = true
-            } else {
-                this.log('identifyEvent | skipped — user already identified', { user_id })
+            if (!user_id || !user_id.trim() || Posthog.ILLEGAL_IDS.has(user_id.toLowerCase())) {
+                this.log('identifyEvent | skipped — invalid user_id', { user_id })
+                return
             }
+
+            const currentDistinctId = posthog.get_distinct_id()
+
+            if (currentDistinctId === user_id) {
+                this.log('identifyEvent | skipped — user already identified', { user_id })
+                return
+            }
+
+            // If PostHog holds a different identified user's ID (not an anonymous UUID),
+            // reset first to prevent profile merging between accounts.
+            this.resetIfStaleId(currentDistinctId, user_id, 'identifyEvent')
+
+            this.log('identifyEvent | identifying user', { user_id, traits })
+            posthog.identify(user_id, {
+                ...traits,
+                client_id: user_id,
+            })
+            this.has_identified = true
         } catch (error) {
             console.error('Posthog: Failed to identify user', error)
         }
@@ -202,31 +306,48 @@ export class Posthog {
     }): void => {
         if (!this.has_initialized || !user_id) return
 
+        if (!user_id.trim() || Posthog.ILLEGAL_IDS.has(user_id.toLowerCase())) {
+            this.log('backfillPersonProperties | skipped — invalid user_id', { user_id })
+            return
+        }
+
         try {
-            const storedProperties: Record<string, any> = posthog.get_property('$stored_person_properties') ?? {}
             const updates: Record<string, any> = {}
 
-            if (!storedProperties.client_id) {
+            if (!posthog.get_property('client_id')) {
                 updates.client_id = user_id
             }
-            if (email && storedProperties.is_internal === undefined) {
+            // Use == null (catches both null and undefined) so is_internal: false is never overwritten.
+            if (email && posthog.get_property('is_internal') == null) {
                 updates.is_internal = isInternalEmail(email)
             }
-            if (language && !storedProperties.language) {
+            if (language && !posthog.get_property('language')) {
                 updates.language = language
             }
-            if (country_of_residence && !storedProperties.country_of_residence) {
+            if (country_of_residence && !posthog.get_property('country_of_residence')) {
                 updates.country_of_residence = country_of_residence
             }
 
-            if (Object.keys(updates).length > 0) {
-                this.log('backfillPersonProperties | backfilling person properties', { user_id, updates })
-                posthog.setPersonProperties(updates)
-            } else {
+            if (Object.keys(updates).length === 0) {
                 this.log('backfillPersonProperties | skipped — all properties already present', {
                     user_id,
                     country_of_residence,
                 })
+                return
+            }
+
+            const currentDistinctId = posthog.get_distinct_id()
+            const alreadyIdentified = currentDistinctId === user_id
+
+            if (!alreadyIdentified) {
+                this.resetIfStaleId(currentDistinctId, user_id, 'backfillPersonProperties')
+
+                this.log('backfillPersonProperties | user not identified, identifying now', { user_id, updates })
+                posthog.identify(user_id, updates)
+                this.has_identified = true
+            } else {
+                this.log('backfillPersonProperties | backfilling person properties', { user_id, updates })
+                posthog.setPersonProperties(updates)
             }
         } catch (error) {
             console.error('Posthog: Failed to backfill person properties', error)
@@ -327,6 +448,8 @@ export class Posthog {
         if (!this.has_initialized) return {}
 
         try {
+            // NOTE: featureFlags and getFlagVariants() are internal posthog-js APIs.
+            // Verify after major SDK version bumps.
             const result = posthog.featureFlags?.getFlagVariants() ?? {}
             this.log('getAllFlags', { result })
             return result
