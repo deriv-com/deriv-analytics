@@ -62,9 +62,13 @@ describe('PostHog Provider', () => {
 
         consoleWarnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {})
         consoleErrorSpy = vi.spyOn(console, 'error').mockImplementation(() => {})
-        // Reset singleton instance
+        // Reset singleton and double-init guard between tests
         // @ts-ignore - accessing private property for testing
         Posthog._instance = undefined
+        // @ts-ignore - accessing private property for testing
+        Posthog._hasLoaded = false
+        // Reset posthog.__loaded so the secondary guard doesn't interfere
+        ;(posthog as any).__loaded = false
     })
 
     afterEach(() => {
@@ -94,6 +98,20 @@ describe('PostHog Provider', () => {
             expect(posthog.init).toHaveBeenCalledTimes(1)
             expect(posthog.init).toHaveBeenCalledWith('test-key-1', expect.any(Object))
         })
+
+        test('should warn when called with a different API key than the existing instance', () => {
+            Posthog.getPosthogInstance({ apiKey: 'key-one' })
+            Posthog.getPosthogInstance({ apiKey: 'key-two' })
+
+            expect(consoleWarnSpy).toHaveBeenCalledWith(expect.stringContaining('different API key'))
+        })
+
+        test('should not warn when called with the same API key', () => {
+            Posthog.getPosthogInstance({ apiKey: 'key-one' })
+            Posthog.getPosthogInstance({ apiKey: 'key-one' })
+
+            expect(consoleWarnSpy).not.toHaveBeenCalled()
+        })
     })
 
     describe('Initialization', () => {
@@ -106,7 +124,10 @@ describe('PostHog Provider', () => {
                 expect.objectContaining({
                     api_host: 'https://ph-api.deriv.com',
                     ui_host: 'https://ph-ui.deriv.com',
-                    autocapture: true,
+                    capture_pageview: 'history_change',
+                    capture_pageleave: true,
+                    autocapture: expect.objectContaining({ dom_event_allowlist: ['click'] }),
+                    rate_limiting: expect.objectContaining({ events_per_second: 10, events_burst_limit: 100 }),
                     session_recording: expect.objectContaining({
                         recordCrossOriginIframes: true,
                         minimumDurationMilliseconds: 30000,
@@ -161,6 +182,49 @@ describe('PostHog Provider', () => {
             ;(posthog.init as Mock).mockImplementation(() => {})
         })
 
+        describe('Double-init guard', () => {
+            test('should skip posthog.init when _hasLoaded is already true', () => {
+                // First init goes through normally
+                const instance1 = new Posthog({ apiKey: 'test-key' })
+                expect(posthog.init).toHaveBeenCalledTimes(1)
+                expect(instance1.has_initialized).toBe(true)
+
+                // Second instantiation (e.g. duplicate module) must not call posthog.init again
+                // @ts-ignore - reset singleton to simulate a second class instance
+                Posthog._instance = undefined
+                const instance2 = new Posthog({ apiKey: 'test-key' })
+                expect(posthog.init).toHaveBeenCalledTimes(1)
+                expect(instance2.has_initialized).toBe(true)
+            })
+
+            test('should skip posthog.init when posthog.__loaded is already true', () => {
+                // Simulate another bundle having already initialized posthog-js
+                ;(posthog as any).__loaded = true
+
+                const instance = new Posthog({ apiKey: 'test-key' })
+                expect(posthog.init).not.toHaveBeenCalled()
+                expect(instance.has_initialized).toBe(true)
+            })
+
+            test('should not set _hasLoaded when posthog.init throws', () => {
+                ;(posthog.init as Mock).mockImplementationOnce(() => {
+                    throw new Error('Init failed')
+                })
+
+                new Posthog({ apiKey: 'test-key' })
+                // @ts-ignore
+                expect(Posthog._hasLoaded).toBe(false)
+
+                // A subsequent init attempt must be allowed to proceed
+                ;(posthog.init as Mock).mockClear()
+                // @ts-ignore
+                Posthog._instance = undefined
+                const instance2 = new Posthog({ apiKey: 'test-key' })
+                expect(posthog.init).toHaveBeenCalledTimes(1)
+                expect(instance2.has_initialized).toBe(true)
+            })
+        })
+
         describe('Domain Filtering (before_send)', () => {
             test('should have before_send function configured', async () => {
                 const instance = new Posthog({ apiKey: 'test-key' })
@@ -187,6 +251,47 @@ describe('PostHog Provider', () => {
                 expect(typeof beforeSendFn(mockEvent)).toBeDefined()
             })
         })
+
+        describe('Timestamp filtering (before_send)', () => {
+            let beforeSendFn: (event: any) => any
+
+            beforeEach(() => {
+                new Posthog({ apiKey: 'test-key' })
+                const initCall = (posthog.init as Mock).mock.calls[0]!
+                beforeSendFn = initCall[1].before_send
+            })
+
+            test('should pass through events with a current timestamp', () => {
+                const event = { event: 'test', timestamp: new Date() }
+                expect(beforeSendFn(event)).toBe(event)
+            })
+
+            test('should drop events with timestamp more than 7 days in the past', () => {
+                const old = new Date(Date.now() - 8 * 24 * 60 * 60 * 1000)
+                const event = { event: 'test', timestamp: old }
+                expect(beforeSendFn(event)).toBeNull()
+            })
+
+            test('should drop events with timestamp more than 7 days in the future', () => {
+                const future = new Date(Date.now() + 8 * 24 * 60 * 60 * 1000)
+                const event = { event: 'test', timestamp: future }
+                expect(beforeSendFn(event)).toBeNull()
+            })
+
+            test('should drop events from year 2014 (broken device clock)', () => {
+                const event = { event: 'test', timestamp: new Date('2014-05-07') }
+                expect(beforeSendFn(event)).toBeNull()
+            })
+
+            test('should pass through events without a timestamp', () => {
+                const event = { event: 'test' }
+                expect(beforeSendFn(event)).toBe(event)
+            })
+
+            test('should return null for a null event', () => {
+                expect(beforeSendFn(null)).toBeNull()
+            })
+        })
     })
 
     describe('Identify Event', () => {
@@ -200,7 +305,7 @@ describe('PostHog Provider', () => {
             ;(posthog.capture as Mock).mockClear()
             ;(posthog.reset as Mock).mockClear()
             ;(posthog._isIdentified as Mock).mockReturnValue(false)
-            ;(posthog.get_distinct_id as Mock).mockReturnValue('anon-default')
+            ;(posthog.get_distinct_id as Mock).mockReturnValue('12345678-1234-5678-1234-567890123456')
             instance = new Posthog({ apiKey: 'test-key' })
             await instance.init()
         })
@@ -258,8 +363,30 @@ describe('PostHog Provider', () => {
 
             instance.identifyEvent('CR222', { is_internal: false }) // new user
 
+            // Stale identified ID detected → reset fires automatically before identify
+            expect(posthog.reset).toHaveBeenCalled()
             expect(posthog.identify).toHaveBeenCalledWith('CR222', { client_id: 'CR222', is_internal: false })
             expect(instance.has_identified).toBe(true)
+        })
+
+        test('should not reset before identifying an anonymous user (UUID distinct_id)', () => {
+            // Anonymous UUIDs must NOT trigger an auto-reset — that would discard
+            // the anonymous session and break event stitching on first login.
+            ;(posthog.get_distinct_id as Mock).mockReturnValue('12345678-1234-5678-1234-567890123456')
+
+            instance.identifyEvent('CR123', { is_internal: false })
+
+            expect(posthog.reset).not.toHaveBeenCalled()
+            expect(posthog.identify).toHaveBeenCalledWith('CR123', { client_id: 'CR123', is_internal: false })
+        })
+
+        test('should not reset when get_distinct_id returns null (null treated as anonymous)', () => {
+            ;(posthog.get_distinct_id as Mock).mockReturnValue(null)
+
+            instance.identifyEvent('CR123', { is_internal: false })
+
+            expect(posthog.reset).not.toHaveBeenCalled()
+            expect(posthog.identify).toHaveBeenCalledWith('CR123', { client_id: 'CR123', is_internal: false })
         })
 
         test('should identify user and include client_id in traits', () => {
@@ -403,32 +530,98 @@ describe('PostHog Provider', () => {
         beforeEach(async () => {
             ;(posthog.get_property as Mock).mockClear()
             ;(posthog.setPersonProperties as Mock).mockClear()
+            ;(posthog.identify as Mock).mockClear()
+            ;(posthog.get_distinct_id as Mock).mockReturnValue('12345678-1234-5678-1234-567890123456')
             instance = new Posthog({ apiKey: 'test-key' })
             await instance.init()
         })
 
-        test('should set client_id when missing from stored person properties', () => {
-            ;(posthog.get_property as Mock).mockReturnValue({})
+        test('should call identify when user is not yet identified', () => {
+            ;(posthog.get_property as Mock).mockReturnValue(undefined)
 
             instance.backfillPersonProperties({ user_id: 'CR123', email: 'user@example.com' })
 
-            expect(posthog.setPersonProperties).toHaveBeenCalledWith({ client_id: 'CR123', is_internal: false })
+            expect(posthog.identify).toHaveBeenCalledWith('CR123', { client_id: 'CR123', is_internal: false })
+            expect(posthog.setPersonProperties).not.toHaveBeenCalled()
+            expect(instance.has_identified).toBe(true)
         })
 
-        test('should set client_id when stored person properties is null', () => {
+        test('should not reset when get_distinct_id returns null (null treated as anonymous)', () => {
+            ;(posthog.get_property as Mock).mockReturnValue(undefined)
+            ;(posthog.get_distinct_id as Mock).mockReturnValue(null)
+
+            instance.backfillPersonProperties({ user_id: 'CR123', email: 'user@example.com' })
+
+            expect(posthog.reset).not.toHaveBeenCalled()
+            expect(posthog.identify).toHaveBeenCalledWith('CR123', { client_id: 'CR123', is_internal: false })
+        })
+
+        test('should call identify when stored properties are null and user is not identified', () => {
             ;(posthog.get_property as Mock).mockReturnValue(null)
 
             instance.backfillPersonProperties({ user_id: 'CR123', email: 'user@example.com' })
 
-            expect(posthog.setPersonProperties).toHaveBeenCalledWith({ client_id: 'CR123', is_internal: false })
+            expect(posthog.identify).toHaveBeenCalledWith('CR123', { client_id: 'CR123', is_internal: false })
+            expect(posthog.setPersonProperties).not.toHaveBeenCalled()
         })
 
-        test('should not set client_id when already present in stored person properties', () => {
-            ;(posthog.get_property as Mock).mockReturnValue({ client_id: 'CR123', is_internal: false })
+        test('should call setPersonProperties when user is already identified', () => {
+            ;(posthog.get_property as Mock).mockReturnValue(undefined)
+            ;(posthog.get_distinct_id as Mock).mockReturnValue('CR123')
+            instance.has_identified = true
 
             instance.backfillPersonProperties({ user_id: 'CR123', email: 'user@example.com' })
 
+            expect(posthog.setPersonProperties).toHaveBeenCalledWith({ client_id: 'CR123', is_internal: false })
+            expect(posthog.identify).not.toHaveBeenCalled()
+        })
+
+        test('should not overwrite client_id or is_internal when already present', () => {
+            ;(posthog.get_property as Mock).mockImplementation((key: string) => {
+                if (key === 'client_id') return 'CR123'
+                if (key === 'is_internal') return false
+                return undefined
+            })
+
+            instance.backfillPersonProperties({ user_id: 'CR123', email: 'user@example.com' })
+
+            // Anonymous session (UUID distinct_id) → identify is still called to link the session,
+            // but only with client_id since all other properties were already present.
+            expect(posthog.identify).toHaveBeenCalledWith('CR123', { client_id: 'CR123' })
             expect(posthog.setPersonProperties).not.toHaveBeenCalled()
+        })
+
+        test('should reset stale distinct_id and identify the new user', () => {
+            ;(posthog.get_property as Mock).mockReturnValue(undefined)
+            ;(posthog.get_distinct_id as Mock).mockReturnValue('CR111') // stale non-anonymous ID
+
+            instance.backfillPersonProperties({ user_id: 'CR222', email: 'b@example.com' })
+
+            expect(posthog.reset).toHaveBeenCalled()
+            expect(posthog.identify).toHaveBeenCalledWith('CR222', expect.objectContaining({ client_id: 'CR222' }))
+        })
+
+        test('should reset and identify even when stale cache fills all properties', () => {
+            // Regression: without the fix, updates={} because stale user's properties satisfy
+            // all get_property checks, the early-return fires, and resetIfStaleId is never reached.
+            ;(posthog.get_property as Mock).mockImplementation((key: string) => {
+                if (key === 'client_id') return 'CR111'
+                if (key === 'is_internal') return false
+                if (key === 'language') return 'en'
+                if (key === 'country_of_residence') return 'US'
+                return undefined
+            })
+            ;(posthog.get_distinct_id as Mock).mockReturnValue('CR111') // stale
+
+            instance.backfillPersonProperties({
+                user_id: 'CR222',
+                email: 'b@example.com',
+                language: 'en',
+                country_of_residence: 'US',
+            })
+
+            expect(posthog.reset).toHaveBeenCalled()
+            expect(posthog.identify).toHaveBeenCalledWith('CR222', expect.objectContaining({ client_id: 'CR222' }))
         })
 
         test('should be a no-op when not initialized', () => {
@@ -438,6 +631,7 @@ describe('PostHog Provider', () => {
 
             expect(posthog.get_property).not.toHaveBeenCalled()
             expect(posthog.setPersonProperties).not.toHaveBeenCalled()
+            expect(posthog.identify).not.toHaveBeenCalled()
         })
 
         test('should be a no-op when user_id is empty', () => {
@@ -445,6 +639,18 @@ describe('PostHog Provider', () => {
 
             expect(posthog.get_property).not.toHaveBeenCalled()
             expect(posthog.setPersonProperties).not.toHaveBeenCalled()
+        })
+
+        test('should skip illegal user_id values', () => {
+            for (const id of ['null', 'undefined', 'anonymous', 'guest']) {
+                ;(posthog.identify as Mock).mockClear()
+                ;(posthog.setPersonProperties as Mock).mockClear()
+
+                instance.backfillPersonProperties({ user_id: id })
+
+                expect(posthog.identify).not.toHaveBeenCalled()
+                expect(posthog.setPersonProperties).not.toHaveBeenCalled()
+            }
         })
 
         test('should handle errors gracefully', () => {
@@ -658,6 +864,16 @@ describe('PostHog Provider', () => {
                 expect(instance.getAllFlags()).toEqual({})
             })
 
+            test('should filter out null and undefined flag values', () => {
+                ;(posthog.featureFlags.getFlagVariants as Mock).mockReturnValue({
+                    'flag-active': true,
+                    'flag-null': null,
+                    'flag-undefined': undefined,
+                })
+
+                expect(instance.getAllFlags()).toEqual({ 'flag-active': true })
+            })
+
             test('should return empty object when not initialized', () => {
                 const uninitializedInstance = new Posthog({ apiKey: '' })
 
@@ -758,7 +974,7 @@ describe('PostHog Provider', () => {
             ;(posthog.identify as Mock).mockClear()
             ;(posthog.capture as Mock).mockClear()
             ;(posthog.reset as Mock).mockClear()
-            ;(posthog.get_distinct_id as Mock).mockReturnValue('anon-id')
+            ;(posthog.get_distinct_id as Mock).mockReturnValue('12345678-1234-5678-1234-567890123456')
 
             const instance = new Posthog({ apiKey: 'test-key' })
             await instance.init()
@@ -792,7 +1008,7 @@ describe('PostHog Provider', () => {
 
         test('should handle multiple identify calls correctly', async () => {
             ;(posthog.identify as Mock).mockClear()
-            ;(posthog.get_distinct_id as Mock).mockReturnValue('anon-id')
+            ;(posthog.get_distinct_id as Mock).mockReturnValue('12345678-1234-5678-1234-567890123456')
 
             const instance = new Posthog({ apiKey: 'test-key' })
             await instance.init()
@@ -815,7 +1031,7 @@ describe('PostHog Provider', () => {
         test('should re-identify after logout and login with a different account', async () => {
             ;(posthog.identify as Mock).mockClear()
             ;(posthog.reset as Mock).mockClear()
-            ;(posthog.get_distinct_id as Mock).mockReturnValue('anon-id')
+            ;(posthog.get_distinct_id as Mock).mockReturnValue('12345678-1234-5678-1234-567890123456')
 
             const instance = new Posthog({ apiKey: 'test-key' })
             await instance.init()

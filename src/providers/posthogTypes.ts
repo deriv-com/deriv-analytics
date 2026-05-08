@@ -15,6 +15,15 @@ export type TExtendedSessionRecordingOptions = SessionRecordingOptions & {
  */
 export type TPosthogConfig = Partial<Omit<PostHogConfig, 'session_recording'>> & {
     session_recording?: Partial<TExtendedSessionRecordingOptions>
+    /**
+     * Client-side rate limiting for PostHog event capture.
+     * Not yet reflected in posthog-js TypeScript types but supported at runtime.
+     * Raise events_burst_limit if legitimate user flows are hitting the limiter.
+     */
+    rate_limiting?: {
+        events_per_second?: number
+        events_burst_limit?: number
+    }
 }
 
 export type TPosthogIdentifyTraits = {

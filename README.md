@@ -28,6 +28,10 @@ A modern, tree-shakeable analytics library for tracking user events with RudderS
 - [Configuration](#configuration)
     - [RudderStack](#rudderstack-configuration)
     - [PostHog](#posthog-configuration)
+        - [Enforced settings](#enforced-settings)
+        - [Overridable defaults](#overridable-defaults)
+        - [Do not capture $pageview manually](#-do-not-capture-pageview-manually)
+        - [Domain allowlist](#domain-allowlist)
 - [Core API](#core-api)
     - [Initialization](#initialization)
     - [Event Tracking](#event-tracking)
@@ -37,6 +41,8 @@ A modern, tree-shakeable analytics library for tracking user events with RudderS
 - [Caching & Offline Support](#caching--offline-support)
 - [Debug Mode](#debug-mode)
 - [Advanced Usage](#advanced-usage)
+- [PostHog Feature Flags](#posthog-feature-flags)
+- [PostHog Integration Checklist](#posthog-integration-checklist)
 - [API Reference](#api-reference)
 - [Performance](#performance)
 - [Troubleshooting](#troubleshooting)
@@ -379,52 +385,31 @@ await Analytics.initialise({
 
 ### PostHog Configuration
 
-PostHog provides powerful analytics, session recording, and feature flags:
+PostHog provides analytics, session recording, and feature flags.
+
+#### Initialisation
+
+`getPosthogInstance` (and `Analytics.initialise`) use a singleton — calling them more than once with the same key returns the existing instance without re-running the SDK init. Call once at app startup, not inside render loops.
 
 ```typescript
 await Analytics.initialise({
     rudderstackKey: 'YOUR_RUDDERSTACK_KEY',
     posthogOptions: {
-        // Required: API key
         apiKey: 'phc_YOUR_KEY',
 
-        // Optional: Override the PostHog API host.
-        // If omitted, the host is auto-selected at init time based on window.location.hostname:
-        //   *.deriv.me  → https://ph.deriv.me
-        //   *.deriv.be  → https://ph.deriv.be
-        //   *.deriv.ae  → https://ph.deriv.ae
-        //   all others  → https://ph.deriv.com (default, also used in SSR/non-browser environments)
-        // Set this explicitly if you need to override the resolved host (e.g. in tests or custom deployments).
+        // Optional: override the auto-resolved API host (see table below)
         api_host: 'https://ph.deriv.com',
 
-        // Optional: PostHog configuration
+        // Optional: overridable settings (see "Overridable defaults" table below)
         config: {
-            // ui_host controls where the PostHog UI links point (e.g. session replay links).
-            // This is separate from api_host and should remain pointed at the PostHog cloud UI.
-            ui_host: 'https://us.posthog.com',
-
-            // Session recording
+            autocapture: false, // disable autocapture entirely
+            disable_session_recording: true, // opt out of session recording
             session_recording: {
-                recordCrossOriginIframes: true,
-                maskAllInputs: false,
-                minimumDurationMilliseconds: 30000, // Only save sessions longer than 30 seconds
+                sessionRecordingSampleRate: 0.5, // record 50% of sessions
             },
-
-            // Feature capture
-            autocapture: true, // Automatically capture clicks, form submissions, etc.
-            capture_pageview: true, // Automatically capture page views
-            capture_pageleave: true, // Capture when users leave pages
-
-            // Console log recording (useful for debugging)
-            enable_recording_console_log: true,
-
-            // Disable features if needed
-            disable_session_recording: false,
-            disable_surveys: false,
-
-            // Custom event filtering
             before_send: event => {
-                // Custom logic to filter or modify events
+                // your function runs after the built-in domain + timestamp filter
+                if (event?.properties?.sensitive_field) return null
                 return event
             },
         },
@@ -432,45 +417,76 @@ await Analytics.initialise({
 })
 ```
 
-#### Stale Cookie Cleanup
+`api_host` is auto-resolved from `window.location.hostname` if omitted:
 
-On every PostHog initialization, the library automatically removes leftover `ph_*_posthog` cookies from previous or rotated API keys. This prevents stale cookies from accumulating in users' browsers when the PostHog project key changes.
+| Domain pattern         | Resolved host          |
+| ---------------------- | ---------------------- |
+| `*.deriv.me`           | `https://ph.deriv.me`  |
+| `*.deriv.be`           | `https://ph.deriv.be`  |
+| `*.deriv.ae`           | `https://ph.deriv.ae`  |
+| all others (incl. SSR) | `https://ph.deriv.com` |
 
-#### Domain Allowlisting
+#### Enforced settings
 
-PostHog events are only sent from the following domains (hardcoded internally):
+These are applied **after** any consumer `config` spread. Passing them in `config` has no effect:
+
+| Setting                                         | Value               | Reason                                                 |
+| ----------------------------------------------- | ------------------- | ------------------------------------------------------ |
+| `person_profiles`                               | `'identified_only'` | Prevents anonymous profile bloat                       |
+| `capture_pageview`                              | `'history_change'`  | SPA-safe — fires on every `pushState` / `replaceState` |
+| `capture_pageleave`                             | `true`              | Standard session completeness                          |
+| `session_recording.recordCrossOriginIframes`    | `true`              | Captures embedded tools                                |
+| `session_recording.minimumDurationMilliseconds` | `30000`             | Filters sub-30-second noise sessions                   |
+| `session_recording.maskAllInputs`               | `true`              | Privacy — cannot be lowered by consumers               |
+
+Consumer keys inside `session_recording` are spread **before** these enforced values, so extras like `sessionRecordingSampleRate` take effect without conflicting.
+
+#### Overridable defaults
+
+| Setting                            | Default                              | Override when…                                                     |
+| ---------------------------------- | ------------------------------------ | ------------------------------------------------------------------ |
+| `autocapture`                      | `{ dom_event_allowlist: ['click'] }` | You need more event types, or want to disable autocapture entirely |
+| `rate_limiting.events_per_second`  | `10`                                 | Legitimate user flows are hitting the burst limiter                |
+| `rate_limiting.events_burst_limit` | `100`                                | Legitimate user flows are hitting the burst limiter                |
+
+#### ⚠ Do not capture `$pageview` manually
+
+`capture_pageview: 'history_change'` is enforced and fires automatically on every client-side navigation. Adding a manual `posthog.capture('$pageview')` **doubles your pageview count** and contributes to `$client_ingestion_warning` rate-limit hits.
+
+**React Router:**
+
+```typescript
+// ❌ Remove this
+useEffect(() => {
+    posthog.capture('$pageview')
+}, [location.pathname])
+
+// ✅ Nothing needed — capture_pageview: 'history_change' handles it
+```
+
+**Vue Router:**
+
+```typescript
+// ❌ Remove this
+router.afterEach(() => {
+    posthog.capture('$pageview')
+})
+
+// ✅ Nothing needed — capture_pageview: 'history_change' handles it
+```
+
+#### Domain allowlist
+
+Events are silently blocked in `before_send` unless the hostname matches:
 
 - `deriv.com`, `deriv.be`, `deriv.me`, `deriv.team`, `deriv.ae`
 - `localhost` and `127.0.0.1` are always allowed
 
-Events from any other domain are silently blocked. This list is not user-configurable.
+This list is hardcoded and not configurable.
 
-#### Session Recording Customization
+#### Stale cookie cleanup
 
-```typescript
-posthogOptions: {
-    apiKey: 'phc_YOUR_KEY',
-    config: {
-        session_recording: {
-            // Record content from iframes
-            recordCrossOriginIframes: true,
-
-            // Mask sensitive input fields
-            maskAllInputs: true,
-            maskInputOptions: {
-                password: true,
-                email: true,
-            },
-
-            // Only save sessions longer than 1 minute
-            minimumDurationMilliseconds: 60000,
-
-            // Sampling (record only 50% of sessions)
-            sessionRecordingSampleRate: 0.5,
-        },
-    },
-}
-```
+On every init, leftover `ph_*_posthog` cookies from previous or rotated API keys are removed automatically. No action needed.
 
 ## Core API
 
@@ -556,6 +572,22 @@ Analytics.identifyEvent('CR123456', {
 - PostHog automatically handles aliasing between anonymous and identified users
 - When `email` is provided in PostHog traits, the `is_internal` flag is automatically computed and set as a person property — `email` itself is **not** forwarded to PostHog
 
+#### PostHog identity lifecycle
+
+| Scenario                                                                        | Call                                                                             |
+| ------------------------------------------------------------------------------- | -------------------------------------------------------------------------------- |
+| User logs in                                                                    | `identifyEvent(user_id, { posthog: { email, language, country_of_residence } })` |
+| User logs out                                                                   | `reset()`                                                                        |
+| User already identified in a previous session, person properties may be missing | `backfillPersonProperties({ user_id, email, language, country_of_residence })`   |
+
+**`identifyEvent`** links the anonymous PostHog session to the user and enforces `client_id`. Skip it if the current distinct ID is already the same `user_id` — the library does this check automatically.
+
+**`reset`** clears the PostHog session on logout. Future events are anonymous until the next `identifyEvent`.
+
+**`backfillPersonProperties`** fills in properties that may be missing on a returning user's profile (e.g. `client_id`, `is_internal`). It checks each property before writing and is a no-op if everything is already present. Call it once after the user ID is available, alongside or instead of `identifyEvent` for returning users.
+
+> **Account-switch guard**: both `identifyEvent` and `backfillPersonProperties` detect when PostHog's stored distinct ID belongs to a _different_ identified user (not an anonymous UUID) and call `posthog.reset()` automatically before identifying the new user. This prevents profiles from merging across accounts.
+
 ### Page Views
 
 Track page navigation:
@@ -574,7 +606,7 @@ Analytics.pageView('/trade', 'Deriv App', {
 })
 ```
 
-**Note**: PostHog automatically captures page views when `capture_pageview: true` is set in config. Manual page view tracking is primarily for RudderStack.
+**Note**: PostHog page views are captured automatically via the enforced `capture_pageview: 'history_change'` setting. Do not call `posthog.capture('$pageview')` manually — see the [⚠ Do not capture `$pageview` manually](#-do-not-capture-pageview-manually) section. Manual page view tracking via `Analytics.pageView()` is primarily for RudderStack.
 
 ### User Attributes
 
@@ -728,6 +760,57 @@ if (tracking?.has_initialized) {
     const anonId = tracking.getAnonymousId()
 }
 ```
+
+## PostHog Feature Flags
+
+Access feature flags through the `posthog` instance:
+
+```typescript
+const { posthog } = Analytics.getInstances()
+
+// Boolean flag — returns true, false, or undefined (not ready)
+const isEnabled = posthog?.isFeatureEnabled('my-flag')
+
+// Multivariate flag — returns a string variant, boolean, or undefined
+const variant = posthog?.getFeatureFlag('button-color') // e.g. 'red' | 'blue' | true | undefined
+
+// Structured payload attached to a flag
+const config = posthog?.getFeatureFlagPayload('pricing-config') // e.g. { price: 9.99 }
+
+// All active flags as a map
+const allFlags = posthog?.getAllFlags() // { 'flag-a': true, 'flag-b': 'variant-x' }
+
+// Subscribe to flag changes (fires immediately + on every reload)
+const unsubscribe = posthog?.onFeatureFlags((flags, variants) => {
+    console.log('active flags:', flags)
+    console.log('variants:', variants)
+})
+// Call unsubscribe() to stop listening
+
+// Force a reload from the server (e.g. after login or attribute change)
+posthog?.reloadFeatureFlags()
+```
+
+When using PostHog directly (without the `Analytics` wrapper):
+
+```typescript
+import { Posthog } from '@deriv-com/analytics/posthog'
+
+const posthog = Posthog.getPosthogInstance({ apiKey: 'phc_YOUR_KEY' })
+const isEnabled = posthog.isFeatureEnabled('my-flag')
+```
+
+## PostHog Integration Checklist
+
+Before shipping, verify:
+
+- [ ] `Analytics.initialise` (or `getPosthogInstance`) is called **once** at app startup — not on every render or route change
+- [ ] No `posthog.capture('$pageview')` calls remain — search the codebase and remove them
+- [ ] `identifyEvent` is called on login with `email` in PostHog traits (needed for the `is_internal` flag)
+- [ ] `reset()` is called on logout
+- [ ] `backfillPersonProperties` is called for returning users when the user ID is available
+- [ ] Your domain is in the allowlist — if testing on a non-`deriv.*` domain other than `localhost`, events are silently blocked
+- [ ] `debug: true` is removed or guarded behind `process.env.NODE_ENV === 'development'`
 
 ## API Reference
 
