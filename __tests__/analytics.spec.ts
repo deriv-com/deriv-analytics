@@ -3,6 +3,7 @@ import { createAnalyticsInstance } from '../src/analytics'
 
 // Mock dependencies
 vi.mock('../src/providers/rudderstack')
+vi.mock('../src/providers/growthbook')
 vi.mock('../src/utils/storage')
 vi.mock('../src/utils/helpers', async importOriginal => ({
     ...(await importOriginal<typeof import('../src/utils/helpers')>()),
@@ -63,21 +64,16 @@ describe('Analytics - createAnalyticsInstance', () => {
             analytics = createAnalyticsInstance()
             await analytics.initialise({ rudderstackKey: 'test_key' })
 
-            expect(RudderStack.getRudderStackInstance).toHaveBeenCalledWith('test_key', expect.any(Function), false)
+            expect(RudderStack.getRudderStackInstance).toHaveBeenCalledWith(
+                'test_key',
+                expect.any(Function),
+                false,
+                undefined
+            )
         })
 
         test('should initialize with Growthbook options', async () => {
             analytics = createAnalyticsInstance()
-
-            // Mock Growthbook module
-            vi.mock('../src/providers/growthbook', () => ({
-                Growthbook: {
-                    getGrowthBookInstance: vi.fn().mockReturnValue({
-                        setAttributes: vi.fn(),
-                        getFeatureValue: vi.fn(),
-                    }),
-                },
-            }))
 
             await analytics.initialise({
                 growthbookKey: 'gb_key',

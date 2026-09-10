@@ -198,6 +198,9 @@ export class Posthog {
 
             // Initialize PostHog
             posthog.init(apiKey, posthogConfig)
+            if (this.options.app_version) {
+                posthog.register({ app_version: this.options.app_version })
+            }
             Posthog._hasLoaded = true
             this.has_initialized = true
             this.log('init | PostHog SDK loaded successfully')
@@ -430,13 +433,7 @@ export class Posthog {
 
         try {
             const result = posthog.getFeatureFlagResult(key)?.payload as
-                | string
-                | number
-                | boolean
-                | null
-                | Record<string, unknown>
-                | unknown[]
-                | undefined
+                string | number | boolean | null | Record<string, unknown> | unknown[] | undefined
             this.log('getFeatureFlagPayload', { key, result })
             return result
         } catch (error) {

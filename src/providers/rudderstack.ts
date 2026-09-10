@@ -17,12 +17,14 @@ export class RudderStack {
     rudderstack_anonymous_cookie_key = 'rudder_anonymous_id'
     private static _instance: RudderStack
     private onLoadedCallback?: () => void
+    private app_version?: string
     private debug = false
     private log = createLogger('[RudderStack]', () => this.debug)
 
-    constructor(RUDDERSTACK_KEY: string, onLoaded?: () => void, debug = false) {
+    constructor(RUDDERSTACK_KEY: string, onLoaded?: () => void, debug = false, app_version?: string) {
         this.onLoadedCallback = onLoaded
         this.debug = debug
+        this.app_version = app_version
         this.init(RUDDERSTACK_KEY)
     }
 
@@ -31,15 +33,17 @@ export class RudderStack {
      * @param RUDDERSTACK_KEY - RudderStack write key
      * @param onLoaded - Optional callback when RudderStack is loaded
      * @param debug - Enable debug logging
+     * @param app_version - App version attached to every event's context
      * @returns The RudderStack singleton instance
      */
     public static getRudderStackInstance = (
         RUDDERSTACK_KEY: string,
         onLoaded?: () => void,
-        debug = false
+        debug = false,
+        app_version?: string
     ): RudderStack => {
         if (!RudderStack._instance) {
-            RudderStack._instance = new RudderStack(RUDDERSTACK_KEY, onLoaded, debug)
+            RudderStack._instance = new RudderStack(RUDDERSTACK_KEY, onLoaded, debug, app_version)
         }
         return RudderStack._instance
     }
@@ -117,6 +121,8 @@ export class RudderStack {
             this.setCookieIfNotExists()
 
             this.analytics.load(RUDDERSTACK_KEY, rudderstackDataplane, {
+                // Merged into every event's context by the SDK (CustomContextStore).
+                ...(this.app_version && { context: { app_version: this.app_version } }),
                 externalAnonymousIdCookieName: this.rudderstack_anonymous_cookie_key,
                 storage: { type: 'localStorage' },
                 // Performance optimizations

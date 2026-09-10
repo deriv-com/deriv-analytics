@@ -48,4 +48,8 @@ export type TPosthogOptions = {
      * Allows customization of PostHog behavior, session recording, etc.
      */
     config?: TPosthogConfig
+    /**
+     * App version to attach to all events via posthog.register
+     */
+    app_version?: string
 }
