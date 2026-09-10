@@ -32,6 +32,8 @@ type Options = {
     growthbookDecryptionKey?: string
     /** RudderStack write key for event tracking */
     rudderstackKey?: string
+    /** App version attached to every event sent to RudderStack and PostHog */
+    app_version?: string
     /** Additional configuration options for GrowthBook */
     growthbookOptions?: TGrowthbookOptions
     /** PostHog configuration options including API keys and settings */
@@ -170,6 +172,7 @@ export function createAnalyticsInstance(_options?: Options) {
         growthbookKey,
         growthbookDecryptionKey,
         rudderstackKey,
+        app_version,
         growthbookOptions,
         posthogOptions,
         debug,
@@ -188,7 +191,7 @@ export function createAnalyticsInstance(_options?: Options) {
 
             if (rudderstackKey) {
                 log('initialise | initializing RudderStack')
-                _rudderstack = RudderStack.getRudderStackInstance(rudderstackKey, onSdkLoaded, _debug)
+                _rudderstack = RudderStack.getRudderStackInstance(rudderstackKey, onSdkLoaded, _debug, app_version)
             }
 
             if (growthbookOptions?.attributes && Object.keys(growthbookOptions.attributes).length > 0) {
@@ -244,7 +247,7 @@ export function createAnalyticsInstance(_options?: Options) {
                 log('initialise | initializing PostHog')
                 // Dynamically import Posthog only when needed
                 const { Posthog } = await import('./providers/posthog')
-                _posthog = Posthog.getPosthogInstance(posthogOptions, _debug)
+                _posthog = Posthog.getPosthogInstance({ app_version, ...posthogOptions }, _debug)
                 log('initialise | PostHog initialized')
             }
 
