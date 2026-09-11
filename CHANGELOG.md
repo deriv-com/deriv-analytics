@@ -1,3 +1,14 @@
+# [1.43.0](https://github.com/deriv-com/deriv-analytics/compare/v1.42.1...v1.43.0) (2026-09-11)
+
+### ✨ Features
+
+- attach app_version to all RudderStack and PostHog events ([e86e994](https://github.com/deriv-com/deriv-analytics/commit/e86e9947287e6b61134eb34fa8ea6b5d3be4f67a))
+
+### ♻️ Chores
+
+- updated all the packages to the latest version ([87bc1fd](https://github.com/deriv-com/deriv-analytics/commit/87bc1fdc26a60cafc37bf38c999a1e9d478654b9))
+- test PR and release flow after security update ([d5e2138](https://github.com/deriv-com/deriv-analytics/commit/d5e2138e8f7db8bbae7aafe3f43556684c8dae18))
+
 ## [1.42.1](https://github.com/deriv-com/deriv-analytics/compare/v1.42.0...v1.42.1) (2026-05-08)
 
 ### 🐛 Bug Fixes
